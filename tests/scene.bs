@@ -1,0 +1,33 @@
+
+scene1 = new Scene()
+scene1.init = function()
+{
+}
+
+scene1.enter()
+{
+    System.console.log("Scene1.enter: Hello!");
+}
+
+class Advenger
+{
+    setScene(scene)
+    {
+        System.console.log("Advenger.setScene: Setting scene...");
+        scene.enter();
+        System.console.log("Advenger.setScene: Done!");
+    }
+};
+
+class Test
+{
+    Test()
+    {
+    }
+
+    main()
+    {
+        Advenger.setScene(scene1);
+    }
+};
+

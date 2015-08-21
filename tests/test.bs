@@ -1,0 +1,23 @@
+
+class Test
+{
+    var var1;
+
+    function Test()
+    {
+        System.log("Test.init: Hello!");
+    }
+
+    function main() static
+    {
+        var t;
+        t = new Test();
+        t.nativeTest();
+    }
+
+function nestedExpressions()
+{
+System.log(functionCall());
+}
+}
+

@@ -1,0 +1,9 @@
+
+class MathsTest
+{
+    function MathsTest()
+    {
+a = b + c + d;
+    }
+}
+
