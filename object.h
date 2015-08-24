@@ -13,13 +13,17 @@ class Object
  private:
     Class* m_class;
 
+    Value* m_values;
+
  public:
     Object(Class* clazz);
     ~Object();
 
     Class* getClass() { return m_class; }
 
-void* data;
+    Value getValue(int slot) { return m_values[slot]; }
+    void setValue(int slot, Value v) { m_values[slot] = v; }
+
 };
 
 #endif

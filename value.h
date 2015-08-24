@@ -5,11 +5,19 @@
 
 class Object;
 
+enum ValueType
+{
+   VALUE_OBJECT,
+   VALUE_POINTER
+};
+
 struct Value
 {
+    ValueType type;
     union
     {
         Object* object;
+        void* pointer;
     } v;
 };
 
