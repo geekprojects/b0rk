@@ -3,14 +3,18 @@
 
 #include "class.h"
 
+class Context;
+
 class String : public Class
 {
  private:
-    std::string m_string;
 
  public:
     String();
     ~String();
+
+    static Object* createString(Context* context, const char* str);
+    static std::string getString(Context* context, Object* obj);
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "function.h"
+#include "string.h"
 
 using namespace std;
 
@@ -80,10 +81,8 @@ bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code
                 {
                     StringExpression* strExpr = (StringExpression*)paramExpr;
 
-                    Class* stringClass = context->getRuntime()->findClass("String");
-                    Object* strObj = new Object(stringClass);
-                    strObj->data = (void*)strdup(strExpr->str.c_str());
-                    printf("ScriptFunction::execute: Created string: %s\n", (char*)strObj->data);
+                    Object* strObj = String::createString(context, strExpr->str.c_str());
+
                     Value v;
                     v.v.object = strObj;
                     args.push_back(v);
