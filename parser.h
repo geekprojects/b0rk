@@ -12,7 +12,7 @@ class Parser
 {
  private:
     std::vector<Token> m_tokens;
-    int m_pos;
+    size_t m_pos;
 
     Token* nextToken();
     bool moreTokens() { return m_pos < m_tokens.size(); }

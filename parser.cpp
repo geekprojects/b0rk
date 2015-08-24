@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 #include "parser.h"
 
 using namespace std;
@@ -290,7 +292,7 @@ Expression* Parser::parseExpression()
 
     // See if we have an operation
     token = nextToken();
-    int i;
+    unsigned int i;
     bool isOper = false;
     TokenType oper = TOK_ANY;
     for (i = 0; i < (sizeof(g_operatorTokens) / sizeof(TokenType)); i++)

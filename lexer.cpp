@@ -116,7 +116,7 @@ m_tokens.push_back(token);
         else
         {
             bool found = false;
-            int i;
+            unsigned int i;
             for (i = 0; i < sizeof(tokenTable) / sizeof(SimpleToken); i++)
             {
                 if (checkWord(&pos, &(tokenTable[i])))

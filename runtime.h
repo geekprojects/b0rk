@@ -3,11 +3,14 @@
 
 #include "class.h"
 #include "context.h"
+#include "object.h"
 
 #include <map>
+#include <string>
 
 class Context;
 class Class;
+class Object;
 
 class Runtime
 {
