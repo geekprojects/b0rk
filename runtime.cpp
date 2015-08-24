@@ -1,5 +1,8 @@
 
+#include <stdio.h>
+
 #include "runtime.h"
+#include "string.h"
 
 using namespace std;
 
@@ -25,13 +28,22 @@ System::~System()
 
 bool System::log(Context* context)
 {
-printf("System::log: here!\n");
+Value v = context->pop();
+
+printf("System::log: here! obj=%p\n", v.v.object);
+
+if (v.v.object->getClass()->getName() == "String")
+{
+Object* strObj = v.v.object;
+printf("System::log: %s\n", (char*)strObj->data);
+}
 return true;
 }
 
 Runtime::Runtime()
 {
-     addClass(new System());
+    addClass(new System());
+    addClass(new String());
 }
 
 Runtime::~Runtime()

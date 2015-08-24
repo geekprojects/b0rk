@@ -1,4 +1,7 @@
 
+#include <stdio.h>
+#include <string.h>
+
 #include "function.h"
 
 using namespace std;
@@ -58,7 +61,7 @@ bool ScriptFunction::execute(Context* context, Object* instance)
 
 bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code)
 {
-    int i;
+    unsigned int i;
     for (i = 0; i < code->m_code.size(); i++)
     {
         Expression* expr = code->m_code[i];
@@ -75,9 +78,16 @@ bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code
                 Expression* paramExpr = *paramIt;
                 if (paramExpr->type == EXPR_STRING)
                 {
-                    //StringExpression* strExpr = (StringExpression*)paramExpr;
+                    StringExpression* strExpr = (StringExpression*)paramExpr;
 
-                    //Object* strObj = new Object(context->getRuntime()->findClass("String"));
+                    Class* stringClass = context->getRuntime()->findClass("String");
+                    Object* strObj = new Object(stringClass);
+                    strObj->data = (void*)strdup(strExpr->str.c_str());
+                    printf("ScriptFunction::execute: Created string: %s\n", (char*)strObj->data);
+                    Value v;
+                    v.v.object = strObj;
+                    args.push_back(v);
+                    context->push(v);
                 }
                 else
                 {
@@ -94,6 +104,7 @@ bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code
                 {
                     Function* function = clazz->findMethod(callExpr->function.identifier[1]);
                     printf("ScriptFunction::execute: identifier: clazz function=%p\n", function);
+
                     function->execute(context, NULL);
                 }
                 else
