@@ -25,9 +25,8 @@ Token* Parser::nextToken()
     return result;
 }
 
-bool Parser::parse(vector<Token> tokens)
+bool Parser::parse(Runtime* runtime, vector<Token> tokens)
 {
-    bool res;
     m_pos = 0;
     m_tokens = tokens;
 
@@ -38,11 +37,13 @@ bool Parser::parse(vector<Token> tokens)
 
         if (token->type == TOK_CLASS)
         {
-            res = parseClass();
-            if (!res)
+            Class* clazz;
+            clazz = parseClass();
+            if (clazz == NULL)
             {
                 return false;
             }
+            runtime->addClass(clazz);
         }
         else
         {
@@ -53,7 +54,7 @@ bool Parser::parse(vector<Token> tokens)
     return true;
 }
 
-bool Parser::parseClass()
+Class* Parser::parseClass()
 {
     bool res;
     Token* token;
@@ -62,16 +63,20 @@ bool Parser::parseClass()
     if (token->type != TOK_IDENTIFIER)
     {
         printf("Parser::parseClass: Expected class name\n");
-        return false;
+        return NULL;
     }
-    printf("Parser::parseClass: Class name: %s\n", token->string.c_str());
+
+    string name = token->string;
 
     token = nextToken();
     if (token->type != TOK_BRACE_LEFT)
     {
         printf("Parser::parseClass: Expected {\n");
-        return false;
+        return NULL;
     }
+
+    printf("Parser::parseClass: Class name: %s\n", name.c_str());
+    Class* clazz = new Class(name);
 
     while (m_pos < m_tokens.size())
     {
@@ -91,58 +96,70 @@ bool Parser::parseClass()
             if (token->type != TOK_SEMICOLON)
             {
                 printf("Parser::parseClass: Expected ;\n");
-                return false;
+                delete clazz;
+                return NULL;
             }
         }
         else if (token->type == TOK_FUNCTION)
         {
             token = nextToken();
-            string varName = token->string;
-            printf("Parser::parseClass: Function: %s\n", varName.c_str());
+            string funcName = token->string;
+            printf("Parser::parseClass: Function: %s\n", funcName.c_str());
+
+            ScriptFunction* function = new ScriptFunction(clazz);
 
             vector<Token*> paramTokens;
             res = parseList(paramTokens, TOK_IDENTIFIER);
             if (!res)
             {
-                return false;
+                delete clazz;
+                return NULL;
             }
 
             token = nextToken();
             if (token->type == TOK_STATIC)
             {
                 printf("Parser::parseClass: Function: Static function!\n");
+                function->setStatic(true);
                 token = nextToken();
             }
             if (token->type != TOK_BRACE_LEFT)
             {
                 printf("Parser::parseClass: Function: Expected {\n");
-                return false;
+                delete clazz;
+                return NULL;
             }
 
-            res = parseCodeBlock();
-            if (!res)
+            CodeBlock* code;
+            code = parseCodeBlock();
+            if (code == NULL)
             {
-                return false;
+                delete clazz;
+                return NULL;
             }
+            function->setCode(code);
+            clazz->addMethod(funcName, function);
         }
         else
         {
             printf("Parser::parser: ERROR: Unexpected token: %s\n", token->string.c_str());
-            return false;
+            delete clazz;
+            return NULL;
         }
     }
-    return true;
+    return clazz;
 }
 
-bool Parser::parseCodeBlock()
+CodeBlock* Parser::parseCodeBlock()
 {
-    //bool res;
+    CodeBlock* code = new CodeBlock();
+
     while (moreTokens())
     {
         Token* token = nextToken();
         if (token->type == TOK_BRACE_RIGHT)
         {
-            return true;
+            return code;
         }
         else if (token->type == TOK_VAR)
         {
@@ -150,9 +167,11 @@ bool Parser::parseCodeBlock()
             if (token->type != TOK_IDENTIFIER)
             {
                 printf("Parser::parseCodeBlock: VAR: Expected variable name, got %s\n", token->string.c_str());
-                return false;
+                delete code;
+                return NULL;
             }
             printf("Parser::parseCodeBlock: VAR: name=%s\n", token->string.c_str());
+            code->m_vars.push_back(token->string);
 
             // TODO: Handle assignment from var definition
 
@@ -160,19 +179,21 @@ bool Parser::parseCodeBlock()
             if (token->type != TOK_SEMICOLON)
             {
                 printf("Parser::parseCodeBlock: VAR: Expected ;, got %s\n", token->string.c_str());
-                return false;
+                delete code;
+                return NULL;
             }
         }
         else
         {
-// Expression ?
+            // Expression ?
             m_pos--; // Rewind
 
             Expression* expression;
             expression = parseExpression();
             if (expression == NULL)
             {
-                return false;
+                delete code;
+                return NULL;
             }
             printf("Parser::parseCodeBlock: Expression: %s\n", expression->toString().c_str());
 
@@ -180,12 +201,13 @@ bool Parser::parseCodeBlock()
             if (token->type != TOK_SEMICOLON)
             {
                 printf("Parser::parseCodeBlock: EXPRESSION: Expected ;, got %s\n", token->string.c_str());
-                return false;
+                delete code;
+                return NULL;
             }
- 
+            code->m_code.push_back(expression);
         }
     }
-    return true;
+    return code;
 }
 
 Expression* Parser::parseExpression()
@@ -284,7 +306,7 @@ Expression* Parser::parseExpression()
     if (isOper)
     {
         OperationExpression* opExpr = new OperationExpression();
-        opExpr->operType = oper;
+        opExpr->operType = (OpType)oper;
         opExpr->left = expression;
         opExpr->right = parseExpression();
         if (opExpr->right == NULL)
@@ -382,7 +404,6 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
 
 bool Parser::parseExpressionList(vector<Expression*>& list)
 {
-    //printf("Parser::parseList: Here\n");
     Token* token = nextToken();
     if (token->type != TOK_BRACKET_LEFT)
     {
@@ -417,7 +438,7 @@ bool Parser::parseExpressionList(vector<Expression*>& list)
             return false;
         }
     }
-//printf("Parser::parseList: Done\n");
+
     return true;
 }
 

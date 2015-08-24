@@ -11,10 +11,11 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-if (argc < 2)
-{
-return 0;
-}
+    if (argc < 2)
+    {
+        return 0;
+    }
+
     FILE* fp = fopen(argv[1], "r");
     fseek(fp, 0, SEEK_END);
     size_t length = ftell(fp);
@@ -24,13 +25,30 @@ return 0;
     fread(buffer, 1, length, fp);
     fclose(fp);
 
-Lexer lexer;
-lexer.lexer(buffer, length);
+    Runtime* runtime = new Runtime();
 
-Parser parser;
-parser.parse(lexer.getTokens());
+    Lexer lexer;
+    lexer.lexer(buffer, length);
 
-delete[] buffer;
+    Parser parser;
+    parser.parse(runtime, lexer.getTokens());
+
+    delete[] buffer;
+
+    Class* helloWorld = runtime->findClass("HelloWorld");
+    printf("helloWorld=%p\n", helloWorld);
+
+    Function* mainFunc = helloWorld->findMethod("main");
+    printf("mainFunc=%p\n", mainFunc);
+    if (!mainFunc->getStatic())
+    {
+        printf("Main is not static!\n");
+        return 0;
+    }
+
+    Context* context = runtime->createContext();
+
+    mainFunc->execute(context, NULL);
 
     return 0;
 }
