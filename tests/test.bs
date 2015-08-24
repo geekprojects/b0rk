@@ -15,9 +15,9 @@ class Test
         t.nativeTest();
     }
 
-function nestedExpressions()
-{
-System.log(functionCall());
-}
+    function nestedExpressions()
+    {
+        System.log(functionCall());
+    }
 }
 

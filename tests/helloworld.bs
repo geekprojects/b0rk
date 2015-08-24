@@ -1,0 +1,9 @@
+
+class HelloWorld
+{
+    function main() static
+    {
+        System.log("Hello, world!");
+    }
+}
+
