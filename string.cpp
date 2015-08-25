@@ -22,7 +22,7 @@ Object* String::createString(Context* context, const char* str)
     Object* object = new Object(stringClass);
 
     Value v;
-    v.v.pointer = strdup(str);
+    v.pointer = strdup(str);
     object->setValue(0, v);
 
     return object;
@@ -30,6 +30,6 @@ Object* String::createString(Context* context, const char* str)
 
 std::string String::getString(Context* context, Object* obj)
 {
-    return string((const char*)obj->getValue(0).v.pointer);
+    return string((const char*)obj->getValue(0).pointer);
 }
 

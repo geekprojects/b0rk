@@ -33,6 +33,8 @@ enum TokenType
     TOK_NEW,
     TOK_IDENTIFIER,
     TOK_STRING,
+    TOK_INTEGER,
+    TOK_DOUBLE,
     TOK_EXPRESSION,
     TOK_ANY = -1,
 };
@@ -41,6 +43,8 @@ struct Token
 {
     TokenType type;
     std::string string;
+    int i;
+    double d;
 };
 
 #endif

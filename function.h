@@ -46,7 +46,10 @@ class ScriptFunction : public Function
  private:
     CodeBlock* m_code;
 
+    bool executeExpression(Context* context, Expression* expr);
     bool execute(Context* context, Object* instance, CodeBlock* block);
+
+    Value* findVariable(Context* context, std::string name);
 
  public:
     ScriptFunction(Class* clazz);

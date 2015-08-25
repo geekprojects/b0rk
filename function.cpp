@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "function.h"
 #include "string.h"
@@ -55,17 +56,12 @@ void ScriptFunction::setCode(CodeBlock* code)
     m_code = code;
 }
 
-bool ScriptFunction::execute(Context* context, Object* instance)
-{
-    return execute(context, instance, m_code);
-}
+#define DOUBLE_VALUE(_v) (((_v).type == VALUE_DOUBLE) ? (_v.d) : (double)(_v.i))
+#define INTEGER_VALUE(_v) (((_v).type == VALUE_INTEGER) ? (_v.i) : (int)(floor(_v.d)))
 
-bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code)
+bool ScriptFunction::executeExpression(Context* context, Expression* expr)
 {
-    unsigned int i;
-    for (i = 0; i < code->m_code.size(); i++)
-    {
-        Expression* expr = code->m_code[i];
+    bool res;
         printf("ScriptFunction::execute: expression: %s\n", expr->toString().c_str());
 
         if (expr->type == EXPR_CALL)
@@ -84,7 +80,7 @@ bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code
                     Object* strObj = String::createString(context, strExpr->str.c_str());
 
                     Value v;
-                    v.v.object = strObj;
+                    v.object = strObj;
                     args.push_back(v);
                     context->push(v);
                 }
@@ -112,6 +108,116 @@ bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code
                 }
             }
         }
+    else if (expr->type == EXPR_OPER)
+    {
+        OperationExpression* opExpr = (OperationExpression*)expr;
+        printf("ScriptFunction::execute: Operation: %d\n", opExpr->operType);
+
+        if (opExpr->operType != OP_EQUALS)
+        {
+            res = executeExpression(context, opExpr->left);
+            if (!res)
+            {
+                return false;
+            }
+        }
+
+        res = executeExpression(context, opExpr->right);
+        if (!res)
+        {
+            return false;
+        }
+
+        switch (opExpr->operType)
+        {
+            case OP_NONE:
+                printf("ScriptFunction::execute: NONE: Shouldn't happen!\n");
+                return false;
+
+            case OP_EQUALS:
+            {
+                Value value = context->pop();
+                printf("ScriptFunction::execute: EQUALS: value=%s\n", value.toString().c_str());
+                if (opExpr->left->type != EXPR_VAR)
+                {
+                    printf("ScriptFunction::execute: EQUALS: Left hand side is not a variable!\n");
+                    return false;
+                }
+
+                VarExpression* varExpr = (VarExpression*)opExpr->left;
+                printf("ScriptFunction::execute: EQUALS: variable=%s\n", varExpr->var.toString().c_str());
+            } break;
+
+            case OP_PLUS:
+            {
+                Value rightRes = context->pop();
+                Value leftRes = context->pop();
+
+                printf("ScriptFunction::execute: PLUS: left=%s, right=%s\n", leftRes.toString().c_str(), rightRes.toString().c_str());
+                if (leftRes.type == VALUE_DOUBLE || rightRes.type == VALUE_DOUBLE)
+                {
+                    double l = DOUBLE_VALUE(leftRes);
+                    double r = DOUBLE_VALUE(rightRes);
+                    printf("ScriptFunction::execute: PLUS: DOUBLE: %0.2f + %0.2f\n", l, r);
+                    Value result;
+                    result.type = VALUE_DOUBLE;
+                    result.d = l + r;
+                    context->push(result);
+                }
+                else
+                {
+                    printf("ScriptFunction::execute: PLUS: INTEGER: %d + %d\n", leftRes.i, rightRes.i);
+                    Value result;
+                    result.type = VALUE_INTEGER;
+                    result.i = leftRes.i + rightRes.i;
+                    context->push(result);
+                }
+
+            } break;
+
+            case OP_MINUS:
+            {
+                Value rightRes = context->pop();
+                Value leftRes = context->pop();
+                printf("ScriptFunction::execute: MINUS: left=%s, right=%s\n", leftRes.toString().c_str(), rightRes.toString().c_str());
+            } break;
+        }
+
+    }
+    else if (expr->type == EXPR_INTEGER)
+    {
+        Value result;
+        result.type = VALUE_INTEGER;
+        result.i = ((IntegerExpression*)expr)->i;
+        context->push(result);
+    }
+    else if (expr->type == EXPR_DOUBLE)
+    {
+        Value result;
+        result.type = VALUE_DOUBLE;
+        result.d = ((DoubleExpression*)expr)->d;
+        context->push(result);
+    }
+    else
+    {
+        printf("ScriptFunction::execute: Unknown expression type: %d\n", expr->type);
+        return false;
+    }
+    return true;
+}
+
+bool ScriptFunction::execute(Context* context, Object* instance)
+{
+    return execute(context, instance, m_code);
+}
+
+bool ScriptFunction::execute(Context* context, Object* instance, CodeBlock* code)
+{
+    unsigned int i;
+    for (i = 0; i < code->m_code.size(); i++)
+    {
+        Expression* expr = code->m_code[i];
+        executeExpression(context, expr);
     }
     return true;
 }

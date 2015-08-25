@@ -11,7 +11,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    if (argc < 2)
+    if (argc < 3)
     {
         return 0;
     }
@@ -26,20 +26,39 @@ int main(int argc, char** argv)
     fclose(fp);
 
     Runtime* runtime = new Runtime();
+    bool res;
 
     Lexer lexer;
-    lexer.lexer(buffer, length);
+    res = lexer.lexer(buffer, length);
+if (!res)
+{
+return 0;
+}
 
     Parser parser;
-    parser.parse(runtime, lexer.getTokens());
+    res = parser.parse(runtime, lexer.getTokens());
 
     delete[] buffer;
+if (!res)
+{
+return 0;
+}
 
-    Class* helloWorld = runtime->findClass("HelloWorld");
-    printf("helloWorld=%p\n", helloWorld);
+const char* className = argv[2];
 
-    Function* mainFunc = helloWorld->findMethod("main");
-    printf("mainFunc=%p\n", mainFunc);
+    Class* clazz = runtime->findClass(className);
+    printf("main: %s = %p\n", className, clazz);
+    if (clazz == NULL)
+    {
+        return 0;
+    }
+
+    Function* mainFunc = clazz->findMethod("main");
+    printf("main: main Func=%p\n", mainFunc);
+    if (mainFunc == NULL)
+    {
+        return 0;
+    }
     if (!mainFunc->getStatic())
     {
         printf("Main is not static!\n");
@@ -47,7 +66,6 @@ int main(int argc, char** argv)
     }
 
     Context* context = runtime->createContext();
-
     mainFunc->execute(context, NULL);
 
     return 0;

@@ -19,12 +19,12 @@ bool System::log(Context* context)
 {
     Value v = context->pop();
 
-    printf("System::log: here! obj=%p\n", v.v.object);
+    printf("System::log: here! obj=%p\n", v.object);
 
-    if (v.v.object->getClass()->getName() == "String")
+    if (v.object->getClass()->getName() == "String")
     {
         //Object* strObj = v.v.object;
-        printf("System::log: %s\n", String::getString(context, v.v.object).c_str());
+        printf("System::log: %s\n", String::getString(context, v.object).c_str());
     }
     return true;
 }

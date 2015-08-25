@@ -5,12 +5,6 @@
 
 using namespace std;
 
-static TokenType g_operatorTokens[] = {
-    TOK_EQUALS,
-    TOK_PLUS,
-    TOK_MINUS
-};
-
 Parser::Parser()
 {
 }
@@ -275,6 +269,7 @@ Expression* Parser::parseExpression()
         {
             VarExpression* varExpr = new VarExpression();
             varExpr->var = id;
+            printf("Parser::parseExpression: -> Variable!\n");
             expression = varExpr;
             m_pos--;
         }
@@ -285,30 +280,49 @@ Expression* Parser::parseExpression()
         strExpr->str = token->string;
         expression = strExpr;
     }
+    else if (token->type == TOK_INTEGER)
+    {
+        IntegerExpression* intExpr = new IntegerExpression();
+        intExpr->i = token->i;
+        expression = intExpr;
+    }
+    else if (token->type == TOK_DOUBLE)
+    {
+        DoubleExpression* doubleExpr = new DoubleExpression();
+        doubleExpr->d = token->d;
+        expression = doubleExpr;
+    }
     else
     {
+        printf("Parser::parseExpression: Unhandled token type: %d: %s\n", token->type, token->string.c_str());
         return NULL;
     }
 
     // See if we have an operation
     token = nextToken();
-    unsigned int i;
+
     bool isOper = false;
-    TokenType oper = TOK_ANY;
-    for (i = 0; i < (sizeof(g_operatorTokens) / sizeof(TokenType)); i++)
+    OpType oper = OP_NONE;
+    if (token->type == TOK_EQUALS)
     {
-        if (token->type == g_operatorTokens[i])
-        {
-            isOper = true;
-            oper = g_operatorTokens[i];
-            break;
-        }
+        oper = OP_EQUALS;
+        isOper = true;
+    }
+    else if (token->type == TOK_PLUS)
+    {
+        oper = OP_PLUS;
+        isOper = true;
+    }
+    else if (token->type == TOK_MINUS)
+    {
+        oper = OP_MINUS;
+        isOper = true;
     }
 
     if (isOper)
     {
         OperationExpression* opExpr = new OperationExpression();
-        opExpr->operType = (OpType)oper;
+        opExpr->operType = oper;
         opExpr->left = expression;
         opExpr->right = parseExpression();
         if (opExpr->right == NULL)

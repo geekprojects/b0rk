@@ -91,28 +91,28 @@ bool Lexer::lexer(char* buffer, int length)
             // TODO: Check whether we're in a string
             pos++;
         }
-else if (c == '"')
-{
-string str = "";
-pos++;
-while (*pos != '\0')
-{
-char strc = *(pos++);
-if (strc == '\"')
-{
-break;
-}
+        else if (c == '"')
+        {
+            string str = "";
+            pos++;
+            while (*pos != '\0')
+            {
+                char strc = *(pos++);
+                if (strc == '\"')
+                {
+                    break;
+                }
 
-str += strc;
-}
-printf("Lexer: Found String: %s\n", str.c_str());
+                str += strc;
+            }
+            printf("Lexer: Found String: %s\n", str.c_str());
 
-Token token;
-token.type = TOK_STRING;
-token.string = str;
-m_tokens.push_back(token);
+            Token token;
+            token.type = TOK_STRING;
+            token.string = str;
+            m_tokens.push_back(token);
 
-}
+        }
         else
         {
             bool found = false;
@@ -122,10 +122,10 @@ m_tokens.push_back(token);
                 if (checkWord(&pos, &(tokenTable[i])))
                 {
                     printf("Lexer: Found Token: %s\n", tokenTable[i].str);
-Token token;
-token.type = tokenTable[i].token;
-token.string = tokenTable[i].str;
-m_tokens.push_back(token);
+                    Token token;
+                    token.type = tokenTable[i].token;
+                    token.string = tokenTable[i].str;
+                    m_tokens.push_back(token);
                     found = true;
                     break;
                 }
@@ -141,20 +141,59 @@ m_tokens.push_back(token);
                         str += *(pos++);
                     }
                     printf("Lexer: found Identifier: %s\n", str.c_str());
-Token token;
-token.type = TOK_IDENTIFIER;
-token.string = str;
-m_tokens.push_back(token);
+                    Token token;
+                    token.type = TOK_IDENTIFIER;
+                    token.string = str;
+                    m_tokens.push_back(token);
+                }
+                else if (isdigit(c))
+                {
+                    string str = "";
+                    bool dot = false;
+                    while (true)
+                    {
+                        char c = *pos;
+                        if (c == '.' && dot == false)
+                        {
+                            str += '.';
+                            dot = true;
+                        }
+                        else if (isdigit(c))
+                        {
+                            str += c;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                        pos++;
+                    }
+                    printf("Lexer: found number: %s\n", str.c_str());
+
+                    Token token;
+                    if (dot)
+                    {
+                        token.d = atof(str.c_str());
+                        token.type = TOK_DOUBLE;
+                        printf("Lexer: found number:  -> double: %0.2f\n", token.d);
+                    }
+                    else
+                    {
+                        token.i = atoi(str.c_str());
+                        token.type = TOK_INTEGER;
+                        printf("Lexer: found number:  -> int: %d\n", token.i);
+                    }
+                    m_tokens.push_back(token);
                 }
                 else
                 {
                     printf("Unknown token:\n%s\n", pos);
-                    break;
+                    return false;
                 }
             }
         }
     }
 
-return true;
+    return true;
 }
 

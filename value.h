@@ -7,8 +7,11 @@ class Object;
 
 enum ValueType
 {
+   VALUE_VARIABLE,
    VALUE_OBJECT,
-   VALUE_POINTER
+   VALUE_POINTER,
+   VALUE_INTEGER,
+   VALUE_DOUBLE,
 };
 
 struct Value
@@ -16,9 +19,14 @@ struct Value
     ValueType type;
     union
     {
+        Value* variable;
         Object* object;
         void* pointer;
-    } v;
+        int i;
+        double d;
+    };
+
+    std::string toString();
 };
 
 #endif
