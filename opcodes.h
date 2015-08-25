@@ -1,0 +1,21 @@
+#ifndef __BSCRIPT_OPCODES_H_
+#define __BSCRIPT_OPCODES_H_
+
+enum OpCode
+{
+    OPCODE_SET,
+
+    OPCODE_ADD,
+    OPCODE_SUB,
+
+    OPCODE_PUSHI,
+    OPCODE_PUSHD,
+    OPCODE_PUSHV,
+
+    OPCODE_CALL,
+    OPCODE_CALL_STATIC,
+    OPCODE_NEW,
+    OPCODE_NEW_STRING,
+};
+
+#endif
