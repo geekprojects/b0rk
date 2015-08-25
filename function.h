@@ -49,7 +49,7 @@ class ScriptFunction : public Function
     bool executeExpression(Context* context, Expression* expr);
     bool execute(Context* context, Object* instance, CodeBlock* block);
 
-    Value* findVariable(Context* context, std::string name);
+    Value* findVariable(Context* context, Identifier id);
 
  public:
     ScriptFunction(Class* clazz);
@@ -57,6 +57,7 @@ class ScriptFunction : public Function
     ~ScriptFunction();
 
     void setCode(CodeBlock* code);
+    CodeBlock* getCode() { return m_code; }
 
     virtual bool execute(Context* context, Object* instance);
 };
