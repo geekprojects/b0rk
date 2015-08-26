@@ -305,17 +305,17 @@ Expression* Parser::parseExpression()
     OpType oper = OP_NONE;
     if (token->type == TOK_EQUALS)
     {
-        oper = OP_EQUALS;
+        oper = OP_SET;
         isOper = true;
     }
     else if (token->type == TOK_PLUS)
     {
-        oper = OP_PLUS;
+        oper = OP_ADD;
         isOper = true;
     }
     else if (token->type == TOK_MINUS)
     {
-        oper = OP_MINUS;
+        oper = OP_SUB;
         isOper = true;
     }
 

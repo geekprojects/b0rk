@@ -81,9 +81,9 @@ struct NewExpression : public CallExpression
 enum OpType
 {
     OP_NONE,
-    OP_EQUALS,
-    OP_PLUS,
-    OP_MINUS
+    OP_SET,
+    OP_ADD,
+    OP_SUB
 };
 
 struct OperationExpression : public Expression
