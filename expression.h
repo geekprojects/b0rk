@@ -6,6 +6,8 @@
 
 #include "token.h"
 
+struct CodeBlock;
+
 struct Identifier
 {
     std::vector<std::string> identifier;
@@ -17,6 +19,7 @@ enum ExpressionType
     EXPR_CALL,
     EXPR_NEW,
     EXPR_OPER,
+    EXPR_FOR,
     EXPR_VAR,
     EXPR_STRING,
     EXPR_INTEGER,
@@ -32,50 +35,23 @@ struct Expression
 
 struct CallExpression : public Expression
 {
-    CallExpression()
-    {
-        type = EXPR_CALL;
-    }
-
     Identifier function;
     std::vector<Expression*> parameters;
 
-    virtual std::string toString()
-    {
-return "CALL " + function.toString() + "(" + argsToString() + ")";
-    }
+    CallExpression();
 
-    std::string argsToString()
-    {
-        std::string str = "";
-        bool comma = false;
-        std::vector<Expression*>::iterator it;
-        for (it = parameters.begin(); it != parameters.end(); it++)
-        {
-            if (comma)
-            {
-                str += ", ";
-            }
-            comma = true;
-            str += (*it)->toString();
-        }
-        return str;
-    }
+    virtual std::string toString();
+
+    std::string argsToString();
 };
 
 struct NewExpression : public CallExpression
 {
-    NewExpression()
-    {
-        type = EXPR_NEW;
-    }
-
     Identifier clazz;
 
-    virtual std::string toString()
-    {
-        return "NEW " + clazz.toString() + "(" + argsToString() + ")";
-    }
+    NewExpression();
+
+    virtual std::string toString();
 };
 
 enum OpType
@@ -83,87 +59,77 @@ enum OpType
     OP_NONE,
     OP_SET,
     OP_ADD,
-    OP_SUB
+    OP_SUB,
+    OP_INCREMENT,
+    OP_LESS_THAN
 };
 
 struct OperationExpression : public Expression
 {
-    OperationExpression()
-    {
-        type = EXPR_OPER;
-    }
 
     OpType operType;
     Expression* left;
     Expression* right;
 
-    virtual std::string toString()
-    {
-        return left->toString() + " OP " + right->toString();
-    }
+    OperationExpression();
+
+    virtual std::string toString();
+};
+
+struct ForExpression : public Expression
+{
+    Expression* initExpr;
+    Expression* testExpr;
+    Expression* incExpr;
+    CodeBlock* body;
+
+    ForExpression();
+
+    virtual std::string toString();
 };
 
 struct VarExpression : public Expression
 {
-    VarExpression()
-    {
-        type = EXPR_VAR;
-    }
-
     Identifier var;
 
-    virtual std::string toString()
-    {
-        return var.toString();
-    }
+    VarExpression();
+
+    virtual std::string toString();
 };
 
 struct StringExpression : public Expression
 {
-    StringExpression()
-    {
-        type = EXPR_STRING;
-    }
-
     std::string str;
 
-    virtual std::string toString()
-    {
-        return "\"" + str + "\"";
-    }
+    StringExpression();
+
+    virtual std::string toString();
 };
 
 struct IntegerExpression : public Expression
 {
-    IntegerExpression()
-    {
-        type = EXPR_INTEGER;
-    }
     int i;
-    virtual std::string toString()
-    {
-        return "INTEGER";
-    }
+
+    IntegerExpression();
+
+    virtual std::string toString();
 };
 
 struct DoubleExpression : public Expression
 {
-    DoubleExpression()
-    {
-        type = EXPR_DOUBLE;
-    }
     double d;
-    virtual std::string toString()
-    {
-        return "DOUBLE";
-    }
-};
 
+    DoubleExpression();
+
+    virtual std::string toString();
+};
 
 struct CodeBlock
 {
     std::vector<std::string> m_vars;
     std::vector<Expression*> m_code;
+
+    std::string toString();
 };
 
 #endif
