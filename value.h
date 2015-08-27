@@ -22,7 +22,7 @@ struct Value
         Value* variable;
         Object* object;
         void* pointer;
-        int i;
+        int64_t i;
         double d;
     };
 

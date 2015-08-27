@@ -13,6 +13,8 @@ SimpleToken tokenTable[] = {
     { ",", 1, TOK_COMMA },
     { ";", 1, TOK_SEMICOLON },
     { "=", 1, TOK_EQUALS },
+    { "<", 1, TOK_LESS_THAN },
+    { "++", 2, TOK_INCREMENT },
     { "+", 1, TOK_PLUS },
     { "-", 1, TOK_MINUS },
     { "{", 1, TOK_BRACE_LEFT },
@@ -26,6 +28,7 @@ SimpleToken tokenTable[] = {
     { "function", 8, TOK_FUNCTION },
     { "static", 6, TOK_STATIC },
     { "new", 3, TOK_NEW },
+    { "for", 3, TOK_FOR },
 };
 
 Lexer::Lexer()

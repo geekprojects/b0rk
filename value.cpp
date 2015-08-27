@@ -22,7 +22,7 @@ snprintf(buffer, 128, "{POINTER:%p}", pointer);
 return string(buffer);
 
 case VALUE_INTEGER:
-snprintf(buffer, 128, "%d", i);
+snprintf(buffer, 128, "%lld", i);
 return string(buffer);
 
 case VALUE_DOUBLE:

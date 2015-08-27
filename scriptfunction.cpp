@@ -141,7 +141,7 @@ Value* var = findVariable(context, varExpr->var);
                 }
                 else
                 {
-                    printf("ScriptFunction::execute: ADD: INTEGER: %d + %d\n", leftRes.i, rightRes.i);
+                    printf("ScriptFunction::execute: ADD: INTEGER: %lld + %lld\n", leftRes.i, rightRes.i);
                     Value result;
                     result.type = VALUE_INTEGER;
                     result.i = leftRes.i + rightRes.i;
@@ -156,6 +156,9 @@ Value* var = findVariable(context, varExpr->var);
                 Value leftRes = context->pop();
                 printf("ScriptFunction::execute: MINUS: left=%s, right=%s\n", leftRes.toString().c_str(), rightRes.toString().c_str());
             } break;
+default:
+                printf("ScriptFunction::execute: Unhandled op!\n");
+return false;
         }
 
     }

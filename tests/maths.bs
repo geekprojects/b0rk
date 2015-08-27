@@ -6,6 +6,7 @@ class Maths
         var a;
 System.log("LOLWTFBBQ! I'm going to do some adding!!");
         a = 1 + 2.1 + 30;
+System.log(a);
     }
 }
 

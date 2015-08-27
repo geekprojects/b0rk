@@ -3,7 +3,14 @@ class HelloWorld
 {
     function main() static
     {
-        System.log("Hello, world!");
+        System.log("Hello...");
+        var i;
+        for (i = 0; i < 5; i++)
+        {
+            System.log(i);
+            System.log("Hello, world!");
+        }
+        System.log("...World!");
     }
 }
 

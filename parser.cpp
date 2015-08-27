@@ -17,7 +17,9 @@ Token* Parser::nextToken()
 {
     int pos = m_pos++;
     Token* result = &(m_tokens[pos]);
-    //printf("Parser::nextToken: %d: %d: %s\n", pos, result->type, result->string.c_str());
+#if 0
+    printf("Parser::nextToken: %d: %d: %s\n", pos, result->type, result->string.c_str());
+#endif
     return result;
 }
 
@@ -135,10 +137,12 @@ Class* Parser::parseClass()
             }
             function->setCode(code);
             clazz->addMethod(funcName, function);
+
+            printf("Parser::parseClass: body:\n%s\n", code->toString().c_str());
         }
         else
         {
-            printf("Parser::parser: ERROR: Unexpected token: %s\n", token->string.c_str());
+            printf("Parser::parseClass: ERROR: Unexpected token: %s\n", token->string.c_str());
             delete clazz;
             return NULL;
         }
@@ -179,6 +183,81 @@ CodeBlock* Parser::parseCodeBlock()
                 return NULL;
             }
         }
+        else if (token->type == TOK_FOR)
+        {
+            token = nextToken();
+            if (token->type != TOK_BRACKET_LEFT)
+            {
+                printf("Parser::parseCodeBlock: FOR: Expected (, got %s\n", token->string.c_str());
+                delete code;
+                return NULL;
+            }
+
+            ForExpression* forExpr = new ForExpression();
+
+            forExpr->initExpr = parseExpression();
+            if (forExpr->initExpr == NULL)
+            {
+                delete code;
+                return NULL;
+            }
+            printf("Parser::parseCodeBlock: FOR: Init Expression: %s\n", forExpr->initExpr->toString().c_str());
+
+            token = nextToken();
+            if (token->type != TOK_SEMICOLON)
+            {
+                printf("Parser::parseCodeBlock: FOR: Expected ;, got %s\n", token->string.c_str());
+                delete code;
+                return NULL;
+            }
+
+            forExpr->testExpr = parseExpression();
+            if (forExpr->testExpr == NULL)
+            {
+                delete code;
+                return NULL;
+            }
+            printf("Parser::parseCodeBlock: FOR: Test Expression: %s\n", forExpr->testExpr->toString().c_str());
+
+            token = nextToken();
+            if (token->type != TOK_SEMICOLON)
+            {
+                printf("Parser::parseCodeBlock: FOR: Expected ;, got %s\n", token->string.c_str());
+                delete code;
+                return NULL;
+            }
+
+            forExpr->incExpr = parseExpression();
+            if (forExpr->incExpr == NULL)
+            {
+                delete code;
+                return NULL;
+            }
+            printf("Parser::parseCodeBlock: FOR: Inc Expression: %s\n", forExpr->incExpr->toString().c_str());
+
+            token = nextToken();
+            if (token->type != TOK_BRACKET_RIGHT)
+            {
+                printf("Parser::parseCodeBlock: FOR: Expected ), got %s\n", token->string.c_str());
+                delete code;
+                return NULL;
+            }
+
+            token = nextToken();
+            if (token->type != TOK_BRACE_LEFT)
+            {
+                printf("Parser::parseCodeBlock: FOR: Expected {, got %s\n", token->string.c_str());
+                delete code;
+                return NULL;
+            }
+
+
+            printf("Parser::parseCodeBlock: FOR: Parsing Body...\n");
+            forExpr->body = parseCodeBlock();
+            printf("Parser::parseCodeBlock: FOR: Got body!\n");
+
+            code->m_code.push_back(forExpr);
+            }
         else
         {
             // Expression ?
@@ -302,33 +381,57 @@ Expression* Parser::parseExpression()
     token = nextToken();
 
     bool isOper = false;
+    bool hasRightExpr = false;
     OpType oper = OP_NONE;
     if (token->type == TOK_EQUALS)
     {
         oper = OP_SET;
         isOper = true;
+        hasRightExpr = true;
     }
     else if (token->type == TOK_PLUS)
     {
         oper = OP_ADD;
         isOper = true;
+        hasRightExpr = true;
     }
     else if (token->type == TOK_MINUS)
     {
         oper = OP_SUB;
         isOper = true;
+        hasRightExpr = true;
     }
+    else if (token->type == TOK_LESS_THAN)
+    {
+        oper = OP_LESS_THAN;
+        isOper = true;
+        hasRightExpr = true;
+    }
+    else if (token->type == TOK_INCREMENT)
+    {
+        oper = OP_INCREMENT;
+        isOper = true;
+        hasRightExpr = false;
+    }
+
 
     if (isOper)
     {
         OperationExpression* opExpr = new OperationExpression();
         opExpr->operType = oper;
         opExpr->left = expression;
+if (hasRightExpr)
+{
         opExpr->right = parseExpression();
         if (opExpr->right == NULL)
         {
             return NULL;
         }
+}
+else
+{
+        opExpr->right = NULL;
+}
         expression = opExpr;
     }
     else

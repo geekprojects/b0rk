@@ -6,6 +6,8 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "assembler.h"
+#include "executor.h"
 
 using namespace std;
 
@@ -65,9 +67,18 @@ const char* className = argv[2];
         return 0;
     }
 
-    Context* context = runtime->createContext();
-    mainFunc->execute(context, NULL);
+AssembledCode code;
+    Assembler assembler(runtime);
+    assembler.assemble(((ScriptFunction*)mainFunc)->getCode(), code);
 
+    Context* context = runtime->createContext();
+
+Executor executor;
+executor.run(context, code);
+
+/*
+    mainFunc->execute(context, NULL);
+*/
     return 0;
 }
 
