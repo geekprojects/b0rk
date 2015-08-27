@@ -8,6 +8,7 @@
 
 class Runtime;
 class Function;
+class ScriptFunction;
 
 struct AssembledCode
 {
@@ -19,8 +20,11 @@ class Assembler
 {
  private:
     Runtime* m_runtime;
+    ScriptFunction* m_function;
+
     std::vector<uint64_t> m_code;
 
+    bool assemble(CodeBlock* block, AssembledCode& asmCode);
     bool assembleExpression(Expression* expr);
     bool assembleBlock(CodeBlock* block);
 
@@ -30,9 +34,7 @@ class Assembler
     Assembler(Runtime* runtime);
     ~Assembler();
 
-    bool assemble(CodeBlock* block, AssembledCode& asmCode);
-
-    
+    bool assemble(ScriptFunction* func, AssembledCode& asmCode);
 };
 
 #endif

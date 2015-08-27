@@ -1,16 +1,26 @@
 
 class HelloWorld
 {
+    function hello() static
+    {
+        System.log("Hello!");
+    }
+
+    function world() static
+    {
+        System.log("World!");
+    }
+
     function main() static
     {
-        System.log("Hello...");
+        hello();
         var i;
         for (i = 0; i < 5; i++)
         {
             System.log(i);
             System.log("Hello, world!");
         }
-        System.log("...World!");
+        world();
     }
 }
 

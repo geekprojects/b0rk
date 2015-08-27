@@ -1,6 +1,7 @@
 
 #include "assembler.h"
 #include "runtime.h"
+#include "function.h"
 
 Assembler::Assembler(Runtime* runtime)
 {
@@ -9,6 +10,12 @@ Assembler::Assembler(Runtime* runtime)
 
 Assembler::~Assembler()
 {
+}
+
+bool Assembler::assemble(ScriptFunction* function, AssembledCode& asmCode)
+{
+    m_function = function;
+    return assemble(function->getCode(), asmCode);
 }
 
 bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
@@ -250,6 +257,12 @@ Function* Assembler::findFunction(Identifier id)
     }
     else
     {
+        Function* func = m_function->getClass()->findMethod(id.identifier[0]);
+        if (func != NULL)
+        {
+            printf("TODO: Assembler::findFunction: Found method for %s: %p\n", id.toString().c_str(), func);
+            return func;
+        }
         printf("TODO: Assembler::findFunction: Not found relative id: %s\n", id.toString().c_str());
     }
     return NULL;

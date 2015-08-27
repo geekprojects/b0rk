@@ -35,7 +35,7 @@ bool ScriptFunction::execute(Context* context, Object* instance)
     if (m_assembled == false)
     {
         Assembler assembler(context->getRuntime());
-        bool res = assembler.assemble(m_code, m_asmCode);
+        bool res = assembler.assemble(this, m_asmCode);
         if (!res)
         {
             return false;
