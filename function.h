@@ -5,6 +5,7 @@
 #include "context.h"
 #include "expression.h"
 #include "object.h"
+#include "assembler.h"
 
 #include <vector>
 
@@ -46,10 +47,8 @@ class ScriptFunction : public Function
  private:
     CodeBlock* m_code;
 
-    bool executeExpression(Context* context, Expression* expr);
-    bool execute(Context* context, Object* instance, CodeBlock* block);
-
-    Value* findVariable(Context* context, Identifier id);
+    bool m_assembled;
+    AssembledCode m_asmCode;
 
  public:
     ScriptFunction(Class* clazz);

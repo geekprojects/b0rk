@@ -67,18 +67,10 @@ const char* className = argv[2];
         return 0;
     }
 
-AssembledCode code;
-    Assembler assembler(runtime);
-    assembler.assemble(((ScriptFunction*)mainFunc)->getCode(), code);
-
     Context* context = runtime->createContext();
 
-Executor executor;
-executor.run(context, code);
-
-/*
     mainFunc->execute(context, NULL);
-*/
+
     return 0;
 }
 

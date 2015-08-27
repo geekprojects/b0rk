@@ -11,11 +11,14 @@
 class Context;
 class Class;
 class Object;
+class Executor;
 
 class Runtime
 {
  private:
     std::map<std::string, Class*> m_classes;
+
+    Executor* m_executor;
 
  public:
     Runtime();
@@ -27,6 +30,8 @@ class Runtime
     Context* createContext();
 
     Object* newObject(std::string clazz);
+
+    Executor* getExecutor();
 };
 
 #endif

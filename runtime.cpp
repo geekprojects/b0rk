@@ -4,6 +4,7 @@
 #include "runtime.h"
 #include "string.h"
 #include "system.h"
+#include "executor.h"
 
 using namespace std;
 
@@ -11,6 +12,8 @@ Runtime::Runtime()
 {
     addClass(new System());
     addClass(new String());
+
+    m_executor = new Executor();
 }
 
 Runtime::~Runtime()
@@ -36,5 +39,10 @@ Class* Runtime::findClass(string name)
 Context* Runtime::createContext()
 {
     return new Context(this);
+}
+
+Executor* Runtime::getExecutor()
+{
+    return m_executor;
 }
 
