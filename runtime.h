@@ -29,7 +29,7 @@ class Runtime
 
     Context* createContext();
 
-    Object* newObject(std::string clazz);
+    Object* newObject(Context* context, Class* clazz);
 
     Executor* getExecutor();
 };

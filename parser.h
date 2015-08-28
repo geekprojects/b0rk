@@ -20,10 +20,13 @@ class Parser
     Class* parseClass();
     CodeBlock* parseCodeBlock();
 
+
     Expression* parseExpression();
     bool parseIdentifier(Identifier& id);
     bool parseList(std::vector<Token*>& list, TokenType type);
     bool parseExpressionList(std::vector<Expression*>& list);
+
+    void setVarIds(CodeBlock* block, int startingId);
 
  public:
 

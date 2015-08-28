@@ -16,7 +16,7 @@ bool Executor::run(Context* context, AssembledCode& code)
     size_t pc = 0;
     bool res;
 
-Value fixme;
+    Value localVars[code.localVars];
 
     bool flagZero = false;
     bool flagSign = false;
@@ -31,16 +31,16 @@ Value fixme;
         {
             case OPCODE_LOAD:
             {
-                pc++; // TODO: Where we're going to load the value from
-                context->push(fixme);
-                printf("Executor::run: LOAD: %s\n", fixme.toString().c_str());
+                int varId = code.code[pc++]; // TODO: Where we're going to load the value from
+                context->push(localVars[varId]);
+                printf("Executor::run: LOAD: v%d\n", varId);
             } break;
 
             case OPCODE_STORE:
             {
-                pc++; // TODO: Where we're going to store the value
-                fixme = context->pop();
-                printf("Executor::run: STORE: %s\n", fixme.toString().c_str());
+                int varId = code.code[pc++]; // TODO: Where we're going to store the value
+                localVars[varId] = context->pop();
+                printf("Executor::run: STORE: v%d = %s\n", varId, localVars[varId].toString().c_str());
             } break;
 
             case OPCODE_PUSHI:
@@ -101,6 +101,18 @@ Value fixme;
                 {
                     return false;
                 }
+            } break;
+
+            case OPCODE_NEW:
+            {
+                Class* clazz = (Class*)code.code[pc++];
+                printf("Executor::run: NEW: class=%s\n", clazz->getName().c_str());
+                Object* obj = context->getRuntime()->newObject(context, clazz);
+                printf("Executor::run: NEW:  -> object=%p\n", obj);
+                Value v;
+                v.type = VALUE_OBJECT;
+                v.object = obj;
+                context->push(v);
             } break;
 
             case OPCODE_NEW_STRING:

@@ -93,7 +93,7 @@ Class* Parser::parseClass()
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
             {
-                printf("Parser::parseClass: Expected ;\n");
+                printf("Parser::parseClass: Expected = or ;\n");
                 delete clazz;
                 return NULL;
             }
@@ -135,6 +135,9 @@ Class* Parser::parseClass()
                 delete clazz;
                 return NULL;
             }
+
+            int maxId = code->setStartingVarId(0);
+            printf("Parser::parseClass: max var id: %d\n", maxId);
             function->setCode(code);
             clazz->addMethod(funcName, function);
 
@@ -176,6 +179,18 @@ CodeBlock* Parser::parseCodeBlock()
             // TODO: Handle assignment from var definition
 
             token = nextToken();
+
+            if (token->type == TOK_EQUALS)
+            {
+                printf("Parser::parseClass: VAR equals!\n");
+
+                // Reverse back up to the variable name and pretend it was just an assignment!
+                m_pos -= 2;
+                Expression* expr = parseExpression();
+            code->m_code.push_back(expr);
+
+                token = nextToken();
+            }
             if (token->type != TOK_SEMICOLON)
             {
                 printf("Parser::parseCodeBlock: VAR: Expected ;, got %s\n", token->string.c_str());
@@ -254,6 +269,8 @@ CodeBlock* Parser::parseCodeBlock()
 
             printf("Parser::parseCodeBlock: FOR: Parsing Body...\n");
             forExpr->body = parseCodeBlock();
+            forExpr->body->m_parent = code;
+            code->m_childBlocks.push_back(forExpr->body);
             printf("Parser::parseCodeBlock: FOR: Got body!\n");
 
             code->m_code.push_back(forExpr);
@@ -307,6 +324,7 @@ Expression* Parser::parseExpression()
         res = parseExpressionList(newParams);
         if (!res)
         {
+            printf("Parser::parseExpression: NEW: Failed to parse args?\n");
             return NULL;
         }
 
@@ -560,7 +578,6 @@ bool Parser::parseExpressionList(vector<Expression*>& list)
 
     return true;
 }
-
 
 string Identifier::toString()
 {

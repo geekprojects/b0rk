@@ -36,6 +36,19 @@ Class* Runtime::findClass(string name)
     return NULL;
 }
 
+Object* Runtime::newObject(Context* context, Class* clazz)
+{
+    Object* obj = new Object(clazz);
+
+    Function* ctor = clazz->findMethod(clazz->getName());
+    if (ctor != NULL)
+    {
+        ctor->execute(context, obj);
+    }
+
+    return obj;
+}
+
 Context* Runtime::createContext()
 {
     return new Context(this);

@@ -114,15 +114,54 @@ string DoubleExpression::toString()
     return "DOUBLE";
 }
 
+CodeBlock::CodeBlock()
+{
+    m_parent = NULL;
+}
+
+int CodeBlock::setStartingVarId(int id)
+{
+    m_startingVarId = id;
+    m_maxVarId = id + m_vars.size();
+
+    vector<CodeBlock*>::iterator it;
+    for (it = m_childBlocks.begin(); it != m_childBlocks.end(); it++)
+    {
+        int childIdMax = (*it)->setStartingVarId(id + m_vars.size());
+        if (childIdMax > m_maxVarId)
+        {
+            m_maxVarId = childIdMax;
+        }
+    }
+    return m_maxVarId;
+}
+
+int CodeBlock::getVarId(string var)
+{
+    vector<string>::iterator it;
+    int i;
+    for (i = 0; i < m_vars.size(); i++)
+    {
+        if (m_vars[i] == var)
+        {
+            return i + m_startingVarId;
+        }
+    }
+    if (m_parent != NULL)
+    {
+        return m_parent->getVarId(var);
+    }
+    return -1;
+}
+
 string CodeBlock::toString()
 {
-std::string str = "";
-std::vector<Expression*>::iterator it;
-for (it = m_code.begin(); it != m_code.end(); it++)
-{
-str += (*it)->toString() + "; ";
-}
-return str;
-
+    std::string str = "";
+    std::vector<Expression*>::iterator it;
+    for (it = m_code.begin(); it != m_code.end(); it++)
+    {
+        str += (*it)->toString() + "; ";
+    }
+    return str;
 }
 

@@ -126,8 +126,18 @@ struct DoubleExpression : public Expression
 
 struct CodeBlock
 {
+    CodeBlock* m_parent;
+    int m_startingVarId;
+    int m_maxVarId;
+
     std::vector<std::string> m_vars;
     std::vector<Expression*> m_code;
+    std::vector<CodeBlock*> m_childBlocks;
+
+    CodeBlock();
+
+    int setStartingVarId(int id);
+    int getVarId(std::string var);
 
     std::string toString();
 };

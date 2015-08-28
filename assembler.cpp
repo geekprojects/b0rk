@@ -29,6 +29,7 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
 
     asmCode.code = new uint64_t[m_code.size()];
     asmCode.size = m_code.size();
+    asmCode.localVars = code->m_maxVarId + 1;
 
     unsigned int i;
     for (i = 0; i < m_code.size(); i++)
@@ -46,7 +47,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
     for (i = 0; i < code->m_code.size(); i++)
     {
         bool res;
-        res = assembleExpression(code->m_code[i]);
+        res = assembleExpression(code, code->m_code[i]);
         if (!res)
         {
             return false;
@@ -56,7 +57,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
 }
 
 
-bool Assembler::assembleExpression(Expression* expr)
+bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
 {
     bool res;
 
@@ -68,7 +69,7 @@ bool Assembler::assembleExpression(Expression* expr)
             std::vector<Expression*>::iterator it;
             for (it = callExpr->parameters.begin(); it != callExpr->parameters.end(); it++)
             {
-                res = assembleExpression(*it);
+                res = assembleExpression(block, *it);
                 if (!res)
                 {
                     return false;
@@ -94,7 +95,7 @@ bool Assembler::assembleExpression(Expression* expr)
 
             if (opExpr->right != NULL)
             {
-                res = assembleExpression(opExpr->right);
+                res = assembleExpression(block, opExpr->right);
                 if (!res)
                 {
                     return false;
@@ -103,7 +104,7 @@ bool Assembler::assembleExpression(Expression* expr)
 
             if (opExpr->operType != OP_SET && opExpr->operType != OP_INCREMENT)
             {
-                res = assembleExpression(opExpr->left);
+                res = assembleExpression(block, opExpr->left);
                 if (!res)
                 {
                     return false;
@@ -129,33 +130,41 @@ bool Assembler::assembleExpression(Expression* expr)
                     break;
 
                 case OP_INCREMENT:
-                    printf("Assembler::assembleExpression: OPER: POST INCREMENT\n");
-                    m_code.push_back(OPCODE_LOAD);
-                    m_code.push_back(0);
-                    m_code.push_back(OPCODE_PUSHI);
-                    m_code.push_back(1);
-                    m_code.push_back(OPCODE_ADD);
-
+                {
                     if (opExpr->left->type != EXPR_VAR)
                     {
                         printf("Assembler::assembleExpression: OPER: INCREMENT: Error: Left must be a variable!\n");
                         return false;
                     }
+
+                    VarExpression* varExpr = (VarExpression*)(opExpr->left);
+                    int id = block->getVarId(varExpr->var.identifier[0]);
+
+                    printf("Assembler::assembleExpression: OPER: POST INCREMENT (%d)\n", id);
+                    m_code.push_back(OPCODE_LOAD);
+                    m_code.push_back(id);
+                    m_code.push_back(OPCODE_PUSHI);
+                    m_code.push_back(1);
+                    m_code.push_back(OPCODE_ADD);
+
                     m_code.push_back(OPCODE_STORE);
-                    m_code.push_back(0);
+                    m_code.push_back(id);
  
-                    break;
+                    } break;
 
                 case OP_SET:
+                {
                     printf("Assembler::assembleExpression: OPER: SET\n");
                     if (opExpr->left->type != EXPR_VAR)
                     {
                         printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable!\n");
                         return false;
                     }
+                    VarExpression* varExpr = (VarExpression*)(opExpr->left);
+                    int id = block->getVarId(varExpr->var.identifier[0]);
                     m_code.push_back(OPCODE_STORE);
-                    m_code.push_back(0);
-                    break;
+                    m_code.push_back(id);
+                } break;
 
                 default:
                     printf("Assembler::assembleExpression: OPER: Unhandled operation\n");
@@ -167,12 +176,14 @@ bool Assembler::assembleExpression(Expression* expr)
         {
             ForExpression* forExpr = (ForExpression*)expr;
 
+            printf("Assembler::assembleExpression: FOR: init...\n");
             // Add the init
-            assembleExpression(forExpr->initExpr);
+            assembleExpression(block, forExpr->initExpr);
 
+            printf("Assembler::assembleExpression: FOR: test...\n");
             // Add the test
             int loopTop = m_code.size();
-            assembleExpression(forExpr->testExpr);
+            assembleExpression(block, forExpr->testExpr);
 
             // Check whether the test expression was true
             m_code.push_back(OPCODE_PUSHI);
@@ -184,15 +195,19 @@ bool Assembler::assembleExpression(Expression* expr)
             m_code.push_back(0); // Will be filled in with the end address
             int bneToEndPos = m_code.size() - 1;
 
+            printf("Assembler::assembleExpression: FOR: body...\n");
             // Add the body
             assembleBlock(forExpr->body);
 
+            printf("Assembler::assembleExpression: FOR: increment...\n");
             // Increment
-            assembleExpression(forExpr->incExpr);
+            assembleExpression(block, forExpr->incExpr);
 
+            printf("Assembler::assembleExpression: FOR: jump...\n");
             // Jump back to the test above
             m_code.push_back(OPCODE_JMP);
             m_code.push_back(loopTop);
+            printf("Assembler::assembleExpression: FOR: done!\n");
 
             m_code[bneToEndPos] = m_code.size();
         } break;
@@ -200,10 +215,23 @@ bool Assembler::assembleExpression(Expression* expr)
         case EXPR_VAR:
         {
             VarExpression* varExpr = (VarExpression*)expr;
-            printf("Assembler::assembleExpression: VAR: PUSH ADDRESS OF %s\n", varExpr->var.toString().c_str());
+            int id = block->getVarId(varExpr->var.identifier[0]);
+            printf("Assembler::assembleExpression: VAR: PUSH ADDRESS OF %s (%d)\n", varExpr->var.toString().c_str(), id);
             // TODO: Local? Class? Static?
+
+
             m_code.push_back(OPCODE_LOAD);
-            m_code.push_back(0);
+            m_code.push_back(id);
+        } break;
+
+        case EXPR_NEW:
+        {
+            NewExpression* newExpr = (NewExpression*)expr;
+            Class* clazz = m_runtime->findClass(newExpr->clazz.identifier[0]);
+            printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
+
+            m_code.push_back(OPCODE_NEW);
+            m_code.push_back((uint64_t)clazz);
         } break;
 
         case EXPR_STRING:

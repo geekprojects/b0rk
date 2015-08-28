@@ -8,6 +8,11 @@
 
 class Runtime;
 
+struct Frame
+{
+    Value* variables;
+};
+
 class Context
 {
  private:

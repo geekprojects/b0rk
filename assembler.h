@@ -14,6 +14,7 @@ struct AssembledCode
 {
     uint64_t* code;
     int size;
+    int localVars;
 };
 
 class Assembler
@@ -25,7 +26,7 @@ class Assembler
     std::vector<uint64_t> m_code;
 
     bool assemble(CodeBlock* block, AssembledCode& asmCode);
-    bool assembleExpression(Expression* expr);
+    bool assembleExpression(CodeBlock* block, Expression* expr);
     bool assembleBlock(CodeBlock* block);
 
     Function* findFunction(Identifier id);
