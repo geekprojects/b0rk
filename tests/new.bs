@@ -1,0 +1,21 @@
+
+class NewTest
+{
+    function NewTest()
+    {
+        System.log("NewTest: constructor!");
+    }
+
+    function method1()
+    {
+        System.log("NewTest.method1: Hello!");
+    }
+
+    function main() static
+    {
+        var obj = new NewTest();
+        obj.method1();
+        obj.method1();
+    }
+}
+

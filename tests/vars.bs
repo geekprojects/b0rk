@@ -1,0 +1,23 @@
+
+class VarTest
+{
+    function main() static
+    {
+        var i; 
+        for (i = 0; i < 2; i++)
+        {
+            var j; 
+            for (j = 0; j < 2; j++)
+            {
+                var k; 
+                for (k = 0; k < 3; k++)
+                {
+                    System.log(i);
+                    System.log(j);
+                    System.log(k);
+                }
+            }
+        }
+    }
+}
+
