@@ -16,8 +16,9 @@ enum OpCode
 
     OPCODE_CALL        = 0x0400,
     OPCODE_CALL_STATIC = 0x0401,
-    OPCODE_NEW         = 0x0402,
-    OPCODE_NEW_STRING  = 0x0403,
+    OPCODE_CALL_NAMED  = 0x0402,
+    OPCODE_NEW         = 0x0410,
+    OPCODE_NEW_STRING  = 0x0411,
 
     OPCODE_CMP         = 0x0500,
 

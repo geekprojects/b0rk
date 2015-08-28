@@ -77,16 +77,60 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             }
             printf("Assembler::assembleExpression: CALL: %s\n", callExpr->function.toString().c_str());
 
-            Function* function = findFunction(callExpr->function);
-            printf("Assembler::assembleExpression: CALL: function=%p\n", function);
-            if (function == NULL)
+            Identifier id = callExpr->function;
+            if (id.identifier.size() > 1)
             {
-                printf("Assembler::assembleExpression: CALL: Unknown function: %s\n", callExpr->function.toString().c_str());
-                return false;
-            }
+                // TODO: Handle more than 2 parts!
 
-            m_code.push_back(OPCODE_CALL);
-            m_code.push_back((uint64_t)function);
+                // Does it start with a local object?
+                int varId = block->getVarId(id.identifier[0]);
+                if (varId != -1)
+                {
+                    m_code.push_back(OPCODE_NEW_STRING);
+                    m_code.push_back((uint64_t)strdup(id.identifier[1].c_str()));
+                    m_code.push_back(OPCODE_LOAD);
+                    m_code.push_back(varId);
+                    m_code.push_back(OPCODE_CALL_NAMED);
+                }
+                else
+                {
+                    // Try class names?
+                    Class* clazz = m_runtime->findClass(id.identifier[0]);
+
+                    printf("Assembler::findFunction: nexecute: identifier: clazz=%p\n", clazz);
+                    if (clazz != NULL)
+                    {
+                        Function* func = clazz->findMethod(id.identifier[1]);
+                        m_code.push_back(OPCODE_CALL_STATIC);
+                        m_code.push_back((uint64_t)func);
+                    }
+                    else
+                    {
+                        printf("TODO: Assembler::findFunction: Not found object method id: %s\n", id.toString().c_str());
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                // No qualifier, just a function name
+
+                // TODO: Try local variables
+
+                // Try methods of the same class
+                Function* func = m_function->getClass()->findMethod(id.identifier[0]);
+                if (func != NULL)
+                {
+                    printf("TODO: Assembler::findFunction: Found method for %s: %p\n", id.toString().c_str(), func);
+                    m_code.push_back(OPCODE_CALL_STATIC);
+                    m_code.push_back((uint64_t)func);
+                }
+                else
+                {
+                    printf("TODO: Assembler::findFunction: Not found relative id: %s\n", id.toString().c_str());
+                    return false;
+                }
+            }
         } break;
 
         case EXPR_OPER:
@@ -264,35 +308,5 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             return false;
     }
     return true;
-}
-
-Function* Assembler::findFunction(Identifier id)
-{
-    if (id.identifier.size() > 1)
-    {
-        // Non-relative id
-        Class* clazz = m_runtime->findClass(id.identifier[0]);
-
-        printf("Assembler::findFunction: nexecute: identifier: clazz=%p\n", clazz);
-        if (clazz != NULL)
-        {
-            return clazz->findMethod(id.identifier[1]);
-        }
-        else
-        {
-            printf("TODO: Assembler::findFunction: Not found object method id: %s\n", id.toString().c_str());
-        }
-    }
-    else
-    {
-        Function* func = m_function->getClass()->findMethod(id.identifier[0]);
-        if (func != NULL)
-        {
-            printf("TODO: Assembler::findFunction: Found method for %s: %p\n", id.toString().c_str(), func);
-            return func;
-        }
-        printf("TODO: Assembler::findFunction: Not found relative id: %s\n", id.toString().c_str());
-    }
-    return NULL;
 }
 

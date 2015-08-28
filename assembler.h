@@ -29,7 +29,7 @@ class Assembler
     bool assembleExpression(CodeBlock* block, Expression* expr);
     bool assembleBlock(CodeBlock* block);
 
-    Function* findFunction(Identifier id);
+    Function* findFunction(CodeBlock* block, Identifier id);
 
  public:
     Assembler(Runtime* runtime);

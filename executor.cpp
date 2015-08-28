@@ -92,11 +92,27 @@ bool Executor::run(Context* context, AssembledCode& code)
                 printf("Executor::run: PUSHCL:  -> zero=%d, sign=%d, overflow=%d\n", flagZero, flagSign, flagOverflow);
             } break;
 
-            case OPCODE_CALL:
+            case OPCODE_CALL_STATIC:
             {
                 Function* function = (Function*)code.code[pc++];
                 printf("Executor::run: CALL: %p\n", function);
                 res = function->execute(context, NULL);
+                if (!res)
+                {
+                    return false;
+                }
+            } break;
+
+            case OPCODE_CALL_NAMED:
+            {
+                Object* obj = context->pop().object;
+                Object* nameObj = context->pop().object;
+                string funcName = String::getString(context, nameObj);
+                printf("Executor::run: CALL_NAMED: obj=%p, name=%s\n", obj, funcName.c_str());
+
+                Function* function = obj->getClass()->findMethod(funcName);
+                printf("Executor::run: CALL_NAMED:  -> function=%p\n", function);
+                res = function->execute(context, obj);
                 if (!res)
                 {
                     return false;
