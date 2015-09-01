@@ -138,6 +138,9 @@ Class* Parser::parseClass()
 
             int maxId = code->setStartingVarId(0);
             printf("Parser::parseClass: max var id: %d\n", maxId);
+
+            resolveTypes();
+
             function->setCode(code);
             clazz->addMethod(funcName, function);
 
@@ -152,6 +155,75 @@ Class* Parser::parseClass()
     }
     return clazz;
 }
+
+bool Parser::resolveTypes()
+{
+    vector<Expression*>::iterator exprIt;
+    for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
+    {
+        Expression* expr = *exprIt;
+        printf("Parser::resolveTypes: resolve: type=%d\n", expr->type);
+        if (expr->type == EXPR_OPER)
+        {
+            OperationExpression* opExpr = (OperationExpression*)expr;
+            printf("Parser::resolveTypes: resolve: OPER: opType=%d, value type=%d\n", opExpr->operType, opExpr->valueType);
+            if (opExpr->valueType != VALUE_UNKNOWN)
+            {
+                printf("Parser::resolveTypes: resolve:  -> left type=%d\n", opExpr->left->type);
+                if (opExpr->operType == OP_SET && opExpr->left->type == EXPR_VAR)
+                {
+                    VarExpression* varExpr = (VarExpression*)opExpr->left;
+                    printf("Parser::resolveTypes: resolve: OPER SET: var=%s\n", varExpr->var.toString().c_str());
+                    if (varExpr->var.identifier.size() == 1)
+                    {
+                        int varId = varExpr->block->getVarId(varExpr->var.identifier[0]);
+                        printf(
+                            "Parser::resolveTypes: var: %s, id=%d, type=%d\n",
+                            varExpr->var.toString().c_str(),
+                            varId,
+                            opExpr->valueType);
+                        if (varId != -1)
+                        {
+                            varExpr->block->setVarType(varId, opExpr->valueType);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
+    {
+        Expression* expr = *exprIt;
+        printf("Parser::resolveTypes: resolve: type=%d\n", expr->type);
+        if (expr->type == EXPR_VAR)
+        {
+            VarExpression* varExpr = (VarExpression*)expr;
+            int varId = varExpr->block->getVarId(varExpr->var.identifier[0]);
+            ValueType varType = varExpr->block->getVarType(varId);
+            printf(
+                "Parser::resolveTypes: VAR: %s, id=%d, type=%d\n",
+                varExpr->var.toString().c_str(),
+                varId,
+                varType);
+            varExpr->valueType = varType;
+        }
+    }
+
+
+    for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
+    {
+        Expression* expr = *exprIt;
+        if (expr->type == EXPR_OPER)
+        {
+            OperationExpression* opExpr = (OperationExpression*)expr;
+            opExpr->resolveType();
+        }
+    }
+ 
+    return true;
+}
+
 
 CodeBlock* Parser::parseCodeBlock()
 {
@@ -186,8 +258,8 @@ CodeBlock* Parser::parseCodeBlock()
 
                 // Reverse back up to the variable name and pretend it was just an assignment!
                 m_pos -= 2;
-                Expression* expr = parseExpression();
-            code->m_code.push_back(expr);
+                Expression* expr = parseExpression(code);
+                code->m_code.push_back(expr);
 
                 token = nextToken();
             }
@@ -208,9 +280,10 @@ CodeBlock* Parser::parseCodeBlock()
                 return NULL;
             }
 
-            ForExpression* forExpr = new ForExpression();
+            ForExpression* forExpr = new ForExpression(code);
+            m_expressions.push_back(forExpr);
 
-            forExpr->initExpr = parseExpression();
+            forExpr->initExpr = parseExpression(code);
             if (forExpr->initExpr == NULL)
             {
                 delete code;
@@ -226,7 +299,7 @@ CodeBlock* Parser::parseCodeBlock()
                 return NULL;
             }
 
-            forExpr->testExpr = parseExpression();
+            forExpr->testExpr = parseExpression(code);
             if (forExpr->testExpr == NULL)
             {
                 delete code;
@@ -242,7 +315,7 @@ CodeBlock* Parser::parseCodeBlock()
                 return NULL;
             }
 
-            forExpr->incExpr = parseExpression();
+            forExpr->incExpr = parseExpression(code);
             if (forExpr->incExpr == NULL)
             {
                 delete code;
@@ -274,14 +347,14 @@ CodeBlock* Parser::parseCodeBlock()
             printf("Parser::parseCodeBlock: FOR: Got body!\n");
 
             code->m_code.push_back(forExpr);
-            }
+        }
         else
         {
             // Expression ?
             m_pos--; // Rewind
 
             Expression* expression;
-            expression = parseExpression();
+            expression = parseExpression(code);
             if (expression == NULL)
             {
                 delete code;
@@ -302,7 +375,7 @@ CodeBlock* Parser::parseCodeBlock()
     return code;
 }
 
-Expression* Parser::parseExpression()
+Expression* Parser::parseExpression(CodeBlock* code)
 {
     Expression* expression;
 
@@ -321,16 +394,18 @@ Expression* Parser::parseExpression()
         printf("Parser::parseExpression: NEW: class: %s\n", id.toString().c_str());
 
         vector<Expression*> newParams;
-        res = parseExpressionList(newParams);
+        res = parseExpressionList(code, newParams);
         if (!res)
         {
             printf("Parser::parseExpression: NEW: Failed to parse args?\n");
             return NULL;
         }
 
-        NewExpression* newExpr = new NewExpression();
+        NewExpression* newExpr = new NewExpression(code);
+        m_expressions.push_back(newExpr);
         newExpr->clazz = id;
         newExpr->parameters = newParams;
+        newExpr->valueType = VALUE_OBJECT;
         expression = newExpr;
     }
     else if (token->type == TOK_IDENTIFIER)
@@ -351,20 +426,23 @@ Expression* Parser::parseExpression()
             printf("Parser::parseExpression: -> function call!\n");
             m_pos--;
             vector<Expression*> params;
-            res = parseExpressionList(params);
+            res = parseExpressionList(code, params);
             if (!res)
             {
                 return NULL;
             }
             printf("Parser::parseExpression: -> function call to %s\n", id.toString().c_str());
-            CallExpression* callExpr = new CallExpression();
+            CallExpression* callExpr = new CallExpression(code);
+            m_expressions.push_back(callExpr);
             callExpr->function = id;
             callExpr->parameters = params;
+            callExpr->valueType = VALUE_UNKNOWN;
             expression = callExpr;
         }
         else
         {
-            VarExpression* varExpr = new VarExpression();
+            VarExpression* varExpr = new VarExpression(code);
+            m_expressions.push_back(varExpr);
             varExpr->var = id;
             printf("Parser::parseExpression: -> Variable!\n");
             expression = varExpr;
@@ -373,20 +451,26 @@ Expression* Parser::parseExpression()
     }
     else if (token->type == TOK_STRING)
     {
-        StringExpression* strExpr = new StringExpression();
+        StringExpression* strExpr = new StringExpression(code);
+        m_expressions.push_back(strExpr);
         strExpr->str = token->string;
+        strExpr->valueType = VALUE_OBJECT;
         expression = strExpr;
     }
     else if (token->type == TOK_INTEGER)
     {
-        IntegerExpression* intExpr = new IntegerExpression();
+        IntegerExpression* intExpr = new IntegerExpression(code);
+        m_expressions.push_back(intExpr);
         intExpr->i = token->i;
+        intExpr->valueType = VALUE_INTEGER;
         expression = intExpr;
     }
     else if (token->type == TOK_DOUBLE)
     {
-        DoubleExpression* doubleExpr = new DoubleExpression();
+        DoubleExpression* doubleExpr = new DoubleExpression(code);
+        m_expressions.push_back(doubleExpr);
         doubleExpr->d = token->d;
+        doubleExpr->valueType = VALUE_DOUBLE;
         expression = doubleExpr;
     }
     else
@@ -421,8 +505,6 @@ Expression* Parser::parseExpression()
     }
     else if (token->type == TOK_ADD_ASSIGN)
     {
-printf("ADD_ASSIGN\n");
-
         // l += r -> l = l + r
 
         oper = OP_SET;
@@ -445,26 +527,29 @@ printf("ADD_ASSIGN\n");
 
     if (isOper)
     {
-        OperationExpression* opExpr = new OperationExpression();
+        OperationExpression* opExpr = new OperationExpression(code);
+        m_expressions.push_back(opExpr);
         opExpr->operType = oper;
         opExpr->left = expression;
         if (token->type == TOK_ADD_ASSIGN)
         {
             // l += r -> l = (l + r)
-            OperationExpression* addExpr = new OperationExpression();
+            OperationExpression* addExpr = new OperationExpression(code);
+            m_expressions.push_back(addExpr);
             addExpr->operType = OP_ADD;
             addExpr->left = expression;
-            addExpr->right = parseExpression();
+            addExpr->right = parseExpression(code);
             if (addExpr->right == NULL)
             {
                 return NULL;
             }
+            addExpr->resolveType();
 
             opExpr->right = addExpr;
         }
         else if (hasRightExpr)
         {
-            opExpr->right = parseExpression();
+            opExpr->right = parseExpression(code);
             if (opExpr->right == NULL)
             {
                 return NULL;
@@ -474,6 +559,7 @@ printf("ADD_ASSIGN\n");
         {
             opExpr->right = NULL;
         }
+        opExpr->resolveType();
         expression = opExpr;
     }
     else
@@ -563,7 +649,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
     return true;
 }
 
-bool Parser::parseExpressionList(vector<Expression*>& list)
+bool Parser::parseExpressionList(CodeBlock* code, vector<Expression*>& list)
 {
     Token* token = nextToken();
     if (token->type != TOK_BRACKET_LEFT)
@@ -581,7 +667,7 @@ bool Parser::parseExpressionList(vector<Expression*>& list)
         }
 
             m_pos--;
-            Expression* childExp = parseExpression();
+            Expression* childExp = parseExpression(code);
             if (childExp == NULL)
             {
                 return false;

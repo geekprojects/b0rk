@@ -29,7 +29,11 @@ enum ExpressionType
 
 struct Expression
 {
+    CodeBlock* block;
     ExpressionType type;
+    ValueType valueType;
+
+    Expression(CodeBlock* block);
 
     virtual std::string toString() = 0;
 };
@@ -39,7 +43,7 @@ struct CallExpression : public Expression
     Identifier function;
     std::vector<Expression*> parameters;
 
-    CallExpression();
+    CallExpression(CodeBlock* block);
 
     virtual std::string toString();
 
@@ -50,7 +54,7 @@ struct NewExpression : public CallExpression
 {
     Identifier clazz;
 
-    NewExpression();
+    NewExpression(CodeBlock* block);
 
     virtual std::string toString();
 };
@@ -72,7 +76,9 @@ struct OperationExpression : public Expression
     Expression* left;
     Expression* right;
 
-    OperationExpression();
+    OperationExpression(CodeBlock* block);
+
+    void resolveType();
 
     virtual std::string toString();
 };
@@ -84,7 +90,7 @@ struct ForExpression : public Expression
     Expression* incExpr;
     CodeBlock* body;
 
-    ForExpression();
+    ForExpression(CodeBlock* block);
 
     virtual std::string toString();
 };
@@ -93,7 +99,7 @@ struct VarExpression : public Expression
 {
     Identifier var;
 
-    VarExpression();
+    VarExpression(CodeBlock* block);
 
     virtual std::string toString();
 };
@@ -102,7 +108,7 @@ struct StringExpression : public Expression
 {
     std::string str;
 
-    StringExpression();
+    StringExpression(CodeBlock* block);
 
     virtual std::string toString();
 };
@@ -111,7 +117,7 @@ struct IntegerExpression : public Expression
 {
     int i;
 
-    IntegerExpression();
+    IntegerExpression(CodeBlock* block);
 
     virtual std::string toString();
 };
@@ -120,7 +126,7 @@ struct DoubleExpression : public Expression
 {
     double d;
 
-    DoubleExpression();
+    DoubleExpression(CodeBlock* block);
 
     virtual std::string toString();
 };
@@ -141,6 +147,8 @@ struct CodeBlock
 
     int setStartingVarId(int id);
     int getVarId(std::string var);
+    bool setVarType(int id, ValueType type);
+    ValueType getVarType(int id);
 
     std::string toString();
 };

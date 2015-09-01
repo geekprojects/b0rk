@@ -8,11 +8,11 @@ class Object;
 enum ValueType
 {
    VALUE_UNKNOWN,
-   VALUE_VARIABLE,
-   VALUE_OBJECT,
-   VALUE_POINTER,
-   VALUE_INTEGER,
-   VALUE_DOUBLE,
+   VALUE_VARIABLE, // 1
+   VALUE_OBJECT,   // 2
+   VALUE_POINTER,  // 3
+   VALUE_INTEGER,  // 4
+   VALUE_DOUBLE,   // 5
 };
 
 struct Value

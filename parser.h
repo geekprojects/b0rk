@@ -12,6 +12,7 @@ class Parser
 {
  private:
     std::vector<Token> m_tokens;
+    std::vector<Expression*> m_expressions;
     size_t m_pos;
 
     Token* nextToken();
@@ -20,11 +21,12 @@ class Parser
     Class* parseClass();
     CodeBlock* parseCodeBlock();
 
-
-    Expression* parseExpression();
+    Expression* parseExpression(CodeBlock* code);
     bool parseIdentifier(Identifier& id);
     bool parseList(std::vector<Token*>& list, TokenType type);
-    bool parseExpressionList(std::vector<Expression*>& list);
+    bool parseExpressionList(CodeBlock* code, std::vector<Expression*>& list);
+
+    bool resolveTypes();
 
     void setVarIds(CodeBlock* block, int startingId);
 
