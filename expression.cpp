@@ -117,12 +117,22 @@ string DoubleExpression::toString()
 CodeBlock::CodeBlock()
 {
     m_parent = NULL;
+    m_startingVarId = 0;
+    m_maxVarId = 0;
+    m_varTypes = NULL;
 }
 
 int CodeBlock::setStartingVarId(int id)
 {
     m_startingVarId = id;
     m_maxVarId = id + m_vars.size();
+
+m_varTypes = new ValueType[m_vars.size()];
+unsigned int i;
+for (i = 0; i < m_vars.size(); i++)
+{
+    m_varTypes[i] = VALUE_UNKNOWN;
+}
 
     vector<CodeBlock*>::iterator it;
     for (it = m_childBlocks.begin(); it != m_childBlocks.end(); it++)

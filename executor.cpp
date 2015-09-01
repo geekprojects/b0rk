@@ -65,21 +65,37 @@ bool Executor::run(Context* context, AssembledCode& code)
             case OPCODE_ADD:
             {
                 Value v1 = context->pop();
-                Value v2 = context->pop();
-                Value result;
-                if (v1.type == VALUE_DOUBLE || v2.type == VALUE_DOUBLE)
+                if (v1.type == VALUE_OBJECT)
                 {
-                    result.type = VALUE_DOUBLE;
-                    result.d = DOUBLE_VALUE(v1) + DOUBLE_VALUE(v2);
-                    printf("Executor::run: ADD: %0.2f + %0.2f = %0.2f\n", v1.d, v2.d, result.d);
+                    // TODO: This should have been figured out by the assembler?
+                    Class* clazz = v1.object->getClass();
+                    printf("Executor::run: ADD OBJECT: class=%s\n", clazz->getName().c_str());
+                    Function* addFunc = clazz->findMethod("operator+");
+                    printf("Executor::run: ADD OBJECT: add operator=%p\n", addFunc);
+                    res = addFunc->execute(context, v1.object);
+                    if (!res)
+                    {
+                        return false;
+                    }
                 }
                 else
                 {
-                    result.type = VALUE_INTEGER;
-                    result.i = v1.i + v2.i;
-                    printf("Executor::run: ADD: %lld + %lld = %lld\n", v1.i, v2.i, result.i);
+                    Value v2 = context->pop();
+                    Value result;
+                    if (v1.type == VALUE_DOUBLE || v2.type == VALUE_DOUBLE)
+                    {
+                        result.type = VALUE_DOUBLE;
+                        result.d = DOUBLE_VALUE(v1) + DOUBLE_VALUE(v2);
+                        printf("Executor::run: ADD: %0.2f + %0.2f = %0.2f\n", v1.d, v2.d, result.d);
+                    }
+                    else
+                    {
+                        result.type = VALUE_INTEGER;
+                        result.i = v1.i + v2.i;
+                        printf("Executor::run: ADD: %lld + %lld = %lld\n", v1.i, v2.i, result.i);
+                    }
+                    context->push(result);
                 }
-                context->push(result);
             } break;
 
             case OPCODE_PUSHCL:

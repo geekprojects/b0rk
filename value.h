@@ -7,6 +7,7 @@ class Object;
 
 enum ValueType
 {
+   VALUE_UNKNOWN,
    VALUE_VARIABLE,
    VALUE_OBJECT,
    VALUE_POINTER,

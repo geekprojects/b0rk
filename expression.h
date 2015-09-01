@@ -5,6 +5,7 @@
 #include <string>
 
 #include "token.h"
+#include "value.h"
 
 struct CodeBlock;
 
@@ -129,6 +130,8 @@ struct CodeBlock
     CodeBlock* m_parent;
     int m_startingVarId;
     int m_maxVarId;
+
+    ValueType* m_varTypes;
 
     std::vector<std::string> m_vars;
     std::vector<Expression*> m_code;

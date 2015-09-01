@@ -20,6 +20,7 @@ enum TokenType
     TOK_EQUALS,
     TOK_LESS_THAN,
     TOK_INCREMENT,
+    TOK_ADD_ASSIGN,
     TOK_PLUS,
     TOK_MINUS,
     TOK_BRACE_LEFT,

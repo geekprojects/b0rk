@@ -14,6 +14,7 @@ SimpleToken tokenTable[] = {
     { ";", 1, TOK_SEMICOLON },
     { "=", 1, TOK_EQUALS },
     { "<", 1, TOK_LESS_THAN },
+    { "+=", 2, TOK_ADD_ASSIGN },
     { "++", 2, TOK_INCREMENT },
     { "+", 1, TOK_PLUS },
     { "-", 1, TOK_MINUS },
@@ -108,7 +109,9 @@ bool Lexer::lexer(char* buffer, int length)
 
                 str += strc;
             }
+#ifdef DEBUG_LEXER
             printf("Lexer: Found String: %s\n", str.c_str());
+#endif
 
             Token token;
             token.type = TOK_STRING;
@@ -124,7 +127,9 @@ bool Lexer::lexer(char* buffer, int length)
             {
                 if (checkWord(&pos, &(tokenTable[i])))
                 {
+#ifdef DEBUG_LEXER
                     printf("Lexer: Found Token: %s\n", tokenTable[i].str);
+#endif
                     Token token;
                     token.type = tokenTable[i].token;
                     token.string = tokenTable[i].str;
@@ -143,7 +148,9 @@ bool Lexer::lexer(char* buffer, int length)
                     {
                         str += *(pos++);
                     }
+#ifdef DEBUG_LEXER
                     printf("Lexer: found Identifier: %s\n", str.c_str());
+#endif
                     Token token;
                     token.type = TOK_IDENTIFIER;
                     token.string = str;
@@ -171,20 +178,26 @@ bool Lexer::lexer(char* buffer, int length)
                         }
                         pos++;
                     }
+#ifdef DEBUG_LEXER
                     printf("Lexer: found number: %s\n", str.c_str());
+#endif
 
                     Token token;
                     if (dot)
                     {
                         token.d = atof(str.c_str());
                         token.type = TOK_DOUBLE;
+#ifdef DEBUG_LEXER
                         printf("Lexer: found number:  -> double: %0.2f\n", token.d);
+#endif
                     }
                     else
                     {
                         token.i = atoi(str.c_str());
                         token.type = TOK_INTEGER;
+#ifdef DEBUG_LEXER
                         printf("Lexer: found number:  -> int: %d\n", token.i);
+#endif
                     }
                     m_tokens.push_back(token);
                 }

@@ -419,6 +419,16 @@ Expression* Parser::parseExpression()
         isOper = true;
         hasRightExpr = true;
     }
+    else if (token->type == TOK_ADD_ASSIGN)
+    {
+printf("ADD_ASSIGN\n");
+
+        // l += r -> l = l + r
+
+        oper = OP_SET;
+        isOper = true;
+        hasRightExpr = true;
+    }
     else if (token->type == TOK_LESS_THAN)
     {
         oper = OP_LESS_THAN;
@@ -438,18 +448,32 @@ Expression* Parser::parseExpression()
         OperationExpression* opExpr = new OperationExpression();
         opExpr->operType = oper;
         opExpr->left = expression;
-if (hasRightExpr)
-{
-        opExpr->right = parseExpression();
-        if (opExpr->right == NULL)
+        if (token->type == TOK_ADD_ASSIGN)
         {
-            return NULL;
+            // l += r -> l = (l + r)
+            OperationExpression* addExpr = new OperationExpression();
+            addExpr->operType = OP_ADD;
+            addExpr->left = expression;
+            addExpr->right = parseExpression();
+            if (addExpr->right == NULL)
+            {
+                return NULL;
+            }
+
+            opExpr->right = addExpr;
         }
-}
-else
-{
-        opExpr->right = NULL;
-}
+        else if (hasRightExpr)
+        {
+            opExpr->right = parseExpression();
+            if (opExpr->right == NULL)
+            {
+                return NULL;
+            }
+        }
+        else
+        {
+            opExpr->right = NULL;
+        }
         expression = opExpr;
     }
     else

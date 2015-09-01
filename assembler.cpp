@@ -20,7 +20,9 @@ bool Assembler::assemble(ScriptFunction* function, AssembledCode& asmCode)
 
 bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
 {
+    unsigned int i;
     bool res;
+
     res = assembleBlock(code);
     if (!res)
     {
@@ -31,10 +33,11 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     asmCode.size = m_code.size();
     asmCode.localVars = code->m_maxVarId + 1;
 
-    unsigned int i;
     for (i = 0; i < m_code.size(); i++)
     {
+#if 0
         printf("%04x: 0x%llx\n", i, m_code[i]);
+#endif
         asmCode.code[i] = m_code[i];
     }
 
@@ -262,7 +265,6 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             int id = block->getVarId(varExpr->var.identifier[0]);
             printf("Assembler::assembleExpression: VAR: PUSH ADDRESS OF %s (%d)\n", varExpr->var.toString().c_str(), id);
             // TODO: Local? Class? Static?
-
 
             m_code.push_back(OPCODE_LOAD);
             m_code.push_back(id);
