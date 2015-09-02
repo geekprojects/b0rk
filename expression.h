@@ -21,6 +21,7 @@ enum ExpressionType
     EXPR_NEW,
     EXPR_OPER,
     EXPR_FOR,
+    EXPR_RETURN,
     EXPR_VAR,
     EXPR_STRING,
     EXPR_INTEGER,
@@ -91,6 +92,15 @@ struct ForExpression : public Expression
     CodeBlock* body;
 
     ForExpression(CodeBlock* block);
+
+    virtual std::string toString();
+};
+
+struct ReturnExpression : public Expression
+{
+    Expression* returnValue;
+
+    ReturnExpression(CodeBlock* block);
 
     virtual std::string toString();
 };

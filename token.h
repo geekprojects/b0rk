@@ -35,6 +35,7 @@ enum TokenType
     TOK_STATIC,
     TOK_NEW,
     TOK_FOR,
+    TOK_RETURN,
     TOK_IDENTIFIER,
     TOK_STRING,
     TOK_INTEGER,

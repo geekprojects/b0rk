@@ -348,6 +348,30 @@ CodeBlock* Parser::parseCodeBlock()
 
             code->m_code.push_back(forExpr);
         }
+        else if (token->type == TOK_RETURN)
+        {
+            printf("Parser::parseCodeBlock: RETURN\n");
+            ReturnExpression* retExpr = new ReturnExpression(code);
+            m_expressions.push_back(retExpr);
+            code->m_code.push_back(retExpr);
+            token = nextToken();
+            if (token->type == TOK_SEMICOLON)
+            {
+                retExpr->returnValue = NULL;
+            }
+            else
+            {
+                m_pos--;
+                retExpr->returnValue = parseExpression(code);
+
+                token = nextToken();
+                if (token->type != TOK_SEMICOLON)
+                {
+                    printf("Parser::parseCodeBlock: RETURN: Expected ;, got %s\n", token->string.c_str());
+                    return NULL;
+                }
+            }
+        }
         else
         {
             // Expression ?

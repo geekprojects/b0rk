@@ -28,6 +28,7 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     {
         return false;
     }
+    m_code.push_back(OPCODE_RETURN);
 
     asmCode.code = new uint64_t[m_code.size()];
     asmCode.size = m_code.size();
@@ -224,6 +225,8 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                 case OP_SET:
                 {
                     printf("Assembler::assembleExpression: OPER: SET\n");
+                    printf("Assembler::assembleExpression: OPER: -> left=%p\n", opExpr->left);
+                    printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
                     if (opExpr->left->type != EXPR_VAR)
                     {
                         printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable!\n");
@@ -279,6 +282,26 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             printf("Assembler::assembleExpression: FOR: done!\n");
 
             m_code[bneToEndPos] = m_code.size();
+        } break;
+
+        case EXPR_RETURN:
+        {
+            ReturnExpression* retExpr = (ReturnExpression*)expr;
+            printf("Assembler::assembleExpression: RETURN\n");
+            if (retExpr->returnValue == NULL)
+            {
+                m_code.push_back(OPCODE_PUSHI);
+                m_code.push_back(0);
+            }
+            else
+            {
+                res = assembleExpression(block, retExpr->returnValue);
+                if (!res)
+                {
+                    return false;
+                }
+            }
+            m_code.push_back(OPCODE_RETURN);
         } break;
 
         case EXPR_VAR:

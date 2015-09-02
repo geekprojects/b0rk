@@ -147,6 +147,25 @@ string ForExpression::toString()
     return str;
 }
 
+ReturnExpression::ReturnExpression(CodeBlock* block)
+    : Expression(block)
+{
+    type = EXPR_RETURN;
+    returnValue = NULL;
+}
+
+string ReturnExpression::toString()
+{
+    string str = "{RETURN";
+    if (returnValue != NULL)
+    {
+        str += ":";
+        str += returnValue->toString();
+    }
+    str += "}";
+    return str;
+}
+
 VarExpression::VarExpression(CodeBlock* block)
     : Expression(block)
 {

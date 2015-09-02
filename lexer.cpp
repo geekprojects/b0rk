@@ -30,6 +30,7 @@ SimpleToken tokenTable[] = {
     { "static", 6, TOK_STATIC },
     { "new", 3, TOK_NEW },
     { "for", 3, TOK_FOR },
+    { "return", 6, TOK_RETURN },
 };
 
 Lexer::Lexer()
