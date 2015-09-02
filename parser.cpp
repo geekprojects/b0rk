@@ -178,7 +178,8 @@ bool Parser::resolveTypes()
                     {
                         int varId = varExpr->block->getVarId(varExpr->var.identifier[0]);
                         printf(
-                            "Parser::resolveTypes: var: %s, id=%d, type=%d\n",
+                            "Parser::resolveTypes: var %p: %s, id=%d, type=%d\n",
+varExpr,
                             varExpr->var.toString().c_str(),
                             varId,
                             opExpr->valueType);
@@ -195,21 +196,20 @@ bool Parser::resolveTypes()
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {
         Expression* expr = *exprIt;
-        printf("Parser::resolveTypes: resolve: type=%d\n", expr->type);
         if (expr->type == EXPR_VAR)
         {
             VarExpression* varExpr = (VarExpression*)expr;
             int varId = varExpr->block->getVarId(varExpr->var.identifier[0]);
             ValueType varType = varExpr->block->getVarType(varId);
             printf(
-                "Parser::resolveTypes: VAR: %s, id=%d, type=%d\n",
+                "Parser::resolveTypes: VAR %p: %s, id=%d, type=%d\n",
+varExpr,
                 varExpr->var.toString().c_str(),
                 varId,
                 varType);
             varExpr->valueType = varType;
         }
     }
-
 
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {

@@ -161,13 +161,35 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             switch (opExpr->operType)
             {
                 case OP_ADD:
-                    printf("Assembler::assembleExpression: OPER: ADD\n");
-                    m_code.push_back(OPCODE_ADD);
+                    printf("Assembler::assembleExpression: OPER: ADD: type=%d\n", opExpr->operType);
+                    switch (opExpr->valueType)
+                    {
+                        case VALUE_INTEGER:
+                            m_code.push_back(OPCODE_ADDI);
+                            break;
+                        case VALUE_DOUBLE:
+                            m_code.push_back(OPCODE_ADDD);
+                            break;
+                        default:
+                            m_code.push_back(OPCODE_ADD);
+                            break;
+                    }
                     break;
 
                 case OP_SUB:
                     printf("Assembler::assembleExpression: OPER: SUB\n");
-                    m_code.push_back(OPCODE_SUB);
+                    switch (opExpr->valueType)
+                    {
+                        case VALUE_INTEGER:
+                            m_code.push_back(OPCODE_SUBI);
+                            break;
+                        case VALUE_DOUBLE:
+                            m_code.push_back(OPCODE_SUBD);
+                            break;
+                        default:
+                            m_code.push_back(OPCODE_SUB);
+                            break;
+                    }
                     break;
 
                 case OP_LESS_THAN:
@@ -192,7 +214,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     m_code.push_back(id);
                     m_code.push_back(OPCODE_PUSHI);
                     m_code.push_back(1);
-                    m_code.push_back(OPCODE_ADD);
+                    m_code.push_back(OPCODE_ADDI);
 
                     m_code.push_back(OPCODE_STORE);
                     m_code.push_back(id);

@@ -56,23 +56,25 @@ OperationExpression::OperationExpression(CodeBlock* block)
 
 void OperationExpression::resolveType()
 {
-    printf("Parser::parseExpression: %s\n", toString().c_str());
+    printf("OperationExpression::resolveType: %s\n", toString().c_str());
     // Figure out types
     if (right == NULL)
     {
         valueType = left->valueType;
-        printf("Parser::parseExpression: Expression type=%d (Left Only)\n", valueType);
+        printf("OperationExpression::resolveType: Expression type=%d (Left Only)\n", valueType);
     }
     else
     {
         ValueType leftType = left->valueType;
         ValueType rightType = right->valueType;
+
+        printf("OperationExpression::resolveType: Expression BEFORE: type=%d, left=%d, right=%d\n", valueType, left->valueType, right->valueType);
         if (leftType == rightType)
         {
             // Easy!
             valueType = left->valueType;
         }
-        else if (operType == OP_SET)
+        else if (operType == OP_SET && right->valueType != VALUE_UNKNOWN)
         {
             // Assignment: Left becomes type of right
             left->valueType = right->valueType;
@@ -84,6 +86,10 @@ void OperationExpression::resolveType()
         {
             // Maths to anything involving a double causes the output to always be a double
             valueType = VALUE_DOUBLE;
+        }
+        if (left->type == EXPR_VAR)
+        {
+            printf("OperationExpression::resolveType:  -> left=VAR %p! type=%d\n", left, left->valueType);
         }
 
         printf("OperationExpression::resolveType: Expression type=%d, left=%d, right=%d\n", valueType, left->valueType, right->valueType);
@@ -149,7 +155,7 @@ VarExpression::VarExpression(CodeBlock* block)
 
 string VarExpression::toString()
 {
-    return var.toString();
+    return "{VAR:" + var.toString() + "}";
 }
 
 StringExpression::StringExpression(CodeBlock* block)

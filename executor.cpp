@@ -98,6 +98,28 @@ bool Executor::run(Context* context, AssembledCode& code)
                 }
             } break;
 
+            case OPCODE_ADDI:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+                Value result;
+                result.type = VALUE_INTEGER;
+                result.i = v1.i + v2.i;
+                printf("Executor::run: ADDI: %lld + %lld = %lld\n", v1.i, v2.i, result.i);
+                context->push(result);
+            } break;
+
+            case OPCODE_ADDD:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+                Value result;
+                result.type = VALUE_DOUBLE;
+                result.d = DOUBLE_VALUE(v1) + DOUBLE_VALUE(v2);
+                printf("Executor::run: ADDD: %0.2f + %0.2f = %0.2f\n", v1.d, v2.d, result.d);
+                context->push(result);
+            } break;
+
             case OPCODE_PUSHCL:
             {
                 Value v;

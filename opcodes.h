@@ -6,8 +6,17 @@ enum OpCode
     OPCODE_LOAD        = 0x0100,
     OPCODE_STORE       = 0x0101,
 
+    // Arithmetic: Any value types (Objects etc)
     OPCODE_ADD         = 0x0200,
     OPCODE_SUB         = 0x0201,
+
+    // Arithmetic: Integers
+    OPCODE_ADDI        = 0x0210,
+    OPCODE_SUBI        = 0x0211,
+
+    // Arithmetic: Doubles
+    OPCODE_ADDD        = 0x0220,
+    OPCODE_SUBD        = 0x0221,
 
     OPCODE_PUSHI       = 0x0300,
     OPCODE_PUSHD       = 0x0301,
