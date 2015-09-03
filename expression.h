@@ -8,6 +8,7 @@
 #include "value.h"
 
 struct CodeBlock;
+class ScriptFunction;
 
 struct Identifier
 {
@@ -143,6 +144,7 @@ struct DoubleExpression : public Expression
 
 struct CodeBlock
 {
+    ScriptFunction* m_function;
     CodeBlock* m_parent;
     int m_startingVarId;
     int m_maxVarId;

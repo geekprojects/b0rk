@@ -5,7 +5,8 @@ Object::Object(Class* clazz)
 {
     m_class = clazz;
 
-    m_values = new Value[clazz->getValueCount()];
+    m_valueCount = clazz->getValueCount();
+    m_values = new Value[m_valueCount];
 }
 
 Object::~Object()

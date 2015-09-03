@@ -12,9 +12,7 @@ class VarTest
                 var k; 
                 for (k = 0; k < 3; k++)
                 {
-                    System.log(i);
-                    System.log(j);
-                    System.log(k);
+                    System.log("i=" + new String(i) + ", j=" + new String(j) + ", k=" + new String(k));
                 }
             }
         }

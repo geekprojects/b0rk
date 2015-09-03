@@ -71,6 +71,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         {
             CallExpression* callExpr = (CallExpression*)expr;
             std::vector<Expression*>::iterator it;
+            int count = 0;
             for (it = callExpr->parameters.begin(); it != callExpr->parameters.end(); it++)
             {
                 res = assembleExpression(block, *it);
@@ -78,6 +79,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                 {
                     return false;
                 }
+                count++;
             }
             printf("Assembler::assembleExpression: CALL: %s\n", callExpr->function.toString().c_str());
 
@@ -95,6 +97,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     m_code.push_back(OPCODE_LOAD);
                     m_code.push_back(varId);
                     m_code.push_back(OPCODE_CALL_NAMED);
+                    m_code.push_back(count);
                 }
                 else
                 {
@@ -107,6 +110,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                         Function* func = clazz->findMethod(id.identifier[1]);
                         m_code.push_back(OPCODE_CALL_STATIC);
                         m_code.push_back((uint64_t)func);
+                        m_code.push_back(count);
                     }
                     else
                     {
@@ -128,6 +132,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     printf("TODO: Assembler::findFunction: Found method for %s: %p\n", id.toString().c_str(), func);
                     m_code.push_back(OPCODE_CALL_STATIC);
                     m_code.push_back((uint64_t)func);
+                    m_code.push_back(count);
                 }
                 else
                 {
@@ -321,8 +326,21 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             Class* clazz = m_runtime->findClass(newExpr->clazz.identifier[0]);
             printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
 
+            int count = 0;
+            std::vector<Expression*>::iterator it;
+            for (it = newExpr->parameters.begin(); it != newExpr->parameters.end(); it++)
+            {
+                res = assembleExpression(block, *it);
+                if (!res)
+                {
+                    return false;
+                }
+                count++;
+            }
+
             m_code.push_back(OPCODE_NEW);
             m_code.push_back((uint64_t)clazz);
+            m_code.push_back(count);
         } break;
 
         case EXPR_STRING:

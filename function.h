@@ -18,9 +18,11 @@ class Function
  protected:
     bool m_static;
     Class* m_class;
+    std::vector<std::string> m_args;
 
  public:
     Function(Class* clazz);
+    Function(Class* clazz, std::vector<std::string> args);
     virtual ~Function();
 
     Class* getClass() { return m_class; }
@@ -28,10 +30,12 @@ class Function
     void setStatic(bool isStatic) { m_static = isStatic; }
     bool getStatic() { return m_static; }
 
-    virtual bool execute(Context* context, Object* clazz);
+    int getArgId(std::string arg);
+
+    virtual bool execute(Context* context, Object* clazz, int argCount);
 };
 
-typedef bool(Class::*nativeFunction_t)(Context*, Object* instance);
+typedef bool(Class::*nativeFunction_t)(Context*, Object* instance, int argCount);
 
 class NativeFunction : public Function
 {
@@ -41,7 +45,7 @@ class NativeFunction : public Function
  public:
     NativeFunction(Class* clazz, nativeFunction_t func);
 
-    virtual bool execute(Context* context, Object* instance);
+    virtual bool execute(Context* context, Object* instance, int argCount);
 };
 
 class ScriptFunction : public Function
@@ -53,14 +57,15 @@ class ScriptFunction : public Function
     AssembledCode m_asmCode;
 
  public:
-    ScriptFunction(Class* clazz);
-    ScriptFunction(Class* clazz, CodeBlock* code);
+    ScriptFunction(Class* clazz, std::vector<std::string> args);
+    ScriptFunction(Class* clazz, CodeBlock* code, std::vector<std::string> args);
     ~ScriptFunction();
 
     void setCode(CodeBlock* code);
     CodeBlock* getCode() { return m_code; }
 
-    virtual bool execute(Context* context, Object* instance);
+
+    virtual bool execute(Context* context, Object* instance, int argCount);
 };
 
 #endif

@@ -8,15 +8,15 @@
 
 using namespace std;
 
-ScriptFunction::ScriptFunction(Class* clazz)
-    : Function(clazz)
+ScriptFunction::ScriptFunction(Class* clazz, vector<string> args)
+    : Function(clazz, args)
 {
     m_code = NULL;
     m_assembled = false;
 }
 
-ScriptFunction::ScriptFunction(Class* clazz, CodeBlock* code)
-    : Function(clazz)
+ScriptFunction::ScriptFunction(Class* clazz, CodeBlock* code, vector<string> args)
+    : Function(clazz, args)
 {
     m_code = code;
 }
@@ -30,7 +30,7 @@ void ScriptFunction::setCode(CodeBlock* code)
     m_code = code;
 }
 
-bool ScriptFunction::execute(Context* context, Object* instance)
+bool ScriptFunction::execute(Context* context, Object* instance, int argCount)
 {
     if (m_assembled == false)
     {
@@ -44,6 +44,7 @@ bool ScriptFunction::execute(Context* context, Object* instance)
     }
 
     Executor* executor = context->getRuntime()->getExecutor();
-    return executor->run(context, m_asmCode);
+
+    return executor->run(context, m_asmCode, argCount);
 }
 

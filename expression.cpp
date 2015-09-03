@@ -1,5 +1,6 @@
 
 #include "expression.h"
+#include "function.h"
 
 using namespace std;
 
@@ -98,7 +99,7 @@ void OperationExpression::resolveType()
 
 string OperationExpression::toString()
 {
-    string str = left->toString() + " ";
+    string str = "{";
     switch (operType)
     {
         case OP_SET:
@@ -120,10 +121,12 @@ string OperationExpression::toString()
             str += "?OP?";
             break;
     }
+    str += ":" + left->toString();
     if (right != NULL)
     {
-        str += " " + right->toString();
+        str += "," + right->toString();
     }
+    str += "}";
     return str;
 }
 
@@ -257,6 +260,10 @@ int CodeBlock::getVarId(string var)
     {
         return m_parent->getVarId(var);
     }
+    else if (m_function != NULL)
+    {
+        return m_function->getArgId(var);
+    }
     return -1;
 }
 
@@ -284,7 +291,11 @@ ValueType CodeBlock::getVarType(int id)
 {
     if (id < m_startingVarId)
     {
-        return m_parent->getVarType(id);
+        if (m_parent != NULL)
+        {
+            return m_parent->getVarType(id);
+        }
+        return VALUE_UNKNOWN;
     }
     int thisId = id - m_startingVarId;
     return m_varTypes[thisId];

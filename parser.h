@@ -19,8 +19,9 @@ class Parser
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
     Class* parseClass();
-    CodeBlock* parseCodeBlock();
+    Function* parseFunction(Class* clazz);
 
+    CodeBlock* parseCodeBlock(ScriptFunction* function);
     Expression* parseExpression(CodeBlock* code);
     bool parseIdentifier(Identifier& id);
     bool parseList(std::vector<Token*>& list, TokenType type);
@@ -28,6 +29,7 @@ class Parser
 
     bool resolveTypes();
 
+    int getVarId(CodeBlock* block);
     void setVarIds(CodeBlock* block, int startingId);
 
  public:

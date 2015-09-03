@@ -157,7 +157,7 @@ bool Lexer::lexer(char* buffer, int length)
                     token.string = str;
                     m_tokens.push_back(token);
                 }
-                else if (isdigit(c))
+                else if (isdigit(c) || c == '-')
                 {
                     string str = "";
                     bool dot = false;

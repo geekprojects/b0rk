@@ -6,16 +6,16 @@ class NewTest
         System.log("NewTest: constructor!");
     }
 
-    function method1()
+    function method1(arg1)
     {
-        System.log("NewTest.method1: Hello!");
+        System.log("NewTest.method1: arg1=" + arg1);
     }
 
     function main() static
     {
         var obj = new NewTest();
-        obj.method1();
-        obj.method1();
+        obj.method1("Hello");
+        obj.method1("World");
     }
 }
 

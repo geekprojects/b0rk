@@ -54,7 +54,6 @@ bool Parser::parse(Runtime* runtime, vector<Token> tokens)
 
 Class* Parser::parseClass()
 {
-    bool res;
     Token* token;
 
     token = nextToken();
@@ -104,47 +103,9 @@ Class* Parser::parseClass()
             string funcName = token->string;
             printf("Parser::parseClass: Function: %s\n", funcName.c_str());
 
-            ScriptFunction* function = new ScriptFunction(clazz);
+            Function* function = parseFunction(clazz);
 
-            vector<Token*> paramTokens;
-            res = parseList(paramTokens, TOK_IDENTIFIER);
-            if (!res)
-            {
-                delete clazz;
-                return NULL;
-            }
-
-            token = nextToken();
-            if (token->type == TOK_STATIC)
-            {
-                printf("Parser::parseClass: Function: Static function!\n");
-                function->setStatic(true);
-                token = nextToken();
-            }
-            if (token->type != TOK_BRACE_LEFT)
-            {
-                printf("Parser::parseClass: Function: Expected {\n");
-                delete clazz;
-                return NULL;
-            }
-
-            CodeBlock* code;
-            code = parseCodeBlock();
-            if (code == NULL)
-            {
-                delete clazz;
-                return NULL;
-            }
-
-            int maxId = code->setStartingVarId(0);
-            printf("Parser::parseClass: max var id: %d\n", maxId);
-
-            resolveTypes();
-
-            function->setCode(code);
             clazz->addMethod(funcName, function);
-
-            printf("Parser::parseClass: body:\n%s\n", code->toString().c_str());
         }
         else
         {
@@ -154,6 +115,60 @@ Class* Parser::parseClass()
         }
     }
     return clazz;
+}
+
+Function* Parser::parseFunction(Class* clazz)
+{
+    vector<Token*> paramTokens;
+    bool res = parseList(paramTokens, TOK_IDENTIFIER);
+    if (!res)
+    {
+        delete clazz;
+        return NULL;
+    }
+
+    vector<string> args;
+    vector<Token*>::iterator it;
+    for (it = paramTokens.begin(); it != paramTokens.end(); it++)
+    {
+        args.push_back((*it)->string);
+        printf("Parser::parseClass: Function: arg: %s\n", (*it)->string.c_str());
+    }
+
+    ScriptFunction* function = new ScriptFunction(clazz, args);
+
+    Token* token = nextToken();
+    if (token->type == TOK_STATIC)
+    {
+        printf("Parser::parseClass: Function: Static function!\n");
+        function->setStatic(true);
+        token = nextToken();
+    }
+    if (token->type != TOK_BRACE_LEFT)
+    {
+        printf("Parser::parseClass: Function: Expected {\n");
+        delete clazz;
+        return NULL;
+    }
+
+    CodeBlock* code;
+    code = parseCodeBlock(function);
+    if (code == NULL)
+    {
+        delete clazz;
+        return NULL;
+    }
+
+    int maxId = code->setStartingVarId(paramTokens.size());
+    printf("Parser::parseClass: max var id: %d\n", maxId);
+
+    resolveTypes();
+
+    function->setCode(code);
+
+    printf("Parser::parseClass: body:\n%s\n", code->toString().c_str());
+
+    return function;
 }
 
 bool Parser::resolveTypes()
@@ -200,10 +215,19 @@ varExpr,
         {
             VarExpression* varExpr = (VarExpression*)expr;
             int varId = varExpr->block->getVarId(varExpr->var.identifier[0]);
+            if (varId == -1)
+            {
+                printf(
+                    "Parser::resolveTypes: VAR %p: %s, id=%d\n",
+                    varExpr,
+                    varExpr->var.toString().c_str(),
+                    varId);
+                continue;
+            }
             ValueType varType = varExpr->block->getVarType(varId);
             printf(
                 "Parser::resolveTypes: VAR %p: %s, id=%d, type=%d\n",
-varExpr,
+                varExpr,
                 varExpr->var.toString().c_str(),
                 varId,
                 varType);
@@ -225,9 +249,10 @@ varExpr,
 }
 
 
-CodeBlock* Parser::parseCodeBlock()
+CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 {
     CodeBlock* code = new CodeBlock();
+    code->m_function = function;
 
     while (moreTokens())
     {
@@ -341,7 +366,7 @@ CodeBlock* Parser::parseCodeBlock()
 
 
             printf("Parser::parseCodeBlock: FOR: Parsing Body...\n");
-            forExpr->body = parseCodeBlock();
+            forExpr->body = parseCodeBlock(function);
             forExpr->body->m_parent = code;
             code->m_childBlocks.push_back(forExpr->body);
             printf("Parser::parseCodeBlock: FOR: Got body!\n");

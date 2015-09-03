@@ -13,7 +13,8 @@ class String : public Class
     String();
     ~String();
 
-    bool addOperator(Context* context, Object* instance);
+    bool constructor(Context* context, Object* instance, int argCount);
+    bool addOperator(Context* context, Object* instance, int argCount);
 
     static Object* createString(Context* context, const char* str);
     static std::string getString(Context* context, Object* obj);

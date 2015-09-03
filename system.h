@@ -11,7 +11,7 @@ class System : public Class
     System();
     ~System();
 
-    bool log(Context* context);
+    bool log(Context* context, Object* instance, int argCount);
 };
 
 #endif

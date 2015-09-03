@@ -29,7 +29,7 @@ class Runtime
 
     Context* createContext();
 
-    Object* newObject(Context* context, Class* clazz);
+    Object* newObject(Context* context, Class* clazz, int argCount);
 
     Executor* getExecutor();
 };

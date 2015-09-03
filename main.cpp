@@ -69,7 +69,7 @@ const char* className = argv[2];
 
     Context* context = runtime->createContext();
 
-    mainFunc->execute(context, NULL);
+    mainFunc->execute(context, NULL, 0);
 
     return 0;
 }

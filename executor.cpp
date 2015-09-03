@@ -14,7 +14,7 @@ Executor::Executor()
 #define LOG(_fmt, _args...) \
     printf("Executor::run: %04llx: 0x%llx " _fmt "\n", thisPC, opcode, _args);
 
-bool Executor::run(Context* context, AssembledCode& code)
+bool Executor::run(Context* context, AssembledCode& code, int argCount)
 {
     size_t pc = 0;
     bool res;
@@ -27,6 +27,12 @@ bool Executor::run(Context* context, AssembledCode& code)
 
     bool running = true;
 
+    int arg;
+    for (arg = 0; arg < argCount; arg++)
+    {
+        localVars[arg] = context->pop();
+    }
+
     while (running && pc < code.size)
     {
         uint64_t thisPC = pc;
@@ -35,14 +41,14 @@ bool Executor::run(Context* context, AssembledCode& code)
         {
             case OPCODE_LOAD:
             {
-                int varId = code.code[pc++]; // TODO: Where we're going to load the value from
+                int varId = code.code[pc++];
                 context->push(localVars[varId]);
                 LOG("LOAD: v%d", varId);
             } break;
 
             case OPCODE_STORE:
             {
-                int varId = code.code[pc++]; // TODO: Where we're going to store the value
+                int varId = code.code[pc++];
                 localVars[varId] = context->pop();
                 LOG("STORE: v%d = %s", varId, localVars[varId].toString().c_str());
             } break;
@@ -76,7 +82,7 @@ bool Executor::run(Context* context, AssembledCode& code)
                     LOG("ADD OBJECT: class=%s", clazz->getName().c_str());
                     Function* addFunc = clazz->findMethod("operator+");
                     LOG("ADD OBJECT: add operator=%p", addFunc);
-                    res = addFunc->execute(context, v1.object);
+                    res = addFunc->execute(context, v1.object, 1);
                     if (!res)
                     {
                         running = false;
@@ -137,8 +143,9 @@ bool Executor::run(Context* context, AssembledCode& code)
             case OPCODE_CALL_STATIC:
             {
                 Function* function = (Function*)code.code[pc++];
+                int count = code.code[pc++];
                 LOG("CALL: %p", function);
-                res = function->execute(context, NULL);
+                res = function->execute(context, NULL, count);
                 if (!res)
                 {
                     running = false;
@@ -147,6 +154,7 @@ bool Executor::run(Context* context, AssembledCode& code)
 
             case OPCODE_CALL_NAMED:
             {
+                int count = code.code[pc++];
                 Object* obj = context->pop().object;
                 Object* nameObj = context->pop().object;
                 string funcName = String::getString(context, nameObj);
@@ -154,7 +162,7 @@ bool Executor::run(Context* context, AssembledCode& code)
 
                 Function* function = obj->getClass()->findMethod(funcName);
                 LOG("CALL_NAMED:  -> function=%p", function);
-                res = function->execute(context, obj);
+                res = function->execute(context, obj, count);
                 if (!res)
                 {
                     running = false;
@@ -164,8 +172,9 @@ bool Executor::run(Context* context, AssembledCode& code)
             case OPCODE_NEW:
             {
                 Class* clazz = (Class*)code.code[pc++];
+                int count = code.code[pc++];
                 LOG("NEW: class=%s", clazz->getName().c_str());
-                Object* obj = context->getRuntime()->newObject(context, clazz);
+                Object* obj = context->getRuntime()->newObject(context, clazz, count);
                 LOG("NEW:  -> object=%p", obj);
                 Value v;
                 v.type = VALUE_OBJECT;
