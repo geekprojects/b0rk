@@ -20,14 +20,16 @@ String::~String()
 
 bool String::constructor(Context* context, Object* instance, int argCount)
 {
-printf("String::constructor: argCount=%d\n", argCount);
-if (argCount == 1)
-{
-Value arg = context->pop();
-    Value v;
-    v.pointer = strdup(arg.toString().c_str());
-    instance->setValue(0, v);
-}
+#ifdef DEBUG_STRING
+    printf("String::constructor: argCount=%d\n", argCount);
+#endif
+    if (argCount == 1)
+    {
+        Value arg = context->pop();
+        Value v;
+        v.pointer = strdup(arg.toString().c_str());
+        instance->setValue(0, v);
+    }
     return true;
 }
 
@@ -39,12 +41,16 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
     if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass() == this)
     {
         rhsStr =  getString(context, rhs.object);
-printf("String::addOperator: rhs (String): %s\n", rhsStr.c_str());
+#ifdef DEBUG_STRING
+        printf("String::addOperator: rhs (String): %s\n", rhsStr.c_str());
+#endif
     }
     else
     {
         rhsStr += rhs.toString();
-printf("String::addOperator: rhs (other): %s\n", rhsStr.c_str());
+#ifdef DEBUG_STRING
+        printf("String::addOperator: rhs (other): %s\n", rhsStr.c_str());
+#endif
     }
 
     string resultstr = getString(context, instance) + rhsStr;
@@ -70,22 +76,22 @@ Object* String::createString(Context* context, const char* str)
 
 std::string String::getString(Context* context, Object* obj)
 {
-if (obj == NULL)
-{
-return "INVALID";
-}
-if (obj->getClass()->getName() != "String")
-{
-return "NOTASTRING";
-}
-if (obj->getValueCount() == 0)
-{
-return "INVALID";
-}
-if (obj->getValue(0).pointer == NULL)
-{
-return "NULL";
-}
+    if (obj == NULL)
+    {
+        return "INVALID";
+    }
+    if (obj->getClass()->getName() != "String")
+    {
+        return "NOTASTRING";
+    }
+    if (obj->getValueCount() == 0)
+    {
+        return "INVALID";
+    }
+    if (obj->getValue(0).pointer == NULL)
+    {
+        return "NULL";
+    }
     return string((const char*)obj->getValue(0).pointer);
 }
 

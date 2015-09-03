@@ -18,7 +18,7 @@ System::~System()
 bool System::log(Context* context, Object* instance, int argCount)
 {
     int i;
-    printf("System::log: ");
+    //printf("System::log: ");
     for (i = 0; i < argCount; i++)
     {
         Value v = context->pop();

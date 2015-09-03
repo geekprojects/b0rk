@@ -67,6 +67,8 @@ enum OpType
     OP_SET,
     OP_ADD,
     OP_SUB,
+    OP_MULTIPLY,
+    OP_LOGICAL_AND,
     OP_INCREMENT,
     OP_LESS_THAN
 };

@@ -6,6 +6,8 @@
 
 #include "lexer.h"
 
+#undef DEBUG_LEXER
+
 using namespace std;
 
 SimpleToken tokenTable[] = {
@@ -18,6 +20,8 @@ SimpleToken tokenTable[] = {
     { "++", 2, TOK_INCREMENT },
     { "+", 1, TOK_PLUS },
     { "-", 1, TOK_MINUS },
+    { "*", 1, TOK_ASTERISK },
+    { "&&", 2, TOK_LOGICAL_AND },
     { "{", 1, TOK_BRACE_LEFT },
     { "}", 1, TOK_BRACE_RIGHT },
     { "(", 1, TOK_BRACKET_LEFT },
@@ -30,6 +34,7 @@ SimpleToken tokenTable[] = {
     { "static", 6, TOK_STATIC },
     { "new", 3, TOK_NEW },
     { "for", 3, TOK_FOR },
+    { "while", 5, TOK_WHILE },
     { "return", 6, TOK_RETURN },
 };
 
@@ -96,6 +101,60 @@ bool Lexer::lexer(char* buffer, int length)
             // TODO: Check whether we're in a string
             pos++;
         }
+        else if (isdigit(c) || (c == '-' && isdigit(*(pos + 1))))
+        {
+            string str = "";
+            bool dot = false;
+            while (true)
+            {
+                char c = *pos;
+                if (c == '-')
+                {
+                    if (str.length() > 0)
+                    {
+                        printf("Lexer: OH NOES, WE'VE GOT A MINUS HERE\n");
+                        return false;
+                    }
+                    str += '-';
+                }
+                else if (c == '.' && dot == false)
+                {
+                    str += '.';
+                    dot = true;
+                }
+                else if (isdigit(c))
+                {
+                    str += c;
+                }
+                else
+                {
+                    break;
+                }
+                pos++;
+            }
+#ifdef DEBUG_LEXER
+            printf("Lexer: found number: %s\n", str.c_str());
+#endif
+
+            Token token;
+            if (dot)
+            {
+                token.d = atof(str.c_str());
+                token.type = TOK_DOUBLE;
+#ifdef DEBUG_LEXER
+                printf("Lexer: found number:  -> double: %0.2f\n", token.d);
+#endif
+            }
+            else
+            {
+                token.i = atoi(str.c_str());
+                token.type = TOK_INTEGER;
+#ifdef DEBUG_LEXER
+                printf("Lexer: found number:  -> int: %d\n", token.i);
+#endif
+            }
+            m_tokens.push_back(token);
+        }
         else if (c == '"')
         {
             string str = "";
@@ -157,52 +216,7 @@ bool Lexer::lexer(char* buffer, int length)
                     token.string = str;
                     m_tokens.push_back(token);
                 }
-                else if (isdigit(c) || c == '-')
-                {
-                    string str = "";
-                    bool dot = false;
-                    while (true)
-                    {
-                        char c = *pos;
-                        if (c == '.' && dot == false)
-                        {
-                            str += '.';
-                            dot = true;
-                        }
-                        else if (isdigit(c))
-                        {
-                            str += c;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        pos++;
-                    }
-#ifdef DEBUG_LEXER
-                    printf("Lexer: found number: %s\n", str.c_str());
-#endif
-
-                    Token token;
-                    if (dot)
-                    {
-                        token.d = atof(str.c_str());
-                        token.type = TOK_DOUBLE;
-#ifdef DEBUG_LEXER
-                        printf("Lexer: found number:  -> double: %0.2f\n", token.d);
-#endif
-                    }
-                    else
-                    {
-                        token.i = atoi(str.c_str());
-                        token.type = TOK_INTEGER;
-#ifdef DEBUG_LEXER
-                        printf("Lexer: found number:  -> int: %d\n", token.i);
-#endif
-                    }
-                    m_tokens.push_back(token);
-                }
-                else
+               else
                 {
                     printf("Unknown token:\n%s\n", pos);
                     return false;

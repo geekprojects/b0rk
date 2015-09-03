@@ -57,19 +57,31 @@ OperationExpression::OperationExpression(CodeBlock* block)
 
 void OperationExpression::resolveType()
 {
+    if (valueType != VALUE_UNKNOWN)
+    {
+        return;
+    }
+
+#ifdef DEBUG_PARSER
     printf("OperationExpression::resolveType: %s\n", toString().c_str());
+#endif
+
     // Figure out types
     if (right == NULL)
     {
         valueType = left->valueType;
+#ifdef DEBUG_PARSER
         printf("OperationExpression::resolveType: Expression type=%d (Left Only)\n", valueType);
+#endif
     }
     else
     {
         ValueType leftType = left->valueType;
         ValueType rightType = right->valueType;
 
+#ifdef DEBUG_PARSER
         printf("OperationExpression::resolveType: Expression BEFORE: type=%d, left=%d, right=%d\n", valueType, left->valueType, right->valueType);
+#endif
         if (leftType == rightType)
         {
             // Easy!
@@ -90,10 +102,14 @@ void OperationExpression::resolveType()
         }
         if (left->type == EXPR_VAR)
         {
+#ifdef DEBUG_PARSER
             printf("OperationExpression::resolveType:  -> left=VAR %p! type=%d\n", left, left->valueType);
+#endif
         }
 
+#ifdef DEBUG_PARSER
         printf("OperationExpression::resolveType: Expression type=%d, left=%d, right=%d\n", valueType, left->valueType, right->valueType);
+#endif
     }
 }
 
@@ -111,6 +127,12 @@ string OperationExpression::toString()
         case OP_SUB:
             str +="SUB";
             break;
+        case OP_MULTIPLY:
+            str +="MULTIPLY";
+            break;
+        case OP_LOGICAL_AND:
+            str +="LOGICAL_AND";
+            break;
         case OP_INCREMENT:
             str +="INCREMENT";
             break;
@@ -119,6 +141,32 @@ string OperationExpression::toString()
             break;
         default:
             str += "?OP?";
+            break;
+    }
+    str += "-";
+
+    switch (valueType)
+    {
+        case VALUE_UNKNOWN:
+            str += "UNKNOWN";
+            break;
+        case VALUE_VOID:
+            str += "VOID";
+            break;
+        case VALUE_VARIABLE:
+            str += "VARIABLE";
+            break;
+        case VALUE_OBJECT:
+            str += "OBJECT";
+            break;
+        case VALUE_POINTER:
+            str += "POINTER";
+            break;
+        case VALUE_INTEGER:
+            str += "INTEGER";
+            break;
+        case VALUE_DOUBLE:
+            str += "DOUBLE";
             break;
     }
     str += ":" + left->toString();
@@ -139,11 +187,20 @@ ForExpression::ForExpression(CodeBlock* block)
 string ForExpression::toString()
 {
     std::string str = "FOR (";
-    str += initExpr->toString();
+    if (initExpr != NULL)
+    {
+        str += initExpr->toString();
+    }
     str += " ; ";
-    str += testExpr->toString();
+    if (testExpr != NULL)
+    {
+        str += testExpr->toString();
+    }
     str += " ; ";
-    str += incExpr->toString();
+    if (incExpr != NULL)
+    {
+        str += incExpr->toString();
+    }
     str += " )  {";
     str += body->toString();
     str += " }";
@@ -276,12 +333,7 @@ bool CodeBlock::setVarType(int id, ValueType type)
     int thisId = id - m_startingVarId;
     if (m_varTypes[thisId] != VALUE_UNKNOWN)
     {
-        printf("CodeBlock::setVarType: Existing type=%d, new type=%d\n", m_varTypes[thisId], type);
         return m_varTypes[thisId] == type;
-    }
-    else
-    {
-        printf("CodeBlock::setVarType: Setting type=%d\n", type);
     }
     m_varTypes[thisId] = type;
     return true;

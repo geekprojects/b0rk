@@ -2,6 +2,9 @@
 #include "executor.h"
 #include "string.h"
 
+#include <math.h>
+#include <float.h>
+
 #define DOUBLE_VALUE(_v) (((_v).type == VALUE_DOUBLE) ? (_v.d) : (double)(_v.i))
 #define INTEGER_VALUE(_v) (((_v).type == VALUE_INTEGER) ? (_v.i) : (int)(floor(_v.d)))
 
@@ -11,8 +14,12 @@ Executor::Executor()
 {
 }
 
+#ifdef DEBUG_EXECUTOR
 #define LOG(_fmt, _args...) \
     printf("Executor::run: %04llx: 0x%llx " _fmt "\n", thisPC, opcode, _args);
+#else
+#define LOG(_fmt, _args...)
+#endif
 
 bool Executor::run(Context* context, AssembledCode& code, int argCount)
 {
@@ -35,7 +42,9 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
 
     while (running && pc < code.size)
     {
+#ifdef DEBUG_EXECUTOR
         uint64_t thisPC = pc;
+#endif
         uint64_t opcode = code.code[pc++];
         switch (opcode)
         {
@@ -108,6 +117,94 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 }
             } break;
 
+            case OPCODE_SUB:
+            {
+                Value v1 = context->pop();
+                if (v1.type == VALUE_OBJECT)
+                {
+                    // TODO: This should have been figured out by the assembler?
+                    Class* clazz = v1.object->getClass();
+                    LOG("SUB OBJECT: class=%s", clazz->getName().c_str());
+                    Function* addFunc = clazz->findMethod("operator-");
+                    LOG("SUB OBJECT: sub operator=%p", addFunc);
+                    res = addFunc->execute(context, v1.object, 1);
+                    if (!res)
+                    {
+                        running = false;
+                    }
+                }
+                else
+                {
+                    Value v2 = context->pop();
+                    Value result;
+                    if (v1.type == VALUE_DOUBLE || v2.type == VALUE_DOUBLE)
+                    {
+                        result.type = VALUE_DOUBLE;
+                        result.d = DOUBLE_VALUE(v1) - DOUBLE_VALUE(v2);
+                        LOG("SUB: %0.2f - %0.2f = %0.2f", v1.d, v2.d, result.d);
+                    }
+                    else
+                    {
+                        result.type = VALUE_INTEGER;
+                        result.i = v1.i - v2.i;
+                        LOG("SUB: %lld - %lld = %lld", v1.i, v2.i, result.i);
+                    }
+                    context->push(result);
+                }
+            } break;
+
+
+            case OPCODE_MUL:
+            {
+                Value v1 = context->pop();
+                if (v1.type == VALUE_OBJECT)
+                {
+                    // TODO: This should have been figured out by the assembler?
+                    Class* clazz = v1.object->getClass();
+                    LOG("MUL OBJECT: class=%s", clazz->getName().c_str());
+                    Function* addFunc = clazz->findMethod("operator*");
+                    LOG("MUL OBJECT: * operator=%p", addFunc);
+                    res = addFunc->execute(context, v1.object, 1);
+                    if (!res)
+                    {
+                        running = false;
+                    }
+                }
+                else
+                {
+                    Value v2 = context->pop();
+                    Value result;
+                    if (v1.type == VALUE_DOUBLE || v2.type == VALUE_DOUBLE)
+                    {
+                        result.type = VALUE_DOUBLE;
+                        result.d = DOUBLE_VALUE(v1) * DOUBLE_VALUE(v2);
+                        LOG("MUL: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
+                    }
+                    else
+                    {
+                        result.type = VALUE_INTEGER;
+                        result.i = v1.i * v2.i;
+                        LOG("MUL: %lld * %lld = %lld", v1.i, v2.i, result.i);
+                    }
+                    context->push(result);
+                }
+            } break;
+
+
+            case OPCODE_AND:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+
+                Value result;
+                result.type = VALUE_INTEGER;
+                result.i = (v1.i && v2.i);
+
+                LOG("AND: %lld + %lld = %lld", v1.i, v2.i, result.i);
+
+                context->push(result);
+            } break;
+
             case OPCODE_ADDI:
             {
                 Value v1 = context->pop();
@@ -126,7 +223,30 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 Value result;
                 result.type = VALUE_DOUBLE;
                 result.d = DOUBLE_VALUE(v1) + DOUBLE_VALUE(v2);
-                LOG("ADDD: %0.2f + %0.2f = %0.2f", v1.d, v2.d, result.d);
+                LOG("ADDD: %0.2f + %0.2f = %0.2f", DOUBLE_VALUE(v1), DOUBLE_VALUE(v2), result.d);
+                context->push(result);
+            } break;
+
+            case OPCODE_MULI:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+                Value result;
+                result.type = VALUE_INTEGER;
+                result.i = v1.i * v2.i;
+                LOG("MULI: %lld * %lld = %lld", v1.i, v2.i, result.i);
+                context->push(result);
+            } break;
+
+
+            case OPCODE_MULD:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+                Value result;
+                result.type = VALUE_DOUBLE;
+                result.d = DOUBLE_VALUE(v1) * DOUBLE_VALUE(v2);
+                LOG("MULD: %0.2f * %0.2f = %0.2f", DOUBLE_VALUE(v1), DOUBLE_VALUE(v2), result.d);
                 context->push(result);
             } break;
 
@@ -203,13 +323,64 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
             {
                 Value left = context->pop();
                 Value right = context->pop();
+                if (left.type == VALUE_INTEGER && right.type == VALUE_INTEGER)
+                {
+                    int64_t result = (int64_t)right.i - (int64_t)left.i;
+                    //int64_t uresult = (uint64_t)right.i - (uint64_t)left.i;
+                    flagZero = (result == 0);
+                    flagSign = (result < 0);
+                    flagOverflow = !flagZero || flagSign;
+                    //context->push(result);
+                    LOG("CMP: left=%s, right=%s, result=%lld", left.toString().c_str(), right.toString().c_str(), result);
+                }
+                else if (left.type == VALUE_DOUBLE || right.type == VALUE_DOUBLE)
+                {
+                    double leftDouble = DOUBLE_VALUE(left);
+                    double rightDouble = DOUBLE_VALUE(right);
+                    double result = rightDouble - leftDouble;
+                    double resultAbs = fabs(result);
+                    LOG("CMP: left=%0.2f, right=%0.2f, result=%0.2f (%0.2f)", leftDouble, rightDouble, result, resultAbs);
+                    flagZero = (resultAbs < FLT_EPSILON);
+                    flagSign = (result < 0.0 && !flagZero);
+                    flagOverflow = !flagZero || flagSign;
+                }
+                else
+                {
+                    printf("CMP: UNHANDLED DATA TYPES\n");
+                    return false;
+                }
+
+                LOG("CMP:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+            } break;
+
+            case OPCODE_CMPI:
+            {
+                Value left = context->pop();
+                Value right = context->pop();
                 int64_t result = (int64_t)right.i - (int64_t)left.i;
                 flagZero = (result == 0);
                 flagSign = (result < 0);
-                flagOverflow = (right.i > left.i);
+                flagOverflow = !flagZero || flagSign;
                 //context->push(result);
-                LOG("CMP: left=%s, right=%s, result=%lld", left.toString().c_str(), right.toString().c_str(), result);
-                LOG("CMP:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+                LOG("CMPI: left=%s, right=%s, result=%lld", left.toString().c_str(), right.toString().c_str(), result);
+                LOG("CMPI:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+ 
+            } break;
+
+            case OPCODE_CMPD:
+            {
+                Value left = context->pop();
+                Value right = context->pop();
+                double leftDouble = left.d;
+                double rightDouble = right.d;
+                double result = rightDouble - leftDouble;
+                double resultAbs = fabs(result);
+                LOG("CMPD: left=%0.2f, right=%0.2f, result=%0.2f (%0.2f)", leftDouble, rightDouble, result, resultAbs);
+                flagZero = (resultAbs < FLT_EPSILON);
+                flagSign = (result < 0.0 && !flagZero);
+                    flagOverflow = !flagZero || flagSign;
+ 
+                LOG("CMPD:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
             } break;
 
             case OPCODE_JMP:

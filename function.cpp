@@ -51,7 +51,6 @@ NativeFunction::NativeFunction(Class* clazz, nativeFunction_t func)
 
 bool NativeFunction::execute(Context* context, Object* instance, int argCount)
 {
-    printf("NativeFunction::execute: Here!\n");
     return (m_class->*m_native)(context, instance, argCount);
 }
 

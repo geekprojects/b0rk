@@ -81,7 +81,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                 }
                 count++;
             }
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: CALL: %s\n", callExpr->function.toString().c_str());
+#endif
 
             Identifier id = callExpr->function;
             if (id.identifier.size() > 1)
@@ -104,7 +106,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     // Try class names?
                     Class* clazz = m_runtime->findClass(id.identifier[0]);
 
+#ifdef DEBUG_ASSEMBLER
                     printf("Assembler::findFunction: nexecute: identifier: clazz=%p\n", clazz);
+#endif
                     if (clazz != NULL)
                     {
                         Function* func = clazz->findMethod(id.identifier[1]);
@@ -167,7 +171,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             switch (opExpr->operType)
             {
                 case OP_ADD:
+#ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: ADD: type=%d\n", opExpr->operType);
+#endif
                     switch (opExpr->valueType)
                     {
                         case VALUE_INTEGER:
@@ -183,7 +189,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     break;
 
                 case OP_SUB:
+#ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: SUB\n");
+#endif
                     switch (opExpr->valueType)
                     {
                         case VALUE_INTEGER:
@@ -198,9 +206,60 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     }
                     break;
 
+                case OP_MULTIPLY:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: MULTIPLY\n");
+#endif
+                    switch (opExpr->valueType)
+                    {
+                        case VALUE_INTEGER:
+                            m_code.push_back(OPCODE_MULI);
+                            break;
+                        case VALUE_DOUBLE:
+                            m_code.push_back(OPCODE_MULD);
+                            break;
+                        default:
+                            m_code.push_back(OPCODE_MUL);
+                            break;
+                    }
+                    break;
+
+                case OP_LOGICAL_AND:
+                {
+#ifdef DEBUG_ASSEMBLER
+                    ValueType leftType = opExpr->left->valueType;
+                    ValueType rightType = opExpr->right->valueType;
+                    printf("Assembler::assembleExpression: OPER: LOGICAL_AND (type=%d)\n", opExpr->valueType);
+                    printf("Assembler::assembleExpression: OPER: LOGICAL_AND left=%d, right=%d\n", leftType, rightType);
+#endif
+                    switch (opExpr->valueType)
+                    {
+                        case VALUE_INTEGER:
+                            m_code.push_back(OPCODE_ANDI);
+                            break;
+                        default:
+                            m_code.push_back(OPCODE_AND);
+                            break;
+                    }
+                } break;
+
                 case OP_LESS_THAN:
+#ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LESS_THAN\n");
-                    m_code.push_back(OPCODE_CMP);
+#endif
+                    switch (opExpr->valueType)
+                    {
+                        case VALUE_INTEGER:
+                            m_code.push_back(OPCODE_CMPI);
+                            break;
+                        case VALUE_DOUBLE:
+                            m_code.push_back(OPCODE_CMPD);
+                            break;
+                        default:
+                            m_code.push_back(OPCODE_CMP);
+                            break;
+                    }
+ 
                     m_code.push_back(OPCODE_PUSHCL);
                     break;
 
@@ -215,7 +274,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
                     int id = block->getVarId(varExpr->var.identifier[0]);
 
+#ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: POST INCREMENT (%d)\n", id);
+#endif
                     m_code.push_back(OPCODE_LOAD);
                     m_code.push_back(id);
                     m_code.push_back(OPCODE_PUSHI);
@@ -229,9 +290,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
 
                 case OP_SET:
                 {
+#ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: SET\n");
                     printf("Assembler::assembleExpression: OPER: -> left=%p\n", opExpr->left);
                     printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
+#endif
                     if (opExpr->left->type != EXPR_VAR)
                     {
                         printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable!\n");
@@ -253,14 +316,29 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         {
             ForExpression* forExpr = (ForExpression*)expr;
 
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: init...\n");
+#endif
             // Add the init
-            assembleExpression(block, forExpr->initExpr);
+            if (forExpr->initExpr != NULL)
+            {
+                res = assembleExpression(block, forExpr->initExpr);
+                if (!res)
+                {
+                    return false;
+                }
+            }
 
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: test...\n");
+#endif
             // Add the test
             int loopTop = m_code.size();
-            assembleExpression(block, forExpr->testExpr);
+            res = assembleExpression(block, forExpr->testExpr);
+            if (!res)
+            {
+                return false;
+            }
 
             // Check whether the test expression was true
             m_code.push_back(OPCODE_PUSHI);
@@ -272,19 +350,38 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             m_code.push_back(0); // Will be filled in with the end address
             int bneToEndPos = m_code.size() - 1;
 
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: body...\n");
+#endif
             // Add the body
-            assembleBlock(forExpr->body);
+            res = assembleBlock(forExpr->body);
+            if (!res)
+            {
+                return false;
+            }
 
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: increment...\n");
+#endif
             // Increment
-            assembleExpression(block, forExpr->incExpr);
+            if (forExpr->incExpr != NULL)
+            {
+                res = assembleExpression(block, forExpr->incExpr);
+                if (!res)
+                {
+                    return false;
+                }
+            }
 
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: jump...\n");
+#endif
             // Jump back to the test above
             m_code.push_back(OPCODE_JMP);
             m_code.push_back(loopTop);
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: done!\n");
+#endif
 
             m_code[bneToEndPos] = m_code.size();
         } break;
@@ -292,7 +389,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_RETURN:
         {
             ReturnExpression* retExpr = (ReturnExpression*)expr;
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: RETURN\n");
+#endif
             if (retExpr->returnValue == NULL)
             {
                 m_code.push_back(OPCODE_PUSHI);
@@ -313,7 +412,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         {
             VarExpression* varExpr = (VarExpression*)expr;
             int id = block->getVarId(varExpr->var.identifier[0]);
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: VAR: PUSH ADDRESS OF %s (%d)\n", varExpr->var.toString().c_str(), id);
+#endif
             // TODO: Local? Class? Static?
 
             m_code.push_back(OPCODE_LOAD);
@@ -324,7 +425,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         {
             NewExpression* newExpr = (NewExpression*)expr;
             Class* clazz = m_runtime->findClass(newExpr->clazz.identifier[0]);
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
+#endif
 
             int count = 0;
             std::vector<Expression*>::iterator it;
@@ -346,7 +449,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_STRING:
         {
             StringExpression* strExpr = (StringExpression*)expr;
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: STRING: NEW STRING: %s\n", strExpr->str.c_str());
+#endif
             m_code.push_back(OPCODE_NEW_STRING);
             m_code.push_back((uint64_t)strdup(strExpr->str.c_str()));
         } break;
@@ -354,7 +459,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_INTEGER:
         {
             IntegerExpression* intExpr = (IntegerExpression*)expr;
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: INTEGER: PUSH %d\n", intExpr->i);
+#endif
             m_code.push_back(OPCODE_PUSHI);
             m_code.push_back(intExpr->i);
         } break;
@@ -362,7 +469,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_DOUBLE:
         {
             DoubleExpression* doubleExpr = (DoubleExpression*)expr;
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: DOUBLE: PUSH %0.2f\n", doubleExpr->d);
+#endif
             m_code.push_back(OPCODE_PUSHD);
             int64_t* dtoi = (int64_t*)(&(doubleExpr->d));
             m_code.push_back(*dtoi);

@@ -49,14 +49,14 @@ return 0;
 const char* className = argv[2];
 
     Class* clazz = runtime->findClass(className);
-    printf("main: %s = %p\n", className, clazz);
+    //printf("main: %s = %p\n", className, clazz);
     if (clazz == NULL)
     {
         return 0;
     }
 
     Function* mainFunc = clazz->findMethod("main");
-    printf("main: main Func=%p\n", mainFunc);
+    //printf("main: main Func=%p\n", mainFunc);
     if (mainFunc == NULL)
     {
         return 0;

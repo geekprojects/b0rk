@@ -9,14 +9,19 @@ enum OpCode
     // Arithmetic: Any value types (Objects etc)
     OPCODE_ADD         = 0x0200,
     OPCODE_SUB         = 0x0201,
+    OPCODE_MUL         = 0x0202,
+    OPCODE_AND         = 0x020a,
 
     // Arithmetic: Integers
     OPCODE_ADDI        = 0x0210,
     OPCODE_SUBI        = 0x0211,
+    OPCODE_MULI        = 0x0212,
+    OPCODE_ANDI        = 0x021a,
 
     // Arithmetic: Doubles
     OPCODE_ADDD        = 0x0220,
     OPCODE_SUBD        = 0x0221,
+    OPCODE_MULD        = 0x0222,
 
     OPCODE_PUSHI       = 0x0300,
     OPCODE_PUSHD       = 0x0301,
@@ -31,6 +36,8 @@ enum OpCode
     OPCODE_RETURN      = 0x0420,
 
     OPCODE_CMP         = 0x0500,
+    OPCODE_CMPI        = 0x0510,
+    OPCODE_CMPD        = 0x0520,
 
     OPCODE_JMP         = 0x0600,
     OPCODE_BEQ         = 0x0601,
