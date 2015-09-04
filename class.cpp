@@ -22,6 +22,19 @@ void Class::addField(string name)
     m_fields.push_back(name);
 }
 
+int Class::getFieldId(string name)
+{
+    unsigned int i;
+    for (i = 0; i < m_fields.size(); i++)
+    {
+        if (m_fields[i] == name)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void Class::addMethod(string name, Function* function)
 {
     m_methods.insert(make_pair(name, function));

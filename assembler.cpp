@@ -1,7 +1,11 @@
 
+#undef DEBUG_ASSEMBLER
+
 #include "assembler.h"
 #include "runtime.h"
 #include "function.h"
+
+using namespace std;
 
 Assembler::Assembler(Runtime* runtime)
 {
@@ -91,13 +95,17 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                 // TODO: Handle more than 2 parts!
 
                 // Does it start with a local object?
-                int varId = block->getVarId(id.identifier[0]);
-                if (varId != -1)
+                if (isVariable(block, NULL, id.identifier[0]))
                 {
                     m_code.push_back(OPCODE_NEW_STRING);
                     m_code.push_back((uint64_t)strdup(id.identifier[1].c_str()));
-                    m_code.push_back(OPCODE_LOAD);
-                    m_code.push_back(varId);
+
+                    res = load(block, NULL, id.identifier[0]);
+                    if (!res)
+                    {
+                        return false;
+                    }
+
                     m_code.push_back(OPCODE_CALL_NAMED);
                     m_code.push_back(count);
                 }
@@ -107,7 +115,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     Class* clazz = m_runtime->findClass(id.identifier[0]);
 
 #ifdef DEBUG_ASSEMBLER
-                    printf("Assembler::findFunction: nexecute: identifier: clazz=%p\n", clazz);
+                    printf("Assembler::findFunction: execute: identifier: clazz=%p\n", clazz);
 #endif
                     if (clazz != NULL)
                     {
@@ -133,10 +141,20 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                 Function* func = m_function->getClass()->findMethod(id.identifier[0]);
                 if (func != NULL)
                 {
-                    printf("TODO: Assembler::findFunction: Found method for %s: %p\n", id.toString().c_str(), func);
-                    m_code.push_back(OPCODE_CALL_STATIC);
-                    m_code.push_back((uint64_t)func);
-                    m_code.push_back(count);
+                    if (func->getStatic())
+                    {
+                        m_code.push_back(OPCODE_CALL_STATIC);
+                        m_code.push_back((uint64_t)func);
+                        m_code.push_back(count);
+                    }
+                    else
+                    {
+                        m_code.push_back(OPCODE_LOAD_VAR);
+                        m_code.push_back(0); // this
+                        m_code.push_back(OPCODE_CALL);
+                        m_code.push_back((uint64_t)func);
+                        m_code.push_back(count);
+                    }
                 }
                 else
                 {
@@ -272,19 +290,16 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     }
 
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    int id = block->getVarId(varExpr->var.identifier[0]);
 
 #ifdef DEBUG_ASSEMBLER
-                    printf("Assembler::assembleExpression: OPER: POST INCREMENT (%d)\n", id);
+                    printf("Assembler::assembleExpression: OPER: POST INCREMENT %d", 0);
 #endif
-                    m_code.push_back(OPCODE_LOAD);
-                    m_code.push_back(id);
+                    load(block, NULL, varExpr->var.identifier[0]);
                     m_code.push_back(OPCODE_PUSHI);
                     m_code.push_back(1);
                     m_code.push_back(OPCODE_ADDI);
 
-                    m_code.push_back(OPCODE_STORE);
-                    m_code.push_back(id);
+                    store(block, NULL, varExpr->var.identifier[0]);
  
                     } break;
 
@@ -301,9 +316,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                         return false;
                     }
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    int id = block->getVarId(varExpr->var.identifier[0]);
-                    m_code.push_back(OPCODE_STORE);
-                    m_code.push_back(id);
+                    store(block, NULL, varExpr->var.identifier[0]);
                 } break;
 
                 default:
@@ -411,14 +424,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_VAR:
         {
             VarExpression* varExpr = (VarExpression*)expr;
-            int id = block->getVarId(varExpr->var.identifier[0]);
-#ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: VAR: PUSH ADDRESS OF %s (%d)\n", varExpr->var.toString().c_str(), id);
-#endif
-            // TODO: Local? Class? Static?
-
-            m_code.push_back(OPCODE_LOAD);
-            m_code.push_back(id);
+            load(block, NULL, varExpr->var.identifier[0]);
         } break;
 
         case EXPR_NEW:
@@ -482,5 +488,113 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
             return false;
     }
     return true;
+}
+
+bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
+{
+    int id = block->getVarId(name);
+#ifdef DEBUG_ASSEMBLER
+    printf("Assembler::isVariable: Local variable %s (%d)\n", name.c_str(), id);
+#endif
+    if (id != -1)
+    {
+        // Local variable!
+        return true;
+    }
+    else
+    {
+        id = m_function->getClass()->getFieldId(name);
+
+#ifdef DEBUG_ASSEMBLER
+        printf("Assembler::isVariable: Object field %s (%d)\n", name.c_str(), id);
+#endif
+        if (id != -1)
+        {
+            // object field!
+            return true;
+        }
+        else
+        {
+#ifdef DEBUG_ASSEMBLER
+            printf("Assembler::isVariable: Unknown variable: %s\n", name.c_str());
+#endif
+            return false;
+        }
+    }
+    return false;
+}
+
+bool Assembler::load(CodeBlock* block, Object* context, string name)
+{
+    int id = block->getVarId(name);
+#ifdef DEBUG_ASSEMBLER
+    printf("Assembler::load: Local variable %s (%d)\n", name.c_str(), id);
+#endif
+    if (id != -1)
+    {
+        // Local variable!
+        m_code.push_back(OPCODE_LOAD_VAR);
+        m_code.push_back(id);
+        return true;
+    }
+    else
+    {
+        id = m_function->getClass()->getFieldId(name);
+
+#ifdef DEBUG_ASSEMBLER
+        printf("Assembler::load: Object field %s (%d)\n", name.c_str(), id);
+#endif
+        if (id != -1)
+        {
+            // object field!
+            m_code.push_back(OPCODE_LOAD_VAR);
+            m_code.push_back(0); // this
+            m_code.push_back(OPCODE_LOAD_FIELD);
+            m_code.push_back(id);
+            return true;
+        }
+        else
+        {
+            printf("Assembler::load: Error: Unknown variable: %s\n", name.c_str());
+            return false;
+        }
+    }
+}
+
+bool Assembler::store(CodeBlock* block, Object* context, string name)
+{
+    int id = block->getVarId(name);
+#ifdef DEBUG_ASSEMBLER
+    printf("Assembler::store: Local variable %s (%d)\n", name.c_str(), id);
+#endif
+    if (id != -1)
+    {
+        // Local variable!
+        m_code.push_back(OPCODE_STORE_VAR);
+        m_code.push_back(id);
+        return true;
+    }
+    else
+    {
+        id = m_function->getClass()->getFieldId(name);
+
+#ifdef DEBUG_ASSEMBLER
+        printf("Assembler::store: Object field %s (%d)\n", name.c_str(), id);
+#endif
+        if (id != -1)
+        {
+            // object field!
+            m_code.push_back(OPCODE_LOAD_VAR);
+            m_code.push_back(0); // this
+            m_code.push_back(OPCODE_STORE_FIELD);
+            m_code.push_back(id);
+            return true;
+        }
+        else
+        {
+            printf("Assembler::store: Error: Unknown variable: %s\n", name.c_str());
+            return false;
+        }
+    }
 }
 

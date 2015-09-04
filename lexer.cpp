@@ -70,6 +70,11 @@ CharType Lexer::chartype(int c)
     }
 }
 
+static bool isIdentifierChar(char c)
+{
+    return isalnum(c) || c == '_';
+}
+
 bool Lexer::checkWord(char** pos, SimpleToken* token)
 {
     CharType firstType = chartype(**pos);
@@ -204,7 +209,7 @@ bool Lexer::lexer(char* buffer, int length)
                 if (isalpha(c))
                 {
                     string str = "";
-                    while (isalnum(*pos))
+                    while (isIdentifierChar(*pos))
                     {
                         str += *(pos++);
                     }

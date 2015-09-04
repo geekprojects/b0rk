@@ -45,6 +45,6 @@ bool ScriptFunction::execute(Context* context, Object* instance, int argCount)
 
     Executor* executor = context->getRuntime()->getExecutor();
 
-    return executor->run(context, m_asmCode, argCount);
+    return executor->run(context, instance, m_asmCode, argCount);
 }
 

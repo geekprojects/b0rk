@@ -5,6 +5,8 @@
 #include <math.h>
 #include <float.h>
 
+#undef DEBUG_EXECUTOR
+
 #define DOUBLE_VALUE(_v) (((_v).type == VALUE_DOUBLE) ? (_v.d) : (double)(_v.i))
 #define INTEGER_VALUE(_v) (((_v).type == VALUE_INTEGER) ? (_v.i) : (int)(floor(_v.d)))
 
@@ -21,7 +23,10 @@ Executor::Executor()
 #define LOG(_fmt, _args...)
 #endif
 
-bool Executor::run(Context* context, AssembledCode& code, int argCount)
+#define ERROR(_fmt, _args...) \
+    printf("Executor::run: %04llx: 0x%llx ERROR: " _fmt "\n", thisPC, opcode, _args);
+
+bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int argCount)
 {
     size_t pc = 0;
     bool res;
@@ -33,33 +38,56 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
     bool flagOverflow = false;
 
     bool running = true;
+    bool success = true;
 
     int arg;
+
+    Value thisValue;
+    thisValue.type = VALUE_OBJECT;
+    thisValue.object = thisObj;
+    localVars[0] = thisValue;
+
     for (arg = 0; arg < argCount; arg++)
     {
-        localVars[arg] = context->pop();
+        localVars[arg + 1] = context->pop();
     }
 
     while (running && pc < code.size)
     {
-#ifdef DEBUG_EXECUTOR
         uint64_t thisPC = pc;
-#endif
         uint64_t opcode = code.code[pc++];
         switch (opcode)
         {
-            case OPCODE_LOAD:
+            case OPCODE_LOAD_VAR:
             {
                 int varId = code.code[pc++];
                 context->push(localVars[varId]);
-                LOG("LOAD: v%d", varId);
+                LOG("LOAD_VAR: v%d", varId);
             } break;
 
-            case OPCODE_STORE:
+            case OPCODE_STORE_VAR:
             {
                 int varId = code.code[pc++];
                 localVars[varId] = context->pop();
-                LOG("STORE: v%d = %s", varId, localVars[varId].toString().c_str());
+                LOG("STORE_VAR: v%d = %s", varId, localVars[varId].toString().c_str());
+            } break;
+
+            case OPCODE_LOAD_FIELD:
+            {
+                Value objValue = context->pop();
+                int fieldId = code.code[pc++];
+                LOG("LOAD_FIELD: f%d, this=%p (value count=%d)", fieldId, objValue.object, objValue.object->getValueCount());
+                Value result = objValue.object->getValue(fieldId);
+                context->push(result);
+            } break;
+
+            case OPCODE_STORE_FIELD:
+            {
+                Value objValue = context->pop();
+                Value value = context->pop();
+                int fieldId = code.code[pc++];
+                LOG("STORE_FIELD: f%d, this=%p (value count=%d)", fieldId, objValue.object, objValue.object->getValueCount());
+                objValue.object->setValue(fieldId, value);
             } break;
 
             case OPCODE_PUSHI:
@@ -95,6 +123,7 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                     if (!res)
                     {
                         running = false;
+                        success = false;
                     }
                 }
                 else
@@ -131,6 +160,7 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                     if (!res)
                     {
                         running = false;
+			success = false;
                     }
                 }
                 else
@@ -168,6 +198,7 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                     if (!res)
                     {
                         running = false;
+			success = false;
                     }
                 }
                 else
@@ -222,8 +253,19 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 Value v2 = context->pop();
                 Value result;
                 result.type = VALUE_DOUBLE;
-                result.d = DOUBLE_VALUE(v1) + DOUBLE_VALUE(v2);
-                LOG("ADDD: %0.2f + %0.2f = %0.2f", DOUBLE_VALUE(v1), DOUBLE_VALUE(v2), result.d);
+                result.d = v1.d + v2.d;
+                LOG("ADDD: %0.2f + %0.2f = %0.2f", v1.d, v2.d, result.d);
+                context->push(result);
+            } break;
+
+            case OPCODE_SUBD:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+                Value result;
+                result.type = VALUE_DOUBLE;
+                result.d = v1.d - v2.d
+                LOG("SUBD: %0.2f - %0.2f = %0.2f", v1.d, v2.d, result.d);
                 context->push(result);
             } break;
 
@@ -245,8 +287,8 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 Value v2 = context->pop();
                 Value result;
                 result.type = VALUE_DOUBLE;
-                result.d = DOUBLE_VALUE(v1) * DOUBLE_VALUE(v2);
-                LOG("MULD: %0.2f * %0.2f = %0.2f", DOUBLE_VALUE(v1), DOUBLE_VALUE(v2), result.d);
+                result.d = v1.d * v2.d;
+                LOG("MULD: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
                 context->push(result);
             } break;
 
@@ -260,6 +302,21 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 LOG("PUSHCL:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
             } break;
 
+            case OPCODE_CALL:
+            {
+                Value objValue = context->pop();
+                Function* function = (Function*)code.code[pc++];
+                int count = code.code[pc++];
+                LOG("CALL: %p.%p", objValue.object, function);
+                res = function->execute(context, objValue.object, count);
+                if (!res)
+                {
+                    running = false;
+                    success = false;
+                }
+            } break;
+
+ 
             case OPCODE_CALL_STATIC:
             {
                 Function* function = (Function*)code.code[pc++];
@@ -269,6 +326,7 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 if (!res)
                 {
                     running = false;
+                    success = false;
                 }
             } break;
 
@@ -286,6 +344,7 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 if (!res)
                 {
                     running = false;
+                    success = false;
                 }
             } break;
 
@@ -295,6 +354,11 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 int count = code.code[pc++];
                 LOG("NEW: class=%s", clazz->getName().c_str());
                 Object* obj = context->getRuntime()->newObject(context, clazz, count);
+                if (obj == NULL)
+                {
+                    running = false;
+                    success = true;
+                }
                 LOG("NEW:  -> object=%p", obj);
                 Value v;
                 v.type = VALUE_OBJECT;
@@ -307,6 +371,10 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
                 const char* str = (const char*)code.code[pc++];
                 LOG("NEW_STRING: %s", str);
                 Object* strObj = String::createString(context, str);
+                if (strObj == NULL)
+                {
+                    return false;
+                }
                 Value v;
                 v.type = VALUE_OBJECT;
                 v.object = strObj;
@@ -317,6 +385,7 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
             {
                 LOG("RETURN %d", 0);
                 running = false;
+                success = true;
             } break;
 
             case OPCODE_CMP:
@@ -412,11 +481,12 @@ bool Executor::run(Context* context, AssembledCode& code, int argCount)
             } break;
 
             default:
-                LOG("Unhandled opcode: 0x%llx", opcode);
+                ERROR("Unhandled opcode: 0x%llx", opcode);
                 running = false;
+                success = false;
         }
     }
 
-    return true;
+    return success;
 }
 

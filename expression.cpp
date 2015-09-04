@@ -93,6 +93,7 @@ void OperationExpression::resolveType()
             left->valueType = right->valueType;
             valueType = right->valueType;
         }
+/*
         else if (
             (left->valueType == VALUE_INTEGER && right->valueType == VALUE_DOUBLE) ||
             (left->valueType == VALUE_DOUBLE && right->valueType == VALUE_INTEGER))
@@ -100,6 +101,7 @@ void OperationExpression::resolveType()
             // Maths to anything involving a double causes the output to always be a double
             valueType = VALUE_DOUBLE;
         }
+*/
         if (left->type == EXPR_VAR)
         {
 #ifdef DEBUG_PARSER

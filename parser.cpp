@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "parser.h"
 
@@ -92,6 +93,7 @@ Class* Parser::parseClass()
 #ifdef DEBUG_PARSER
             printf("Parser::parseClass: Variable: %s\n", varName.c_str());
 #endif
+clazz->addField(varName);
 
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
@@ -172,7 +174,7 @@ Function* Parser::parseFunction(Class* clazz)
         return NULL;
     }
 
-    code->setStartingVarId(paramTokens.size());
+    code->setStartingVarId(paramTokens.size() + 1);
 
     resolveTypes();
 
@@ -759,6 +761,38 @@ Expression* Parser::parseExpression(CodeBlock* code)
         {
             opExpr->right = NULL;
         }
+
+        if (opExpr->left != NULL && opExpr->right != NULL)
+        {
+            if (opExpr->left->type == EXPR_INTEGER && opExpr->right->type == EXPR_INTEGER)
+            {
+#ifdef DEBUG_PARSER
+                printf("Parser::parseExpression: TODO: Integers on both sides, optimise away!\n");
+#endif
+            }
+            else if (opExpr->left->type == EXPR_DOUBLE && opExpr->right->type == EXPR_DOUBLE)
+            {
+                switch (opExpr->operType)
+                {
+                    case OP_MULTIPLY:
+                    {
+                        DoubleExpression* dblExpr = new DoubleExpression(code);
+                        dblExpr->d = ((DoubleExpression*)opExpr->left)->d;
+                        dblExpr->d *= ((DoubleExpression*)opExpr->left)->d;
+                        expression = dblExpr;
+#ifdef DEBUG_PARSER
+                        printf("Parser::parseExpression: Doubles on both sides, optimised! (%0.2f)\n", dblExpr->d);
+#endif
+                    } break;
+                    default:
+#ifdef DEBUG_PARSER
+                        printf("Parser::parseExpression: TODO: Doubles on both sides, optimise away!\n");
+#endif
+                        break;
+                }
+            }
+        }
+
         expression = opExpr;
     }
     else

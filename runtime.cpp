@@ -43,7 +43,12 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
     Function* ctor = clazz->findMethod(clazz->getName());
     if (ctor != NULL)
     {
-        ctor->execute(context, obj, argCount);
+        bool res = ctor->execute(context, obj, argCount);
+        if (!res)
+        {
+            delete obj;
+            return NULL;
+        }
     }
 
     return obj;

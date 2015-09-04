@@ -29,6 +29,10 @@ class Assembler
     bool assembleExpression(CodeBlock* block, Expression* expr);
     bool assembleBlock(CodeBlock* block);
 
+bool isVariable(CodeBlock* block, Object* context, std::string name);
+bool load(CodeBlock* block, Object* context, std::string name);
+bool store(CodeBlock* block, Object* context, std::string name);
+
     Function* findFunction(CodeBlock* block, Identifier id);
 
  public:

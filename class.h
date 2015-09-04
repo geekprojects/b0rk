@@ -25,6 +25,8 @@ class Class
     virtual size_t getValueCount();
 
     void addField(std::string name);
+    int getFieldId(std::string name);
+
     void addMethod(std::string name, Function* function);
     virtual Function* findMethod(std::string name);
 };

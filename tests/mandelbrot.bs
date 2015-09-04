@@ -1,31 +1,48 @@
 
 class Mandelbrot
 {
-    function main() static
+    var maxIterations;
+
+    function Mandelbrot()
     {
-        var maxIteration = 40;
+        maxIterations = 20;
+    }
+
+    function iterate(px, py)
+    {
+        var x = 0.0;
+        var y = 0.0;
+        var iteration = 0;
+        while ((((x * x) + (y * y)) < (2.0 * 2.0)) && iteration < maxIterations)
+        {
+            var xtemp = ((x * x) - (y * y)) + px;
+            y = (2.0 * x * y) + py;
+            x = xtemp;
+            iteration++;
+        }
+        return iteration;
+    }
+
+    function generate()
+    {
         System.log("P2");
         System.log("400 400");
-        System.log(maxIteration);
+        System.log(maxIterations);
         var py;
         for (py = -2.0; py < 2.0; py += 0.01)
         {
             var px;
             for (px = -2.0; px < 2.0; px += 0.01)
             {
-                var x = 0.0;
-                var y = 0.0;
-                var iteration = 0;
-                while ((((x * x) + (y * y)) < (2 * 2)) && iteration < maxIteration)
-                {
-                    var xtemp = ((x * x) - (y * y)) + px;
-                    y = (2 * x * y) + py;
-                    x = xtemp;
-                    iteration++;
-                }
-                System.log(iteration);
+                System.log(iterate(px, py));
             }
         }
+    }
+
+    function main() static
+    {
+        var mandelbrot = new Mandelbrot();
+        mandelbrot.generate();
     }
 }
 

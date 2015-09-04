@@ -11,7 +11,7 @@ class Executor
  public:
     Executor();
 
-    bool run(Context* context, AssembledCode& code, int argCount);
+    bool run(Context* context, Object* thisObj, AssembledCode& code, int argCount);
 };
 
 #endif

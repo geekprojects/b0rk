@@ -3,8 +3,10 @@
 
 enum OpCode
 {
-    OPCODE_LOAD        = 0x0100,
-    OPCODE_STORE       = 0x0101,
+    OPCODE_LOAD_VAR    = 0x0100,
+    OPCODE_STORE_VAR   = 0x0101,
+    OPCODE_LOAD_FIELD  = 0x0110,
+    OPCODE_STORE_FIELD = 0x0111,
 
     // Arithmetic: Any value types (Objects etc)
     OPCODE_ADD         = 0x0200,

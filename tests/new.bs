@@ -1,21 +1,25 @@
 
 class NewTest
 {
-    function NewTest()
+    var m_data;
+
+    function NewTest(data)
     {
-        System.log("NewTest: constructor!");
+        m_data = data;
+        System.log("NewTest: m_data=" + m_data);
     }
 
-    function method1(arg1)
+    function print()
     {
-        System.log("NewTest.method1: arg1=" + arg1);
+        System.log("NewTest.print: m_data=" + m_data);
     }
 
     function main() static
     {
-        var obj = new NewTest();
-        obj.method1("Hello");
-        obj.method1("World");
+        var obj1 = new NewTest("Hello");
+        var obj2 = new NewTest("World");
+        obj1.print();
+        obj2.print();
     }
 }
 

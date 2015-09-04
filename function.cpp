@@ -32,7 +32,7 @@ int Function::getArgId(string arg)
     {
         if (m_args[i] == arg)
         {
-            return i;
+            return i + 1;
         }
     }
     return -1;
