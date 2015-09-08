@@ -518,6 +518,8 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
         }
     }
 
+    context->getRuntime()->gc();
+
     return success;
 }
 
