@@ -29,6 +29,7 @@ enum OpCode
     OPCODE_PUSHD       = 0x0301,
     OPCODE_PUSHVAR     = 0x0302,
     OPCODE_PUSHCL      = 0x0310, // Push condition: Less than
+    OPCODE_POP         = 0x0320,
 
     OPCODE_CALL        = 0x0400,
     OPCODE_CALL_STATIC = 0x0401,

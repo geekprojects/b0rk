@@ -3,7 +3,7 @@
 
 #include <string>
 
-class Object;
+struct Object;
 
 enum ValueType
 {
@@ -14,6 +14,7 @@ enum ValueType
    VALUE_POINTER,  // 4
    VALUE_INTEGER,  // 5
    VALUE_DOUBLE,   // 6
+   VALUE_FRAME = 0x1000,
 };
 
 struct Value

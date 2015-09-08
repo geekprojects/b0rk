@@ -29,6 +29,10 @@ case VALUE_DOUBLE:
 snprintf(buffer, 128, "%0.2f", d);
 return string(buffer);
 
+case VALUE_FRAME:
+snprintf(buffer, 128, "{FRAME:%p}", pointer);
+return string(buffer);
+
 case VALUE_UNKNOWN:
 default:
 snprintf(buffer, 128, "{UNKNWON}");

@@ -10,7 +10,8 @@ class Runtime;
 
 struct Frame
 {
-    Value* variables;
+    int localVarsCount;
+    Value* localVars;
 };
 
 class Context
@@ -26,7 +27,10 @@ class Context
 
     Runtime* getRuntime() { return m_runtime; }
 
+    std::vector<Value>& getStack() { return m_stack; }
+
     void push(Value value);
+    void pushVoid();
     Value pop();
 };
 
