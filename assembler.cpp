@@ -32,6 +32,9 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     {
         return false;
     }
+
+    m_code.push_back(OPCODE_PUSHI);
+    m_code.push_back(0);
     m_code.push_back(OPCODE_RETURN);
 
     asmCode.code = new uint64_t[m_code.size()];
@@ -59,6 +62,13 @@ bool Assembler::assembleBlock(CodeBlock* code)
         if (!res)
         {
             return false;
+        }
+        if (code->m_code[i]->type == EXPR_CALL || code->m_code[i]->type == EXPR_NEW)
+        {
+#ifdef DEBUG_ASSEMBLER
+            printf("Assembler::assembleBlock: Call outside of expression!\n");
+#endif
+            m_code.push_back(OPCODE_POP);
         }
     }
     return true;

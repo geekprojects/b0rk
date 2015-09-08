@@ -170,6 +170,9 @@ string OperationExpression::toString()
         case VALUE_DOUBLE:
             str += "DOUBLE";
             break;
+        case VALUE_FRAME:
+            str += "FRAME";
+            break;
     }
     str += ":" + left->toString();
     if (right != NULL)

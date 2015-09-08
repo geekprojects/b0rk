@@ -11,7 +11,7 @@
 
 class Context;
 class Class;
-class Object;
+struct Object;
 
 class Function
 {

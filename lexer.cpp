@@ -100,6 +100,34 @@ bool Lexer::lexer(char* buffer, int length)
     while (*pos != '\0')
     {
         char c = *pos;
+
+        if (c == '/')
+        {
+            char n = *(pos + 1);
+            if (n == '/')
+            {
+                pos += 2;
+                while (*pos != '\n' && *pos != '\r' && *pos != '\0')
+                {
+                    pos++;
+                }
+                continue;
+            }
+            else if (n == '*')
+            {
+                while (*pos != '\0' && !(*pos == '*' && *(pos + 1) == '/'))
+                {
+                    pos++;
+                }
+
+                if (*pos == '*' && *(pos + 1) == '/')
+                {
+                    pos += 2;
+                }
+                continue;
+            }
+        }
+
         if (isspace(c))
         {
             // Skip whitespace

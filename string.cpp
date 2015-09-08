@@ -30,6 +30,7 @@ bool String::constructor(Context* context, Object* instance, int argCount)
         v.pointer = strdup(arg.toString().c_str());
         instance->setValue(0, v);
     }
+context->pushVoid();
     return true;
 }
 
@@ -65,7 +66,7 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
 Object* String::createString(Context* context, const char* str)
 {
     Class* stringClass = context->getRuntime()->findClass("String");
-    Object* object = new Object(stringClass);
+    Object* object = context->getRuntime()->allocateObject(stringClass);
 
     Value v;
     v.pointer = strdup(str);
@@ -84,7 +85,7 @@ std::string String::getString(Context* context, Object* obj)
     {
         return "NOTASTRING";
     }
-    if (obj->getValueCount() == 0)
+    if (obj->m_class->getValueCount() == 0)
     {
         return "INVALID";
     }

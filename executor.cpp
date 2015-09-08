@@ -2,6 +2,7 @@
 #include "executor.h"
 #include "string.h"
 
+#include <stdlib.h>
 #include <math.h>
 #include <float.h>
 
@@ -31,7 +32,8 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
     size_t pc = 0;
     bool res;
 
-    Value localVars[code.localVars];
+    Frame frame;
+    frame.localVars = (Value*)alloca(sizeof(Frame) * code.localVars);
 
     bool flagZero = false;
     bool flagSign = false;
@@ -45,38 +47,45 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
     Value thisValue;
     thisValue.type = VALUE_OBJECT;
     thisValue.object = thisObj;
-    localVars[0] = thisValue;
+    frame.localVarsCount = code.localVars;
+    frame.localVars[0] = thisValue;
 
     for (arg = 0; arg < argCount; arg++)
     {
-        localVars[arg + 1] = context->pop();
+        frame.localVars[arg + 1] = context->pop();
     }
+
+    Value frameValue;
+    frameValue.type = VALUE_FRAME;
+    frameValue.pointer = &frame;
+    context->push(frameValue);
 
     while (running && pc < code.size)
     {
         uint64_t thisPC = pc;
         uint64_t opcode = code.code[pc++];
+        success = false;
         switch (opcode)
         {
             case OPCODE_LOAD_VAR:
             {
                 int varId = code.code[pc++];
-                context->push(localVars[varId]);
+                context->push(frame.localVars[varId]);
                 LOG("LOAD_VAR: v%d", varId);
             } break;
 
             case OPCODE_STORE_VAR:
             {
                 int varId = code.code[pc++];
-                localVars[varId] = context->pop();
-                LOG("STORE_VAR: v%d = %s", varId, localVars[varId].toString().c_str());
+                frame.localVars[varId] = context->pop();
+                LOG("STORE_VAR: v%d = %s", varId, frame.localVars[varId].toString().c_str());
             } break;
 
             case OPCODE_LOAD_FIELD:
             {
                 Value objValue = context->pop();
                 int fieldId = code.code[pc++];
-                LOG("LOAD_FIELD: f%d, this=%p (value count=%d)", fieldId, objValue.object, objValue.object->getValueCount());
+                LOG("LOAD_FIELD: f%d, this=%p (value count=%ld)", fieldId, objValue.object, objValue.object->getClass()->getValueCount());
                 Value result = objValue.object->getValue(fieldId);
                 context->push(result);
             } break;
@@ -86,7 +95,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Value objValue = context->pop();
                 Value value = context->pop();
                 int fieldId = code.code[pc++];
-                LOG("STORE_FIELD: f%d, this=%p (value count=%d)", fieldId, objValue.object, objValue.object->getValueCount());
+                LOG("STORE_FIELD: f%d, this=%p (value count=%ld)", fieldId, objValue.object, objValue.object->getClass()->getValueCount());
                 objValue.object->setValue(fieldId, value);
             } break;
 
@@ -160,7 +169,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                     if (!res)
                     {
                         running = false;
-			success = false;
+                        success = false;
                     }
                 }
                 else
@@ -198,7 +207,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                     if (!res)
                     {
                         running = false;
-			success = false;
+                        success = false;
                     }
                 }
                 else
@@ -264,7 +273,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Value v2 = context->pop();
                 Value result;
                 result.type = VALUE_DOUBLE;
-                result.d = v1.d - v2.d
+                result.d = v1.d - v2.d;
                 LOG("SUBD: %0.2f - %0.2f = %0.2f", v1.d, v2.d, result.d);
                 context->push(result);
             } break;
@@ -300,6 +309,16 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 context->push(v);
                 LOG("PUSHCL: %lld", v.i);
                 LOG("PUSHCL:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+            } break;
+
+            case OPCODE_POP:
+            {
+#ifdef DEBUG_EXECUTOR
+                Value v = context->pop();
+                LOG("POP: %s", v.toString().c_str());
+#else
+                context->pop();
+#endif
             } break;
 
             case OPCODE_CALL:
@@ -373,7 +392,8 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Object* strObj = String::createString(context, str);
                 if (strObj == NULL)
                 {
-                    return false;
+                    running = false;
+                    success = false;
                 }
                 Value v;
                 v.type = VALUE_OBJECT;
@@ -383,9 +403,20 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
 
             case OPCODE_RETURN:
             {
-                LOG("RETURN %d", 0);
+                Value result = context->pop();
+                LOG("RETURN %s", result.toString().c_str());
+                Value frameCheck = context->pop();
+                if (frameCheck.type != VALUE_FRAME || frameCheck.pointer != &frame)
+                {
+                    ERROR("EXPECTING CURRENT FRAME ON STACK! GOT: %s\n", frameCheck.toString().c_str());
+                    success = false;
+                }
+                else
+                {
+                    success = true;
+                    context->push(result);
+                }
                 running = false;
-                success = true;
             } break;
 
             case OPCODE_CMP:
@@ -416,7 +447,8 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 else
                 {
                     printf("CMP: UNHANDLED DATA TYPES\n");
-                    return false;
+                    running = false;
+                    success = false;
                 }
 
                 LOG("CMP:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
@@ -457,7 +489,6 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 uint64_t dest = code.code[pc++];
                 LOG("JMP: dest=%lld", dest);
                 pc = dest;
-                //return false;
             } break;
 
             case OPCODE_BEQ:
@@ -486,6 +517,8 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 success = false;
         }
     }
+
+    context->getRuntime()->gc();
 
     return success;
 }

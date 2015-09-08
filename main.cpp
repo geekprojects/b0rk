@@ -71,6 +71,10 @@ const char* className = argv[2];
 
     mainFunc->execute(context, NULL, 0);
 
+    runtime->gc();
+    runtime->gcStats();
+    delete runtime;
+
     return 0;
 }
 

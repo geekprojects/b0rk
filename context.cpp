@@ -16,6 +16,13 @@ void Context::push(Value value)
     m_stack.push_back(value);
 }
 
+void Context::pushVoid()
+{
+    Value voidValue;
+    voidValue.type = VALUE_VOID;
+    m_stack.push_back(voidValue);
+}
+
 Value Context::pop()
 {
     Value v = m_stack.back();

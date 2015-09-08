@@ -33,6 +33,7 @@ bool System::log(Context* context, Object* instance, int argCount)
         }
     }
     printf("\n");
+    context->pushVoid();
     return true;
 }
 
