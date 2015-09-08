@@ -42,8 +42,9 @@ Runtime::Runtime()
     memset((void*)m_arena.m_start, 0, m_arena.m_size);
     m_arena.m_head = NULL;
 
-    m_arena.m_free = (Object*)m_arena.m_start;
-    m_arena.m_free->m_size = m_arena.m_size;
+    Object* freeObj = (Object*)m_arena.m_start;
+    freeObj->m_size = m_arena.m_size;
+    m_arena.m_freeList.push_back(freeObj);
 
     addClass(new System());
     addClass(new String());
@@ -74,15 +75,53 @@ Class* Runtime::findClass(string name)
 Object* Runtime::allocateObject(Class* clazz)
 {
     int objSize = sizeof(Object) + (clazz->getValueCount() * sizeof(Value));
-    //Object* obj = (Object*)malloc(objSize);
-    size_t freeSize = m_arena.m_free->m_size;
 
-    Object* obj = (Object*)m_arena.m_free;
-    //printf("Runtime::allocateObject: obj=%p, size=%d\n", obj, objSize);
+    Object* freeObj = NULL;
+    list<Object*>::iterator it;
+    for (it = m_arena.m_freeList.begin(); it != m_arena.m_freeList.end(); it++)
+    {
+        Object* o = *it;
+#ifdef DEBUG_GC
+        printf("Runtime::allocateObject: Free: %p (size=%ld, requested=%d)\n", o, o->m_size, objSize);
+#endif
+        if (o->m_size >= objSize)
+        {
+            freeObj = o;
+            m_arena.m_freeList.erase(it);
+            break;
+        }
+    }
 
-    m_arena.m_free = (Object*)((uintptr_t)m_arena.m_free + objSize);
-    m_arena.m_free->m_class = NULL;
-    m_arena.m_free->m_size = freeSize - objSize;
+    if (freeObj == NULL)
+    {
+        printf("Runtime::allocateObject: ERROR: No suitable free space!\n");
+        return NULL;
+    }
+
+    // Create our new object from the top of the free object
+    Object* obj = freeObj;
+
+    // Deal with the remainder of the free object
+    size_t freeSize = freeObj->m_size - objSize;
+    if (freeSize > sizeof(Object))
+    {
+        // Stick it back on the free list
+        freeObj = (Object*)((uintptr_t)freeObj + objSize);
+        m_arena.m_freeList.push_back(freeObj);
+
+        freeObj->m_class = NULL;
+        freeObj->m_size = freeSize;
+    }
+    else if (freeSize > 0)
+    {
+        // Too small to be of much use, just add it to the end of
+        // the new object
+        objSize += freeSize;
+    }
+
+#ifdef DEBUG_GC
+    printf("Runtime::allocateObject: obj=%p, size=%d\n", obj, objSize);
+#endif
 
     memset(obj, 0, objSize);
 
@@ -150,7 +189,7 @@ void Runtime::gc()
 #ifdef DEBUG_GC
     if (freed > 0)
     {
-        printf("Runtime::gc: Freed %d bytes\n", freed);
+        printf("Runtime::gc: Freed %lld bytes\n", freed);
         gcStats();
     }
     printf("Runtime::gc: Time: %lld msec\n", (endTime - now) / 1000);
@@ -193,40 +232,80 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
         }
     }
 
-    //printf("Runtime::gc: start=0x%llx, end=0x%llx\n", m_arena, end);
+    // Look for objects that haven't been marked
     m_currentObjects = 0;
     m_currentBytes = 0;
     int freed = 0;
     while (pos < end)
     {
         Object* obj = (Object*)pos;
-        //printf("Runtime::gc: pos=%p, class=%p, size=%ld\n", obj, obj->m_class, obj->m_size);
 
         if (obj->m_class != NULL)
         {
-            //printf("Runtime::gc:  -> mark=%lld\n", obj->m_gcMark);
             if (obj->m_gcMark == mark)
             {
-                //printf("Runtime::gc:  -> CURRENT\n");
                 m_currentObjects++;
                 m_currentBytes += obj->m_size;
             }
             else
             {
+                // This object hasn't been marked, collect it!
                 freed += obj->m_size;
+#ifdef DEBUG_GC
                 float survived = 0;
                 if (obj->m_gcMark != 0)
                 {
                     survived = (float)(mark - obj->m_gcMark) / (float)USEC_PER_SEC;
                 }
-                //printf("Runtime::gc:  -> OLD! GC!! %lld-%lld = survived=%f\n", mark, obj->m_gcMark, survived);
+
+                printf("Runtime::gc:  -> OLD! GC!! %lld-%lld = survived=%f\n", mark, obj->m_gcMark, survived);
+#endif
                 m_collectedObjects++;
                 obj->m_class = NULL;
                 obj->m_gcMark = -1;
+
+                // Return object back to free list
+                m_arena.m_freeList.push_back(obj);
             }
         }
 
         pos += obj->m_size;
+    }
+
+    if (freed > 0)
+    {
+        // Sort it, this takes time but makes coalescing much easier
+        m_arena.m_freeList.sort();
+
+        // Coalesce ajacent free objects together
+        bool changed = true;
+        while (changed)
+        {
+            changed = false;
+            Object* prevFreeObj = NULL;
+            uint64_t prevFreeObjEnd = 0;
+            list<Object*>::iterator it;
+            for (it = m_arena.m_freeList.begin(); it != m_arena.m_freeList.end(); it++)
+            {
+                Object* freeObj = *it;
+                if ((uint64_t)freeObj == prevFreeObjEnd)
+                {
+#ifdef DEBUG_GC
+                    printf("Runtime::gc: Coalesce: prev=%p-0x%llx, this=%p-0x%llx\n",
+                        prevFreeObj,
+                        (uint64_t)prevFreeObj + prevFreeObj->m_size,
+                        freeObj,
+                        (uint64_t)freeObj + freeObj->m_size);
+#endif
+                    prevFreeObj->m_size += freeObj->m_size;
+                    m_arena.m_freeList.erase(it);
+                    changed = true;
+                    break;
+                }
+                prevFreeObj = freeObj;
+                prevFreeObjEnd = (uint64_t)freeObj + freeObj->m_size;
+            }
+        }
     }
     return freed;
 }
@@ -248,13 +327,13 @@ void Runtime::gcMarkObject(Object* obj, uint64_t mark)
 
 void Runtime::gcStats()
 {
-    printf("Runtime: Stats:\n");
-    printf("Runtime:  New Objects: %lld\n", m_newObjects);
-    printf("Runtime:  Current Objects: %lld\n", m_currentObjects);
-    printf("Runtime:  Collected Objects: %lld\n", m_collectedObjects);
-    printf("Runtime:  New Bytes: %lld\n", m_newBytes);
-    printf("Runtime:  Current Bytes: %lld\n", m_currentBytes);
-    printf("Runtime:  GC Time: %lld ms\n", m_gcTime / 1000);
+    fprintf(stderr, "Runtime: Stats:\n");
+    fprintf(stderr, "Runtime:  New Objects: %lld\n", m_newObjects);
+    fprintf(stderr, "Runtime:  Current Objects: %lld\n", m_currentObjects);
+    fprintf(stderr, "Runtime:  Collected Objects: %lld\n", m_collectedObjects);
+    fprintf(stderr, "Runtime:  New Bytes: %lld\n", m_newBytes);
+    fprintf(stderr, "Runtime:  Current Bytes: %lld\n", m_currentBytes);
+    fprintf(stderr, "Runtime:  GC Time: %lld ms\n", m_gcTime / 1000);
 }
 
 

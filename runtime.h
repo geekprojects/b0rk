@@ -7,6 +7,7 @@
 
 #include <map>
 #include <vector>
+#include <list>
 #include <string>
 
 class Context;
@@ -18,8 +19,8 @@ struct Arena
 {
     uint64_t m_start;
     Object* m_head;
-    Object* m_free;
     size_t m_size;
+    std::list<Object*> m_freeList;
 };
 
 class Runtime
