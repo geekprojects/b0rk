@@ -40,11 +40,14 @@ class Runtime
     int64_t m_currentBytes;
     int64_t m_collectedObjects;
 
+    bool m_gcEnabled;
     int64_t m_gcLastAlloc;
     uint64_t m_gcTime;
 
     int64_t gcArena(Arena* arena, uint64_t mark);
     void gcMarkObject(Object* obj, uint64_t mark);
+
+    bool callConstructor(Context* context, Object* obj, Class* clazz, int argCount);
 
  public:
     Runtime();

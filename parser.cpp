@@ -1,4 +1,6 @@
 
+#undef DEBUG_PARSER
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,7 +39,7 @@ bool Parser::parse(Runtime* runtime, vector<Token> tokens)
         if (token->type == TOK_CLASS)
         {
             Class* clazz;
-            clazz = parseClass();
+            clazz = parseClass(runtime);
             if (clazz == NULL)
             {
                 return false;
@@ -53,7 +55,7 @@ bool Parser::parse(Runtime* runtime, vector<Token> tokens)
     return true;
 }
 
-Class* Parser::parseClass()
+Class* Parser::parseClass(Runtime* runtime)
 {
     Token* token;
 
@@ -65,8 +67,25 @@ Class* Parser::parseClass()
     }
 
     string name = token->string;
+    Class* superClass = NULL;
 
     token = nextToken();
+    if (token->type == TOK_EXTENDS)
+    {
+        token = nextToken();
+        if (token->type != TOK_IDENTIFIER)
+        {
+            printf("Parser::parseClass: Expected class name\n");
+            return NULL;
+        }
+        superClass = runtime->findClass(token->string);
+#ifdef DEBUG_PARSER
+        printf("Parser::parseClass: Class extends: %s: %p\n", token->string.c_str(), superClass);
+#endif
+
+        token = nextToken();
+    }
+
     if (token->type != TOK_BRACE_LEFT)
     {
         printf("Parser::parseClass: Expected {\n");
@@ -76,7 +95,7 @@ Class* Parser::parseClass()
 #ifdef DEBUG_PARSER
     printf("Parser::parseClass: Class name: %s\n", name.c_str());
 #endif
-    Class* clazz = new Class(name);
+    Class* clazz = new Class(superClass, name);
 
     while (m_pos < m_tokens.size())
     {

@@ -33,7 +33,9 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
     bool res;
 
     Frame frame;
-    frame.localVars = (Value*)alloca(sizeof(Frame) * code.localVars);
+    int frameSize = sizeof(Frame) * code.localVars;
+    frame.localVars = (Value*)alloca(frameSize);
+    memset(frame.localVars, 0, frameSize);
 
     bool flagZero = false;
     bool flagSign = false;
@@ -54,6 +56,10 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
     {
         frame.localVars[arg + 1] = context->pop();
     }
+    for (; arg < frame.localVarsCount; arg++)
+    {
+        frame.localVars[arg + 1].type = VALUE_VOID;
+    }
 
     Value frameValue;
     frameValue.type = VALUE_FRAME;
@@ -71,7 +77,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
             {
                 int varId = code.code[pc++];
                 context->push(frame.localVars[varId]);
-                LOG("LOAD_VAR: v%d", varId);
+                LOG("LOAD_VAR: v%d: %s", varId, frame.localVars[varId].toString().c_str());
             } break;
 
             case OPCODE_STORE_VAR:
@@ -85,7 +91,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
             {
                 Value objValue = context->pop();
                 int fieldId = code.code[pc++];
-                LOG("LOAD_FIELD: f%d, this=%p (value count=%ld)", fieldId, objValue.object, objValue.object->getClass()->getValueCount());
+                LOG("LOAD_FIELD: f%d, this=%p (value count=%ld)", fieldId, objValue.object, objValue.object->getClass()->getFieldCount());
                 Value result = objValue.object->getValue(fieldId);
                 context->push(result);
             } break;
@@ -95,7 +101,15 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Value objValue = context->pop();
                 Value value = context->pop();
                 int fieldId = code.code[pc++];
-                LOG("STORE_FIELD: f%d, this=%p (value count=%ld)", fieldId, objValue.object, objValue.object->getClass()->getValueCount());
+                LOG("STORE_FIELD: f%d, this=%p", fieldId, objValue.object);
+                if (objValue.object == NULL)
+                {
+                    ERROR("STORE_FIELD: f%d, this=%p", fieldId, objValue.object);
+                    running = false;
+                    success = false;
+                    continue;
+                }
+
                 objValue.object->setValue(fieldId, value);
             } break;
 
@@ -357,6 +371,14 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 string funcName = String::getString(context, nameObj);
                 LOG("CALL_NAMED: obj=%p, name=%s", obj, funcName.c_str());
 
+                if (obj->getClass() == NULL)
+                {
+                    ERROR("CALL_NAMED: object with no class!? obj=%p", obj);
+                    running = false;
+                    success = false;
+                    continue;
+                }
+
                 Function* function = obj->getClass()->findMethod(funcName);
                 LOG("CALL_NAMED:  -> function=%p", function);
                 res = function->execute(context, obj, count);
@@ -518,7 +540,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
         }
     }
 
-    context->getRuntime()->gc();
+    //context->getRuntime()->gc();
 
     return success;
 }

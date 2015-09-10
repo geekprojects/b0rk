@@ -1,25 +1,47 @@
 
-class NewTest
+class BaseClass
+{
+    var m_id;
+    function BaseClass()
+    {
+        //System.log("BaseClass: Here!");
+        m_id = 1234;
+    }
+
+    function printId()
+    {
+        System.log("BaseClass.printId: m_id=" + m_id);
+    }
+}
+
+class NewTest extends BaseClass
 {
     var m_data;
 
-    function NewTest(data)
+    function NewTest(data, id)
     {
+m_id = id;
         m_data = data;
+        System.log("NewTest: id=" + id);
+        System.log("NewTest: data=" + data);
+        System.log("NewTest: m_id=" + m_id);
         System.log("NewTest: m_data=" + m_data);
     }
 
     function print()
     {
         System.log("NewTest.print: m_data=" + m_data);
+        System.log("NewTest.print: m_id=" + m_id);
     }
 
     function main() static
     {
-        var obj1 = new NewTest("Hello");
-        var obj2 = new NewTest("World");
+        var obj1 = new NewTest("Hello", 12345);
+        var obj2 = new NewTest("World", 54321);
         obj1.print();
+        obj1.printId();
         obj2.print();
+        obj2.printId();
     }
 }
 

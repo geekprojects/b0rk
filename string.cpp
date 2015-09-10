@@ -7,7 +7,7 @@
 using namespace std;
 
 String::String()
-    : Class("String")
+    : Class(NULL, "String")
 {
     addField("data"); // 0
     addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
@@ -66,9 +66,11 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
 Object* String::createString(Context* context, const char* str)
 {
     Class* stringClass = context->getRuntime()->findClass("String");
+
     Object* object = context->getRuntime()->allocateObject(stringClass);
 
     Value v;
+    v.type = VALUE_POINTER;
     v.pointer = strdup(str);
     object->setValue(0, v);
 
@@ -85,7 +87,7 @@ std::string String::getString(Context* context, Object* obj)
     {
         return "NOTASTRING";
     }
-    if (obj->m_class->getValueCount() == 0)
+    if (obj->m_class->getFieldCount() == 0)
     {
         return "INVALID";
     }

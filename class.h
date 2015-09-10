@@ -13,16 +13,20 @@ class Class
 {
  private:
     std::string m_name;
+    Class* m_superClass;
+
     std::map<std::string, Function*> m_methods;
+    int m_fieldStartId;
     std::vector<std::string> m_fields;
 
  public:
-    Class(std::string name);
+    Class(Class* superClass, std::string name);
     virtual ~Class();
 
     std::string getName() { return m_name; }
+    Class* getSuperClass() { return m_superClass; }
 
-    virtual size_t getValueCount();
+    virtual size_t getFieldCount();
 
     void addField(std::string name);
     int getFieldId(std::string name);

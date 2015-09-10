@@ -3,18 +3,25 @@
 
 using namespace std;
 
-Class::Class(string name)
+Class::Class(Class* superClass, string name)
 {
+    m_superClass = superClass;
     m_name = name;
+
+    m_fieldStartId = 0;
+    if (m_superClass != NULL)
+    {
+        m_fieldStartId = m_superClass->getFieldCount();
+    }
 }
 
 Class::~Class()
 {
 }
 
-size_t Class::getValueCount()
+size_t Class::getFieldCount()
 {
-    return m_fields.size();
+    return m_fieldStartId + m_fields.size();
 }
 
 void Class::addField(string name)
@@ -29,9 +36,15 @@ int Class::getFieldId(string name)
     {
         if (m_fields[i] == name)
         {
-            return i;
+            return i + m_fieldStartId;
         }
     }
+
+    if (m_superClass != NULL)
+    {
+        return m_superClass->getFieldId(name);
+    }
+
     return -1;
 }
 
@@ -48,6 +61,12 @@ Function* Class::findMethod(string name)
     {
         return it->second;
     }
+
+    if (m_superClass != NULL)
+    {
+        return m_superClass->findMethod(name);
+    }
+
     return NULL;
 }
 

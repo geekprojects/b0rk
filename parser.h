@@ -18,7 +18,7 @@ class Parser
     Token* nextToken();
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
-    Class* parseClass();
+    Class* parseClass(Runtime* runtime);
     Function* parseFunction(Class* clazz);
 
     CodeBlock* parseCodeBlock(ScriptFunction* function);

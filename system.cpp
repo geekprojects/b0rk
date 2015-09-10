@@ -6,7 +6,7 @@
 
 using namespace std;
 
-System::System() : Class("System")
+System::System() : Class(NULL, "System")
 {
     addMethod("log", new NativeFunction(this, (nativeFunction_t)&System::log));
 }

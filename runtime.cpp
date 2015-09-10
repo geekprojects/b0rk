@@ -34,6 +34,8 @@ Runtime::Runtime()
     m_currentObjects = 0;
     m_currentBytes = 0;
     m_collectedObjects = 0;
+
+    m_gcEnabled = true;
     m_gcLastAlloc = 0;
     m_gcTime = 0;
 
@@ -74,7 +76,7 @@ Class* Runtime::findClass(string name)
 
 Object* Runtime::allocateObject(Class* clazz)
 {
-    int objSize = sizeof(Object) + (clazz->getValueCount() * sizeof(Value));
+    int objSize = sizeof(Object) + (clazz->getFieldCount() * sizeof(Value));
 
     Object* freeObj = NULL;
     list<Object*>::iterator it;
@@ -144,23 +146,51 @@ Object* Runtime::allocateObject(Class* clazz)
 
 Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
 {
+    // Disable GC otherwise it could collect the new object before we're finished!
+    bool enabled = m_gcEnabled;
+    m_gcEnabled = false;
     Object* obj = allocateObject(clazz);
 
+    bool res = callConstructor(context, obj, clazz, argCount);
+    m_gcEnabled = enabled;
+    if (!res)
+    {
+        return NULL;
+    }
+
+    return obj;
+}
+
+bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int argCount)
+{
+    bool res;
+    if (clazz->getSuperClass() != NULL)
+    {
+        res = callConstructor(context, obj, clazz->getSuperClass(), 0);
+        if (!res)
+        {
+            return false;
+        }
+    }
+
+#ifdef DEBUG_RUNTIME_NEW
+    printf("Runtime::callConstructor: obj=%p, class=%s, super=%p\n", obj, clazz->getName().c_str(), clazz->getSuperClass());
+#endif
     Function* ctor = clazz->findMethod(clazz->getName());
     if (ctor != NULL)
     {
-        bool res = ctor->execute(context, obj, argCount);
+        res = ctor->execute(context, obj, argCount);
         if (!res)
         {
-            return NULL;
+            return false;
         }
 
         // All functions must return something.
         // However, constructor's output is ignored
         context->pop();
-    }
 
-    return obj;
+    }
+    return true;
 }
 
 bool Runtime::isObjectValid(Object* obj)
@@ -176,6 +206,11 @@ bool Runtime::isObjectValid(Object* obj)
 
 void Runtime::gc()
 {
+    if (!m_gcEnabled)
+    {
+        return;
+    }
+
     uint64_t now = getTimestamp();
     int64_t freed = 0;
     if (m_newObjects > m_gcLastAlloc)
@@ -314,8 +349,14 @@ void Runtime::gcMarkObject(Object* obj, uint64_t mark)
 {
     obj->m_gcMark = mark;
 
+if (obj->m_class == NULL)
+{
+printf("Runtime::gcMarkObject: WTF? class is NULL");
+return;
+}
+
     int i;
-    for (i = 0; i < obj->m_class->getValueCount(); i++)
+    for (i = 0; i < obj->m_class->getFieldCount(); i++)
     {
         Object* child = obj->m_values[i].object;
         if (obj->m_values[i].type == VALUE_OBJECT && isObjectValid(child))
