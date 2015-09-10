@@ -24,6 +24,7 @@ int main(int argc, char** argv)
     fseek(fp, 0, SEEK_SET);
 
     char* buffer = new char[length + 128];
+    memset(buffer + length, 0, 128);
     fread(buffer, 1, length, fp);
     fclose(fp);
 
