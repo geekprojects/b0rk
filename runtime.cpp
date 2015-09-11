@@ -56,6 +56,24 @@ Runtime::Runtime()
 
 Runtime::~Runtime()
 {
+    gc();
+    gcStats();
+
+    // Get rid of classes
+    map<std::string, Class*>::iterator it;
+    for (it = m_classes.begin(); it != m_classes.end(); it++)
+    {
+        delete it->second;
+    }
+
+    vector<Context*>::iterator ctxIt;
+    for (ctxIt = m_contexts.begin(); ctxIt != m_contexts.end(); ctxIt++)
+    {
+        delete *ctxIt;
+    }
+
+    delete m_executor;
+    free((void*)m_arena.m_start);
 }
 
 void Runtime::addClass(Class* clazz)

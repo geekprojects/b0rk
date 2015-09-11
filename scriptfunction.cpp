@@ -23,6 +23,12 @@ ScriptFunction::ScriptFunction(Class* clazz, CodeBlock* code, vector<string> arg
 
 ScriptFunction::~ScriptFunction()
 {
+    delete m_code;
+
+    if (m_asmCode.code != NULL)
+    {
+        delete m_asmCode.code;
+    }
 }
 
 void ScriptFunction::setCode(CodeBlock* code)

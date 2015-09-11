@@ -36,6 +36,7 @@ struct Expression
     ValueType valueType;
 
     Expression(CodeBlock* block);
+    virtual ~Expression();
 
     virtual std::string toString() = 0;
 };
@@ -46,6 +47,7 @@ struct CallExpression : public Expression
     std::vector<Expression*> parameters;
 
     CallExpression(CodeBlock* block);
+    virtual ~CallExpression();
 
     virtual std::string toString();
 
@@ -57,6 +59,7 @@ struct NewExpression : public CallExpression
     Identifier clazz;
 
     NewExpression(CodeBlock* block);
+    virtual ~NewExpression() {}
 
     virtual std::string toString();
 };
@@ -81,6 +84,7 @@ struct OperationExpression : public Expression
     Expression* right;
 
     OperationExpression(CodeBlock* block);
+    virtual ~OperationExpression();
 
     void resolveType();
 
@@ -95,6 +99,7 @@ struct ForExpression : public Expression
     CodeBlock* body;
 
     ForExpression(CodeBlock* block);
+    virtual ~ForExpression();
 
     virtual std::string toString();
 };
@@ -113,6 +118,7 @@ struct VarExpression : public Expression
     Identifier var;
 
     VarExpression(CodeBlock* block);
+    virtual ~VarExpression() {}
 
     virtual std::string toString();
 };
@@ -158,6 +164,7 @@ struct CodeBlock
     std::vector<CodeBlock*> m_childBlocks;
 
     CodeBlock();
+    ~CodeBlock();
 
     int setStartingVarId(int id);
     int getVarId(std::string var);

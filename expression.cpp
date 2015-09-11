@@ -10,10 +10,23 @@ Expression::Expression(CodeBlock* _block)
     valueType = VALUE_UNKNOWN;
 }
 
+Expression::~Expression()
+{
+}
+
 CallExpression::CallExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_CALL;
+}
+
+CallExpression::~CallExpression()
+{
+    vector<Expression*>::iterator it;
+    for (it = parameters.begin(); it != parameters.end(); it++)
+    {
+        delete *it;
+    }
 }
 
 string CallExpression::toString()
@@ -53,6 +66,20 @@ OperationExpression::OperationExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_OPER;
+    left = NULL;
+    right = NULL;
+}
+
+OperationExpression::~OperationExpression()
+{
+    if (left != NULL)
+    {
+        delete left;
+    }
+    if (right != NULL)
+    {
+        delete right;
+    }
 }
 
 void OperationExpression::resolveType()
@@ -185,9 +212,28 @@ string OperationExpression::toString()
 
 ForExpression::ForExpression(CodeBlock* block)
     : Expression(block)
+{
+    type = EXPR_FOR;
+    initExpr = NULL;
+    testExpr = NULL;
+    incExpr = NULL;
+}
+
+ForExpression::~ForExpression()
+{
+    if (initExpr != NULL)
     {
-        type = EXPR_FOR;
+        delete initExpr;
     }
+    if (testExpr != NULL)
+    {
+        delete testExpr;
+    }
+    if (incExpr != NULL)
+    {
+        delete incExpr;
+    }
+}
 
 string ForExpression::toString()
 {
@@ -281,6 +327,26 @@ CodeBlock::CodeBlock()
     m_startingVarId = 0;
     m_maxVarId = 0;
     m_varTypes = NULL;
+}
+
+CodeBlock::~CodeBlock()
+{
+    vector<CodeBlock*>::iterator blockIt;
+    for (blockIt = m_childBlocks.begin(); blockIt != m_childBlocks.end(); blockIt++)
+    {
+        delete *blockIt;
+    }
+
+    vector<Expression*>::iterator codeIt;
+    for (codeIt = m_code.begin(); codeIt != m_code.end(); codeIt++)
+    {
+        delete *codeIt;
+    }
+
+    if (m_varTypes != NULL)
+    {
+        delete[] m_varTypes;
+    }
 }
 
 int CodeBlock::setStartingVarId(int id)

@@ -506,7 +506,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 #endif
 
             code->m_code.push_back(forExpr);
-}
+        }
         else if (token->type == TOK_RETURN)
         {
 #ifdef DEBUG_PARSER
@@ -755,10 +755,27 @@ Expression* Parser::parseExpression(CodeBlock* code)
         if (token->type == TOK_ADD_ASSIGN)
         {
             // l += r -> l = (l + r)
+
+            // Make a copy of the left hand side rather than reuse or cleaning up
+            // at the end tries to free it twice!
+            Expression* copy;
+            if (expression->type == EXPR_VAR)
+            {
+                VarExpression* varExpr = new VarExpression(code);
+                m_expressions.push_back(varExpr);
+                varExpr->var = ((VarExpression*)expression)->var;
+                copy = varExpr;
+            }
+            else
+            {
+                printf("Parser::parseExpression: TOK_ADD_ASSIGN: Unhandled left type: %d: %s\n", expression->type, expression->toString().c_str());
+                return NULL;
+            }
+
             OperationExpression* addExpr = new OperationExpression(code);
             m_expressions.push_back(addExpr);
             addExpr->operType = OP_ADD;
-            addExpr->left = expression;
+            addExpr->left = copy;
             addExpr->right = parseExpression(code);
             if (addExpr->right == NULL)
             {

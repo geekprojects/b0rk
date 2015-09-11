@@ -42,6 +42,7 @@ m_id = id;
         obj1.printId();
         obj2.print();
         obj2.printId();
+        new NewTest("And Another", 1337);
     }
 }
 

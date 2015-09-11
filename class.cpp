@@ -17,6 +17,11 @@ Class::Class(Class* superClass, string name)
 
 Class::~Class()
 {
+    map<std::string, Function*>::iterator methIt;
+    for (methIt = m_methods.begin(); methIt != m_methods.end(); methIt++)
+    {
+        delete methIt->second;
+    }
 }
 
 size_t Class::getFieldCount()
