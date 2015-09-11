@@ -1,5 +1,5 @@
 
-#undef DEBUG_ASSEMBLER
+#define DEBUG_ASSEMBLER
 
 #include "assembler.h"
 #include "runtime.h"
@@ -440,10 +440,16 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_NEW:
         {
             NewExpression* newExpr = (NewExpression*)expr;
-            Class* clazz = m_runtime->findClass(newExpr->clazz.identifier[0]);
+            Class* clazz = m_runtime->findClass(newExpr->clazz.toString());
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
 #endif
+
+if (clazz == NULL)
+{
+            printf("Assembler::assembleExpression: Unknown class: %s\n", newExpr->clazz.toString().c_str());
+return false;
+}
 
             int count = 0;
             std::vector<Expression*>::iterator it;

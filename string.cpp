@@ -1,4 +1,6 @@
 
+#define DEBUG_STRING
+
 #include "string.h"
 #include "context.h"
 
@@ -7,10 +9,10 @@
 using namespace std;
 
 String::String()
-    : Class(NULL, "String")
+    : Class(NULL, "system.lang.String")
 {
     addField("data"); // 0
-    addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
+    addMethod("system.lang.String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
     addMethod("operator+", new NativeFunction(this, (nativeFunction_t)&String::addOperator));
 }
 
@@ -65,7 +67,7 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
 
 Object* String::createString(Context* context, const char* str)
 {
-    Class* stringClass = context->getRuntime()->findClass("String");
+    Class* stringClass = context->getRuntime()->findClass("system.lang.String");
 
     Object* object = context->getRuntime()->allocateObject(stringClass);
 
@@ -83,7 +85,7 @@ std::string String::getString(Context* context, Object* obj)
     {
         return "INVALID";
     }
-    if (obj->getClass()->getName() != "String")
+    if (obj->getClass()->getName() != "system.lang.String")
     {
         return "NOTASTRING";
     }

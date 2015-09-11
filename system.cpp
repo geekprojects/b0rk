@@ -23,8 +23,8 @@ bool System::log(Context* context, Object* instance, int argCount)
     {
         Value v = context->pop();
 
-        if (v.type == VALUE_OBJECT && v.object->getClass()->getName() == "String")
-            {
+        if (v.type == VALUE_OBJECT && v.object->getClass()->getName() == "system.lang.String")
+        {
             printf("%s", String::getString(context, v.object).c_str());
         }
         else

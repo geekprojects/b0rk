@@ -6,7 +6,7 @@
 #include <math.h>
 #include <float.h>
 
-#undef DEBUG_EXECUTOR
+#define DEBUG_EXECUTOR
 
 #define DOUBLE_VALUE(_v) (((_v).type == VALUE_DOUBLE) ? (_v.d) : (double)(_v.i))
 #define INTEGER_VALUE(_v) (((_v).type == VALUE_INTEGER) ? (_v.i) : (int)(floor(_v.d)))
