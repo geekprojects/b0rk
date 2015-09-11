@@ -303,6 +303,17 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
             else
             {
                 // This object hasn't been marked, collect it!
+
+                // Free up any private pointers (Mostly Strings)
+                int i;
+                for (i = 0; i < obj->m_class->getFieldCount(); i++)
+                {
+                    if (obj->m_values[i].type == VALUE_POINTER && obj->m_values[i].pointer != NULL)
+                    {
+                        free(obj->m_values[i].pointer);
+                    }
+                }
+
                 freed += obj->m_size;
 #ifdef DEBUG_GC
                 float survived = 0;
