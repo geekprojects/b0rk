@@ -9,6 +9,8 @@
 class Runtime;
 class Function;
 class ScriptFunction;
+struct CodeBlock;
+struct Expression;
 
 struct AssembledCode
 {

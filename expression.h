@@ -150,28 +150,6 @@ struct DoubleExpression : public Expression
     virtual std::string toString();
 };
 
-struct CodeBlock
-{
-    ScriptFunction* m_function;
-    CodeBlock* m_parent;
-    int m_startingVarId;
-    int m_maxVarId;
-
-    ValueType* m_varTypes;
-
-    std::vector<std::string> m_vars;
-    std::vector<Expression*> m_code;
-    std::vector<CodeBlock*> m_childBlocks;
-
-    CodeBlock();
-    ~CodeBlock();
-
-    int setStartingVarId(int id);
-    int getVarId(std::string var);
-    bool setVarType(int id, ValueType type);
-    ValueType getVarType(int id);
-
-    std::string toString();
-};
+#include "codeblock.h"
 
 #endif
