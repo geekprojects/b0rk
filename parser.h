@@ -19,13 +19,13 @@ class Parser
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
     Class* parseClass(Runtime* runtime);
-    Function* parseFunction(Class* clazz);
+    Function* parseFunction(Runtime* runtime, Class* clazz);
 
-    CodeBlock* parseCodeBlock(ScriptFunction* function);
-    Expression* parseExpression(CodeBlock* code);
+    CodeBlock* parseCodeBlock(Runtime* runtime, ScriptFunction* function);
+    Expression* parseExpression(Runtime* runtime, CodeBlock* code);
     bool parseIdentifier(Identifier& id);
     bool parseList(std::vector<Token*>& list, TokenType type);
-    bool parseExpressionList(CodeBlock* code, std::vector<Expression*>& list);
+    bool parseExpressionList(Runtime* runtime, CodeBlock* code, std::vector<Expression*>& list);
 
     bool resolveTypes();
 

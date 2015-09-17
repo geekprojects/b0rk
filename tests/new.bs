@@ -4,13 +4,13 @@ class BaseClass
     var m_id;
     function BaseClass()
     {
-        //System.log("BaseClass: Here!");
+        system.io.File.write("BaseClass: Here!");
         m_id = 1234;
     }
 
     function printId()
     {
-        System.log("BaseClass.printId: m_id=" + m_id);
+        system.io.File.write("BaseClass.printId: m_id=" + m_id);
     }
 }
 
@@ -22,16 +22,16 @@ class NewTest extends BaseClass
     {
 m_id = id;
         m_data = data;
-        System.log("NewTest: id=" + id);
-        System.log("NewTest: data=" + data);
-        System.log("NewTest: m_id=" + m_id);
-        System.log("NewTest: m_data=" + m_data);
+        system.io.File.write("NewTest: id=" + id);
+        system.io.File.write("NewTest: data=" + data);
+        system.io.File.write("NewTest: m_id=" + m_id);
+        system.io.File.write("NewTest: m_data=" + m_data);
     }
 
     function print()
     {
-        System.log("NewTest.print: m_data=" + m_data);
-        System.log("NewTest.print: m_id=" + m_id);
+        system.io.File.write("NewTest.print: m_data=" + m_data);
+        system.io.File.write("NewTest.print: m_id=" + m_id);
     }
 
     function main() static
@@ -42,7 +42,7 @@ m_id = id;
         obj1.printId();
         obj2.print();
         obj2.printId();
-        new NewTest("And Another", 1337);
+        new NewTest("And Another", 1337).print();
     }
 }
 

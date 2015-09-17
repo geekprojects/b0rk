@@ -29,10 +29,21 @@ bool String::constructor(Context* context, Object* instance, int argCount)
     {
         Value arg = context->pop();
         Value v;
-        v.pointer = strdup(arg.toString().c_str());
+        if (arg.type == VALUE_OBJECT &&
+            arg.object != NULL &&
+            arg.object->getClass() == this)
+        {
+            v.pointer = strdup((const char*)(arg.object->getValue(0).pointer));
+        }
+        else
+        {
+            v.pointer = strdup(arg.toString().c_str());
+        }
         instance->setValue(0, v);
     }
-context->pushVoid();
+
+    // No result
+    context->pushVoid();
     return true;
 }
 

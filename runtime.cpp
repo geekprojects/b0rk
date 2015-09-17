@@ -8,6 +8,7 @@
 #include "string.h"
 #include "system.h"
 #include "executor.h"
+#include "file.h"
 
 using namespace std;
 
@@ -50,6 +51,7 @@ Runtime::Runtime()
 
     addClass(new System());
     addClass(new String());
+    addClass(new File());
 
     m_executor = new Executor();
 }
@@ -170,11 +172,11 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
     Object* obj = allocateObject(clazz);
 
     bool res = callConstructor(context, obj, clazz, argCount);
-    m_gcEnabled = enabled;
     if (!res)
     {
         return NULL;
     }
+    m_gcEnabled = enabled;
 
     return obj;
 }

@@ -12,7 +12,7 @@ class VarTest
                 var k; 
                 for (k = 0; k < 3; k++)
                 {
-                    System.log("i=" + new String(i) + ", j=" + new String(j) + ", k=" + new String(k));
+                    system.io.File.write("i=" + new system.lang.String(i) + ", j=" + new system.lang.String(j) + ", k=" + new system.lang.String(k));
                 }
             }
         }

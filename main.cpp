@@ -72,7 +72,7 @@ const char* className = argv[2];
 
     mainFunc->execute(context, NULL, 0);
 
-    delete runtime;
+    //delete runtime;
 
     return 0;
 }

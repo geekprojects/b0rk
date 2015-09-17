@@ -6,6 +6,7 @@ using namespace std;
 
 Expression::Expression(CodeBlock* _block)
 {
+    parent = NULL;
     block = _block;
     valueType = VALUE_UNKNOWN;
 }
@@ -31,7 +32,7 @@ CallExpression::~CallExpression()
 
 string CallExpression::toString()
 {
-    return "CALL " + function.toString() + "(" + argsToString() + ")";
+    return "CALL " + function + "(" + argsToString() + ")";
 }
 
 string CallExpression::argsToString()
@@ -168,6 +169,9 @@ string OperationExpression::toString()
         case OP_LESS_THAN:
             str +="LESS_THAN";
             break;
+        case OP_REFERENCE:
+            str +="REFERENCE";
+            break;
         default:
             str += "?OP?";
             break;
@@ -285,7 +289,7 @@ VarExpression::VarExpression(CodeBlock* block)
 
 string VarExpression::toString()
 {
-    return "{VAR:" + var.toString() + "}";
+    return "{VAR:" + var + "}";
 }
 
 StringExpression::StringExpression(CodeBlock* block)
