@@ -119,6 +119,7 @@ struct ReturnExpression : public Expression
 
 struct VarExpression : public Expression
 {
+    Class* clazz;
     std::string var;
 
     VarExpression(CodeBlock* block);

@@ -1,5 +1,5 @@
 
-#define DEBUG_STRING
+#undef DEBUG_STRING
 
 #include "string.h"
 #include "context.h"

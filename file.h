@@ -12,6 +12,7 @@ class File : public Class
     ~File();
 
     bool write(Context* context, Object* instance, int argCount);
+    bool init(Context* context, Object* instance, int argCount);
 };
 
 #endif

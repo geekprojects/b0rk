@@ -96,6 +96,18 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 context->push(result);
             } break;
 
+            case OPCODE_LOAD_STATIC_FIELD:
+            {
+                Class* clazz = (Class*)code.code[pc++];
+                int fieldId = code.code[pc++];
+
+                Value v = clazz->getStaticField(fieldId);
+
+                LOG("LOAD_STATIC_FIELD: f%d, class=%s, v=%s", fieldId, clazz->getName().c_str(), v.toString().c_str());
+
+                context->push(v);
+            } break;
+
             case OPCODE_STORE_FIELD:
             {
                 Value objValue = context->pop();

@@ -29,14 +29,12 @@ class Assembler
     std::vector<uint64_t> m_code;
 
     bool assemble(CodeBlock* block, AssembledCode& asmCode);
-    bool assembleExpression(CodeBlock* block, Expression* expr);
+    bool assembleExpression(CodeBlock* block, Expression* expr, Expression* reference = NULL);
     bool assembleReference(CodeBlock* block, OperationExpression* expr);
     bool assembleBlock(CodeBlock* block);
 
-    bool assembleCall(CodeBlock* block, Class* clazz, bool objOnStack);
-
     bool isVariable(CodeBlock* block, Object* context, std::string name);
-    bool load(CodeBlock* block, Object* context, std::string name);
+    bool load(CodeBlock* block, Object* context, VarExpression* var);
     bool store(CodeBlock* block, Object* context, std::string name);
 
     Function* findFunction(CodeBlock* block, Identifier id);

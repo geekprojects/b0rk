@@ -53,6 +53,48 @@ int Class::getFieldId(string name)
     return -1;
 }
 
+void Class::addStaticField(string name)
+{
+    m_staticFields.push_back(name);
+}
+
+size_t Class::getStaticFieldCount()
+{
+    return m_staticFields.size();
+}
+
+int Class::getStaticFieldId(string name)
+{
+    unsigned int i;
+    for (i = 0; i < m_staticFields.size(); i++)
+    {
+        if (m_staticFields[i] == name)
+        {
+            return i;// + m_fieldStartId;
+        }
+    }
+/*
+    if (m_superClass != NULL)
+    {
+        return m_superClass->getFieldId(name);
+    }
+*/
+    return -1;
+}
+
+void Class::initStaticFields()
+{
+    int count = m_staticFields.size();
+    m_staticValues = new Value[count];
+
+    int i;
+    for (i = 0; i < count; i++)
+    {
+        m_staticValues[i].type = VALUE_VOID;
+    }
+}
+
+
 void Class::addMethod(string name, Function* function)
 {
     m_methods.insert(make_pair(name, function));

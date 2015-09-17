@@ -26,7 +26,7 @@ Token* Parser::nextToken()
     return result;
 }
 
-bool Parser::parse(Runtime* runtime, vector<Token> tokens)
+bool Parser::parse(Context* context, vector<Token> tokens)
 {
     m_pos = 0;
     m_tokens = tokens;
@@ -39,12 +39,12 @@ bool Parser::parse(Runtime* runtime, vector<Token> tokens)
         if (token->type == TOK_CLASS)
         {
             Class* clazz;
-            clazz = parseClass(runtime);
+            clazz = parseClass(context->getRuntime());
             if (clazz == NULL)
             {
                 return false;
             }
-            runtime->addClass(clazz);
+            context->getRuntime()->addClass(context, clazz);
         }
         else
         {
@@ -702,6 +702,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
         {
             VarExpression* varExpr = new VarExpression(code);
             m_expressions.push_back(varExpr);
+            varExpr->clazz = clazz;
             varExpr->var = id;
 #ifdef DEBUG_PARSER
             printf("Parser::parseExpression: -> Variable!\n");

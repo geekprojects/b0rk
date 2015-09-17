@@ -37,7 +37,7 @@ class Parser
     Parser();
     ~Parser();
 
-    bool parse(Runtime* runtime, std::vector<Token> tokens);
+    bool parse(Context* context, std::vector<Token> tokens);
 };
 
 #endif

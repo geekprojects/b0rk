@@ -49,9 +49,11 @@ Runtime::Runtime()
     freeObj->m_size = m_arena.m_size;
     m_arena.m_freeList.push_back(freeObj);
 
-    addClass(new System());
-    addClass(new String());
-    addClass(new File());
+    Context* initContext = new Context(this);
+    addClass(initContext, new System());
+    addClass(initContext, new String());
+    addClass(initContext, new File());
+    delete initContext;
 
     m_executor = new Executor();
 }
@@ -78,9 +80,24 @@ Runtime::~Runtime()
     free((void*)m_arena.m_start);
 }
 
-void Runtime::addClass(Class* clazz)
+bool Runtime::addClass(Context* context, Class* clazz)
 {
     m_classes.insert(make_pair(clazz->getName(), clazz));
+
+    clazz->initStaticFields();
+
+    Function* initFunction = clazz->findMethod("<staticinit>");
+
+    if (initFunction != NULL)
+    {
+        bool res = initFunction->execute(context, NULL, 0);
+        if (!res)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 Class* Runtime::findClass(string name)
