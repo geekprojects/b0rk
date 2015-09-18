@@ -30,6 +30,7 @@ SimpleToken tokenTable[] = {
     { "\"", 1, TOK_DOUBLE_QUOTE },
     { "'", 1, TOK_QUOTE },
     { "var", 3, TOK_VAR },
+    { "import", 6, TOK_IMPORT },
     { "class", 5, TOK_CLASS },
     { "extends", 7, TOK_EXTENDS },
     { "function", 8, TOK_FUNCTION },

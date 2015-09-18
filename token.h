@@ -32,6 +32,7 @@ enum TokenType
     TOK_BRACKET_RIGHT,
     TOK_DOUBLE_QUOTE,
     TOK_QUOTE,
+    TOK_IMPORT,
     TOK_CLASS,
     TOK_EXTENDS,
     TOK_VAR,

@@ -46,9 +46,38 @@ bool Parser::parse(Context* context, vector<Token> tokens)
             }
             context->getRuntime()->addClass(context, clazz);
         }
+        else if (token->type == TOK_IMPORT)
+        {
+            Identifier id;
+            bool res = parseIdentifier(id);
+            if (!res)
+            {
+                return false;
+            }
+
+            string end = id.end();
+            Class* clazz = context->getRuntime()->findClass(id.toString());
+
+#ifdef DEBUG_PARSER
+            printf("Parser::parser: import: %s: %s -> %p\n", id.toString().c_str(), end.c_str(), clazz);
+#endif
+            if (clazz == NULL)
+            {
+                printf("Parser::parser: import: Imported class not found! %s\n", id.toString().c_str());
+                return false;
+            }
+            m_imports.insert(make_pair(end, clazz));
+
+            token = nextToken();
+            if (token->type != TOK_SEMICOLON)
+            {
+                printf("Parser::parser: ERROR: Expected ;, got %s\n", token->string.c_str());
+                return false;
+            }
+        }
         else
         {
-            printf("Parser::parser: ERROR: Unexpected symbol: %d\n", token->type);
+            printf("Parser::parser: ERROR: Unexpected symbol: %s (%d)\n", token->string.c_str(), token->type);
             return false;
         }
     }
@@ -256,10 +285,10 @@ varExpr,
         Expression* expr = *exprIt;
         if (expr->type == EXPR_VAR && expr->parent != NULL)
         {
-if (expr->parent->type == EXPR_OPER && ((OperationExpression*)(expr->parent))->operType == OP_REFERENCE)
-{
-continue;
-}
+            if (expr->parent->type == EXPR_OPER && ((OperationExpression*)(expr->parent))->operType == OP_REFERENCE)
+            {
+                continue;
+            }
             VarExpression* varExpr = (VarExpression*)expr;
             int varId = varExpr->block->getVarId(varExpr->var);
             if (varId == -1)
@@ -635,8 +664,24 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
 #endif
             string clazzname = id;
             token = nextToken();
+
+            // Check for imported classes
+            // TODO: These will override any local vars
+            //       Is that right?
+            map<string, Class*>::iterator it = m_imports.find(clazzname);
+            if (it != m_imports.end())
+            {
+                clazz = it->second;
+#ifdef DEBUG_PARSER
+                printf(
+                    "Parser::parseExpression: Found imported class: %s -> %s\n",
+                    clazzname.c_str(),
+                    clazz->getName().c_str());
+#endif
+                m_pos -= 2;
+            }
             int count = 2;
-            while (token->type == TOK_IDENTIFIER)
+            while (clazz == NULL && token->type == TOK_IDENTIFIER)
             {
 #ifdef DEBUG_PARSER
                 printf("Parser::parseExpression:  -> got an identifier: %s\n", token->string.c_str());
@@ -663,7 +708,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
 
             if (clazz != NULL)
             {
-                token = nextToken();
+                token = nextToken(); // DOT
                 token = nextToken();
                 id = token->string;
             }
@@ -1044,6 +1089,11 @@ bool Parser::parseExpressionList(Runtime* runtime, CodeBlock* code, vector<Expre
     }
 
     return true;
+}
+
+string Identifier::end()
+{
+    return identifier.at(identifier.size() - 1);
 }
 
 string Identifier::toString()
