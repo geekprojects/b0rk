@@ -96,6 +96,18 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 context->push(result);
             } break;
 
+            case OPCODE_LOAD_STATIC_FIELD:
+            {
+                Class* clazz = (Class*)code.code[pc++];
+                int fieldId = code.code[pc++];
+
+                Value v = clazz->getStaticField(fieldId);
+
+                LOG("LOAD_STATIC_FIELD: f%d, class=%s, v=%s", fieldId, clazz->getName().c_str(), v.toString().c_str());
+
+                context->push(v);
+            } break;
+
             case OPCODE_STORE_FIELD:
             {
                 Value objValue = context->pop();
@@ -366,8 +378,8 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
             case OPCODE_CALL_NAMED:
             {
                 int count = code.code[pc++];
-                Object* obj = context->pop().object;
                 Object* nameObj = context->pop().object;
+                Object* obj = context->pop().object;
                 string funcName = String::getString(context, nameObj);
                 LOG("CALL_NAMED: obj=%p, name=%s", obj, funcName.c_str());
 
@@ -395,16 +407,19 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 int count = code.code[pc++];
                 LOG("NEW: class=%s", clazz->getName().c_str());
                 Object* obj = context->getRuntime()->newObject(context, clazz, count);
-                if (obj == NULL)
+                if (obj != NULL)
                 {
-                    running = false;
-                    success = true;
+                    Value v;
+                    v.type = VALUE_OBJECT;
+                    v.object = obj;
+                    context->push(v);
                 }
-                LOG("NEW:  -> object=%p", obj);
-                Value v;
-                v.type = VALUE_OBJECT;
-                v.object = obj;
-                context->push(v);
+                else
+                {
+                    ERROR("NEW: Failed to create new object! class=%s\n", clazz->getName().c_str());
+                    running = false;
+                    success = false;
+                }
             } break;
 
             case OPCODE_NEW_STRING:

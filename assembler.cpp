@@ -52,18 +52,42 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     return true;
 }
 
+#define IS_REFERENCE(_expr) ((_expr) != NULL && (_expr)->type == EXPR_OPER && ((OperationExpression*)(_expr))->operType == OP_REFERENCE)
 bool Assembler::assembleBlock(CodeBlock* code)
 {
    unsigned int i;
     for (i = 0; i < code->m_code.size(); i++)
     {
+        Expression* expr = code->m_code[i];
+
         bool res;
-        res = assembleExpression(code, code->m_code[i]);
+        res = assembleExpression(code, expr);
         if (!res)
         {
             return false;
         }
-        if (code->m_code[i]->type == EXPR_CALL || code->m_code[i]->type == EXPR_NEW)
+
+        bool isRefCall = false;
+        if (IS_REFERENCE(expr))
+        {
+            Expression* pos = expr;
+            while (IS_REFERENCE(pos))
+            {
+#ifdef DEBUG_ASSEMBLER
+                printf("Assembler::assembleBlock: Checking reference: %s\n", pos->toString().c_str());
+#endif
+                pos = ((OperationExpression*)pos)->left;
+            }
+            if (pos != NULL && pos->type == EXPR_CALL)
+            {
+#ifdef DEBUG_ASSEMBLER
+                printf("Assembler::assembleBlock:  -> reference to a call!!\n");
+#endif
+                isRefCall = true;
+            }
+        }
+
+        if (isRefCall || code->m_code[i]->type == EXPR_CALL || code->m_code[i]->type == EXPR_NEW)
         {
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleBlock: Call outside of expression!\n");
@@ -74,8 +98,11 @@ bool Assembler::assembleBlock(CodeBlock* code)
     return true;
 }
 
-
-bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
+/*
+ * An expression should always leave exactly one item on the stack
+ * after execution
+ */
+bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expression* reference)
 {
     bool res;
 
@@ -96,87 +123,106 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                 count++;
             }
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: CALL: %s\n", callExpr->function.toString().c_str());
+            printf("Assembler::assembleExpression: CALL: %s (class=%p)\n", callExpr->function.c_str(), callExpr->clazz);
 #endif
 
-            Identifier id = callExpr->function;
-            if (id.identifier.size() > 1)
+            if (reference != NULL)
             {
-                // TODO: Handle more than 2 parts!
-
-                // Does it start with a local object?
-                if (isVariable(block, NULL, id.identifier[0]))
+                res = assembleReference(block, (OperationExpression*)reference);
+                if (!res)
                 {
-                    m_code.push_back(OPCODE_NEW_STRING);
-                    m_code.push_back((uint64_t)strdup(id.identifier[1].c_str()));
+                    return false;
+                }
+            }
 
-                    res = load(block, NULL, id.identifier[0]);
-                    if (!res)
+            string id = callExpr->function;
+
+            if (callExpr->clazz != NULL)
+            {
+                // Static class method!
+                Function* func = callExpr->clazz->findMethod(id);
+#ifdef DEBUG_ASSEMBLER
+                printf("Assembler::assembleExpression: CALL: Static call: %s.%s\n", callExpr->clazz->getName().c_str(), id.c_str());
+#endif
+                m_code.push_back(OPCODE_CALL_STATIC);
+                m_code.push_back((uint64_t)func);
+                m_code.push_back(count);
+            }
+            else
+            {
+
+#ifdef DEBUG_ASSEMBLER
+                printf("Assembler::assembleExpression: CALL: Named call?\n");
+#endif
+                bool inReference = false;
+                if (callExpr->parent != NULL)
+                {
+                    if (callExpr->parent->type == EXPR_OPER && ((OperationExpression*)(callExpr->parent))->operType == OP_REFERENCE)
                     {
+#ifdef DEBUG_ASSEMBLER
+                        printf("Assembler::assembleExpression: CALL: Parent is a reference\n");
+#endif
+                        inReference = true;
+                    }
+                    else
+                    {
+                        printf("Assembler::assembleExpression: CALL: Parent is not null but not a reference!?\n");
                         return false;
                     }
+                }
 
+                if (inReference)
+                {
+                    m_code.push_back(OPCODE_NEW_STRING);
+                    m_code.push_back((uint64_t)strdup(callExpr->function.c_str()));
                     m_code.push_back(OPCODE_CALL_NAMED);
                     m_code.push_back(count);
                 }
                 else
                 {
-                    // Try class names?
-                    Class* clazz = m_runtime->findClass(id.identifier[0]);
-
 #ifdef DEBUG_ASSEMBLER
-                    printf("Assembler::findFunction: execute: identifier: clazz=%p\n", clazz);
+                    printf("Assembler::assembleExpression: CALL: Not a reference, must be THIS\n");
 #endif
-                    if (clazz != NULL)
+
+                    // Try class names?
+                    Function* func = m_function->getClass()->findMethod(callExpr->function);
+                    if (func == NULL)
                     {
-                        Function* func = clazz->findMethod(id.identifier[1]);
-                        m_code.push_back(OPCODE_CALL_STATIC);
-                        m_code.push_back((uint64_t)func);
-                        m_code.push_back(count);
-                    }
-                    else
-                    {
-                        printf("TODO: Assembler::findFunction: Not found object method id: %s\n", id.toString().c_str());
+                        printf("Assembler::assembleExpression: CALL: Function on this not found\n");
                         return false;
                     }
-                }
-            }
-            else
-            {
-                // No qualifier, just a function name
 
-                // TODO: Try local variables
+                    m_code.push_back(OPCODE_LOAD_VAR);
+                    m_code.push_back(0); // this
 
-                // Try methods of the same class
-                Function* func = m_function->getClass()->findMethod(id.identifier[0]);
-                if (func != NULL)
-                {
-                    if (func->getStatic())
-                    {
-                        m_code.push_back(OPCODE_CALL_STATIC);
-                        m_code.push_back((uint64_t)func);
-                        m_code.push_back(count);
-                    }
-                    else
-                    {
-                        m_code.push_back(OPCODE_LOAD_VAR);
-                        m_code.push_back(0); // this
-                        m_code.push_back(OPCODE_CALL);
-                        m_code.push_back((uint64_t)func);
-                        m_code.push_back(count);
-                    }
+                    m_code.push_back(OPCODE_CALL);
+                    m_code.push_back((uint64_t)func);
+                    m_code.push_back(count);
                 }
-                else
-                {
-                    printf("TODO: Assembler::findFunction: Not found relative id: %s\n", id.toString().c_str());
-                    return false;
-                }
-            }
+
+           }
         } break;
 
         case EXPR_OPER:
         {
             OperationExpression* opExpr = (OperationExpression*)expr;
+
+            if (opExpr->operType == OP_REFERENCE && reference == NULL)
+            {
+
+                Expression* refChild = expr;
+                while (IS_REFERENCE(refChild))
+                {
+                    refChild = ((OperationExpression*)refChild)->left;
+                }
+
+                if (refChild == NULL)
+                {
+                    printf("Assembler::assembleExpression: OPER: Reference isn't used!?\n");
+                    return false;
+                }
+                return assembleExpression(block, refChild, opExpr);
+            }
 
             if (opExpr->right != NULL)
             {
@@ -299,19 +345,25 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                         return false;
                     }
 
-                    VarExpression* varExpr = (VarExpression*)(opExpr->left);
 
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: POST INCREMENT %d", 0);
 #endif
-                    load(block, NULL, varExpr->var.identifier[0]);
+                    VarExpression* varExpr = (VarExpression*)(opExpr->left);
+                    res = load(block, NULL, varExpr);
+                    if (!res)
+                    {
+                        return false;
+                    }
                     m_code.push_back(OPCODE_PUSHI);
                     m_code.push_back(1);
                     m_code.push_back(OPCODE_ADDI);
-
-                    store(block, NULL, varExpr->var.identifier[0]);
- 
-                    } break;
+                    res = store(block, NULL, varExpr->var);
+                    if (!res)
+                    {
+                        return false;
+                    }
+                } break;
 
                 case OP_SET:
                 {
@@ -320,16 +372,28 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
                     printf("Assembler::assembleExpression: OPER: -> left=%p\n", opExpr->left);
                     printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
 #endif
+
                     if (opExpr->left->type != EXPR_VAR)
                     {
                         printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable!\n");
                         return false;
                     }
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    store(block, NULL, varExpr->var.identifier[0]);
+                    res = store(block, NULL, varExpr->var);
+                    if (!res)
+                    {
+                        return false;
+                    }
                 } break;
 
-                default:
+                case OP_REFERENCE:
+                {
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: Reference: Nothing to actually do?\n");
+#endif
+                } break;
+
+               default:
                     printf("Assembler::assembleExpression: OPER: Unhandled operation\n");
                     return false;
             }
@@ -434,16 +498,26 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
         case EXPR_VAR:
         {
             VarExpression* varExpr = (VarExpression*)expr;
-            load(block, NULL, varExpr->var.identifier[0]);
+            res = load(block, NULL, varExpr);
+            if (!res)
+            {
+                return false;
+            }
         } break;
 
         case EXPR_NEW:
         {
             NewExpression* newExpr = (NewExpression*)expr;
-            Class* clazz = m_runtime->findClass(newExpr->clazz.identifier[0]);
+            Class* clazz = m_runtime->findClass(newExpr->clazz.toString());
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
 #endif
+
+            if (clazz == NULL)
+            {
+                printf("Assembler::assembleExpression: Unknown class: %s\n", newExpr->clazz.toString().c_str());
+                return false;
+            }
 
             int count = 0;
             std::vector<Expression*>::iterator it;
@@ -500,6 +574,25 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr)
     return true;
 }
 
+
+bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
+{
+    bool res;
+
+    res = assembleExpression(block, expr->right);
+    if (!res)
+    {
+        return false;
+    }
+
+    if (IS_REFERENCE(expr->left))
+    {
+        return assembleReference(block, (OperationExpression*)(expr->left));
+    }
+
+    return true;
+}
+
 bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
 {
     int id = block->getVarId(name);
@@ -534,11 +627,29 @@ bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
     return false;
 }
 
-bool Assembler::load(CodeBlock* block, Object* context, string name)
+bool Assembler::load(CodeBlock* block, Object* context, VarExpression* varExpr)
 {
-    int id = block->getVarId(name);
+    if (varExpr->clazz != NULL)
+    {
+
 #ifdef DEBUG_ASSEMBLER
-    printf("Assembler::load: Local variable %s (%d)\n", name.c_str(), id);
+        printf("Assembler::load: Looking for static field %s %s\n", varExpr->clazz->getName().c_str(), varExpr->var.c_str());
+#endif
+
+        int id = varExpr->clazz->getStaticFieldId(varExpr->var);
+        if (id != -1)
+        {
+            m_code.push_back(OPCODE_LOAD_STATIC_FIELD);
+            m_code.push_back((uint64_t)varExpr->clazz);
+            m_code.push_back(id);
+            return true;
+        }
+        return false;
+    }
+
+    int id = block->getVarId(varExpr->var);
+#ifdef DEBUG_ASSEMBLER
+    printf("Assembler::load: Local variable %s (%d)\n", varExpr->var.c_str(), id);
 #endif
     if (id != -1)
     {
@@ -549,10 +660,10 @@ bool Assembler::load(CodeBlock* block, Object* context, string name)
     }
     else
     {
-        id = m_function->getClass()->getFieldId(name);
+        id = m_function->getClass()->getFieldId(varExpr->var);
 
 #ifdef DEBUG_ASSEMBLER
-        printf("Assembler::load: Object field %s (%d)\n", name.c_str(), id);
+        printf("Assembler::load: Object field %s (%d)\n", varExpr->var.c_str(), id);
 #endif
         if (id != -1)
         {
@@ -565,7 +676,7 @@ bool Assembler::load(CodeBlock* block, Object* context, string name)
         }
         else
         {
-            printf("Assembler::load: Error: Unknown variable: %s\n", name.c_str());
+            printf("Assembler::load: Error: Unknown variable: %s\n", varExpr->var.c_str());
             return false;
         }
     }

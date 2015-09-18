@@ -53,7 +53,7 @@ class Runtime
     Runtime();
     ~Runtime();
 
-    void addClass(Class* clazz);
+    bool addClass(Context* context, Class* clazz);
     Class* findClass(std::string name);
 
     Context* createContext();

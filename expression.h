@@ -9,10 +9,12 @@
 
 struct CodeBlock;
 class ScriptFunction;
+class Class;
 
 struct Identifier
 {
     std::vector<std::string> identifier;
+    std::string end();
     std::string toString();
 };
 
@@ -31,6 +33,7 @@ enum ExpressionType
 
 struct Expression
 {
+    Expression* parent;
     CodeBlock* block;
     ExpressionType type;
     ValueType valueType;
@@ -43,7 +46,8 @@ struct Expression
 
 struct CallExpression : public Expression
 {
-    Identifier function;
+    Class* clazz;
+    std::string function;
     std::vector<Expression*> parameters;
 
     CallExpression(CodeBlock* block);
@@ -73,7 +77,8 @@ enum OpType
     OP_MULTIPLY,
     OP_LOGICAL_AND,
     OP_INCREMENT,
-    OP_LESS_THAN
+    OP_LESS_THAN,
+    OP_REFERENCE
 };
 
 struct OperationExpression : public Expression
@@ -115,7 +120,8 @@ struct ReturnExpression : public Expression
 
 struct VarExpression : public Expression
 {
-    Identifier var;
+    Class* clazz;
+    std::string var;
 
     VarExpression(CodeBlock* block);
     virtual ~VarExpression() {}

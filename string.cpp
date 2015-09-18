@@ -1,4 +1,6 @@
 
+#undef DEBUG_STRING
+
 #include "string.h"
 #include "context.h"
 
@@ -7,10 +9,10 @@
 using namespace std;
 
 String::String()
-    : Class(NULL, "String")
+    : Class(NULL, "system.lang.String")
 {
     addField("data"); // 0
-    addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
+    addMethod("system.lang.String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
     addMethod("operator+", new NativeFunction(this, (nativeFunction_t)&String::addOperator));
 }
 
@@ -27,10 +29,21 @@ bool String::constructor(Context* context, Object* instance, int argCount)
     {
         Value arg = context->pop();
         Value v;
-        v.pointer = strdup(arg.toString().c_str());
+        if (arg.type == VALUE_OBJECT &&
+            arg.object != NULL &&
+            arg.object->getClass() == this)
+        {
+            v.pointer = strdup((const char*)(arg.object->getValue(0).pointer));
+        }
+        else
+        {
+            v.pointer = strdup(arg.toString().c_str());
+        }
         instance->setValue(0, v);
     }
-context->pushVoid();
+
+    // No result
+    context->pushVoid();
     return true;
 }
 
@@ -65,7 +78,7 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
 
 Object* String::createString(Context* context, const char* str)
 {
-    Class* stringClass = context->getRuntime()->findClass("String");
+    Class* stringClass = context->getRuntime()->findClass("system.lang.String");
 
     Object* object = context->getRuntime()->allocateObject(stringClass);
 
@@ -83,7 +96,7 @@ std::string String::getString(Context* context, Object* obj)
     {
         return "INVALID";
     }
-    if (obj->getClass()->getName() != "String")
+    if (obj->getClass()->getName() != "system.lang.String")
     {
         return "NOTASTRING";
     }

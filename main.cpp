@@ -29,6 +29,7 @@ int main(int argc, char** argv)
     fclose(fp);
 
     Runtime* runtime = new Runtime();
+    Context* context = runtime->createContext();
     bool res;
 
     Lexer lexer;
@@ -39,7 +40,7 @@ return 0;
 }
 
     Parser parser;
-    res = parser.parse(runtime, lexer.getTokens());
+    res = parser.parse(context, lexer.getTokens());
 
     delete[] buffer;
 if (!res)
@@ -68,11 +69,10 @@ const char* className = argv[2];
         return 0;
     }
 
-    Context* context = runtime->createContext();
 
     mainFunc->execute(context, NULL, 0);
 
-    delete runtime;
+    //delete runtime;
 
     return 0;
 }

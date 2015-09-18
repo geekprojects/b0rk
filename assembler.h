@@ -9,6 +9,7 @@
 class Runtime;
 class Function;
 class ScriptFunction;
+class Class;
 struct CodeBlock;
 struct Expression;
 
@@ -28,12 +29,13 @@ class Assembler
     std::vector<uint64_t> m_code;
 
     bool assemble(CodeBlock* block, AssembledCode& asmCode);
-    bool assembleExpression(CodeBlock* block, Expression* expr);
+    bool assembleExpression(CodeBlock* block, Expression* expr, Expression* reference = NULL);
+    bool assembleReference(CodeBlock* block, OperationExpression* expr);
     bool assembleBlock(CodeBlock* block);
 
-bool isVariable(CodeBlock* block, Object* context, std::string name);
-bool load(CodeBlock* block, Object* context, std::string name);
-bool store(CodeBlock* block, Object* context, std::string name);
+    bool isVariable(CodeBlock* block, Object* context, std::string name);
+    bool load(CodeBlock* block, Object* context, VarExpression* var);
+    bool store(CodeBlock* block, Object* context, std::string name);
 
     Function* findFunction(CodeBlock* block, Identifier id);
 
