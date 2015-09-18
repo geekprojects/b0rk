@@ -285,6 +285,7 @@ VarExpression::VarExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_VAR;
+    clazz = NULL;
 }
 
 string VarExpression::toString()
