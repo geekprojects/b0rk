@@ -379,11 +379,20 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
             {
                 int count = code.code[pc++];
                 Object* nameObj = context->pop().object;
-                Object* obj = context->pop().object;
+                Value objValue = context->pop();
                 string funcName = String::getString(context, nameObj);
-                LOG("CALL_NAMED: obj=%p, name=%s", obj, funcName.c_str());
+                LOG("CALL_NAMED: obj=%s, name=%s", objValue.toString().c_str(), funcName.c_str());
+                Object* obj = objValue.object;
+                LOG("CALL_NAMED:  -> obj class=%s, ", obj->getClass()->getName().c_str());
 
-                if (obj->getClass() == NULL)
+                if (obj == NULL)
+                {
+                    ERROR("CALL_NAMED: object is null! %p", obj);
+                    running = false;
+                    success = false;
+                    continue;
+                }
+                else if (obj->getClass() == NULL)
                 {
                     ERROR("CALL_NAMED: object with no class!? obj=%p", obj);
                     running = false;
@@ -393,6 +402,13 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
 
                 Function* function = obj->getClass()->findMethod(funcName);
                 LOG("CALL_NAMED:  -> function=%p", function);
+                if (function == NULL)
+                {
+                    ERROR("CALL_NAMED: function not found! class=%s, function=%s", obj->getClass()->getName().c_str(), funcName.c_str());
+                    running = false;
+                    success = false;
+                    continue;
+                }
                 res = function->execute(context, obj, count);
                 if (!res)
                 {
@@ -555,7 +571,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
         }
     }
 
-    //context->getRuntime()->gc();
+    context->getRuntime()->gc();
 
     return success;
 }

@@ -49,12 +49,14 @@ class Runtime
 
     bool callConstructor(Context* context, Object* obj, Class* clazz, int argCount);
 
+    Class* loadClass(Context* context, std::string name);
+
  public:
     Runtime();
     ~Runtime();
 
     bool addClass(Context* context, Class* clazz);
-    Class* findClass(std::string name);
+    Class* findClass(Context* context, std::string name, bool load = true);
 
     Context* createContext();
 

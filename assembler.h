@@ -10,6 +10,7 @@ class Runtime;
 class Function;
 class ScriptFunction;
 class Class;
+class Context;
 struct CodeBlock;
 struct Expression;
 
@@ -23,7 +24,7 @@ struct AssembledCode
 class Assembler
 {
  private:
-    Runtime* m_runtime;
+    Context* m_context;
     ScriptFunction* m_function;
 
     std::vector<uint64_t> m_code;
@@ -40,7 +41,7 @@ class Assembler
     Function* findFunction(CodeBlock* block, Identifier id);
 
  public:
-    Assembler(Runtime* runtime);
+    Assembler(Context* context);
     ~Assembler();
 
     bool assemble(ScriptFunction* func, AssembledCode& asmCode);

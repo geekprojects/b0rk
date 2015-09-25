@@ -11,6 +11,8 @@
 class Parser
 {
  private:
+    Context* m_context;
+
     std::vector<Token> m_tokens;
     std::vector<Expression*> m_expressions;
     std::map<std::string, Class*> m_imports;
@@ -19,14 +21,14 @@ class Parser
     Token* nextToken();
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
-    Class* parseClass(Runtime* runtime);
-    Function* parseFunction(Runtime* runtime, Class* clazz);
+    Class* parseClass();
+    Function* parseFunction(Class* clazz);
 
-    CodeBlock* parseCodeBlock(Runtime* runtime, ScriptFunction* function);
-    Expression* parseExpression(Runtime* runtime, CodeBlock* code);
+    CodeBlock* parseCodeBlock(ScriptFunction* function);
+    Expression* parseExpression(CodeBlock* code);
     bool parseIdentifier(Identifier& id);
     bool parseList(std::vector<Token*>& list, TokenType type);
-    bool parseExpressionList(Runtime* runtime, CodeBlock* code, std::vector<Expression*>& list);
+    bool parseExpressionList(CodeBlock* code, std::vector<Expression*>& list);
 
     bool resolveTypes();
 
@@ -35,10 +37,10 @@ class Parser
 
  public:
 
-    Parser();
+    Parser(Context* context);
     ~Parser();
 
-    bool parse(Context* context, std::vector<Token> tokens);
+    bool parse(std::vector<Token> tokens);
 };
 
 #endif

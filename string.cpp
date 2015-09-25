@@ -78,9 +78,13 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
 
 Object* String::createString(Context* context, const char* str)
 {
-    Class* stringClass = context->getRuntime()->findClass("system.lang.String");
+    Class* stringClass = context->getRuntime()->findClass(context, "system.lang.String");
 
     Object* object = context->getRuntime()->allocateObject(stringClass);
+    if (object == NULL)
+    {
+        return NULL;
+    }
 
     Value v;
     v.type = VALUE_POINTER;

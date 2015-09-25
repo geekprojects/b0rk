@@ -7,9 +7,9 @@
 
 using namespace std;
 
-Assembler::Assembler(Runtime* runtime)
+Assembler::Assembler(Context* context)
 {
-    m_runtime = runtime;
+    m_context = context;
 }
 
 Assembler::~Assembler()
@@ -508,7 +508,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
         case EXPR_NEW:
         {
             NewExpression* newExpr = (NewExpression*)expr;
-            Class* clazz = m_runtime->findClass(newExpr->clazz.toString());
+            Class* clazz = m_context->getRuntime()->findClass(m_context, newExpr->clazz.toString());
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
 #endif

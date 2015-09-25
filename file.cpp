@@ -23,7 +23,7 @@ File::~File()
 
 bool File::init(Context* context, Object* instance, int argCount)
 {
-    Class* fileClass = context->getRuntime()->findClass("system.io.File");
+    Class* fileClass = context->getRuntime()->findClass(context, "system.io.File");
     Object* outFile = context->getRuntime()->allocateObject(fileClass);
 
     int fdId = getFieldId("fileDescriptor");

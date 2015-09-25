@@ -41,6 +41,7 @@ class Class
     Value getStaticField(int slot) { return m_staticValues[slot]; }
     void setStaticField(int slot, Value v) { m_staticValues[slot] = v; }
     void initStaticFields();
+    std::vector<std::string>& getStaticFields();
 
     void addMethod(std::string name, Function* function);
     virtual Function* findMethod(std::string name);

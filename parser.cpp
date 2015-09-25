@@ -8,8 +8,9 @@
 
 using namespace std;
 
-Parser::Parser()
+Parser::Parser(Context* context)
 {
+    m_context = context;
 }
 
 Parser::~Parser()
@@ -26,7 +27,7 @@ Token* Parser::nextToken()
     return result;
 }
 
-bool Parser::parse(Context* context, vector<Token> tokens)
+bool Parser::parse(vector<Token> tokens)
 {
     m_pos = 0;
     m_tokens = tokens;
@@ -39,12 +40,12 @@ bool Parser::parse(Context* context, vector<Token> tokens)
         if (token->type == TOK_CLASS)
         {
             Class* clazz;
-            clazz = parseClass(context->getRuntime());
+            clazz = parseClass();
             if (clazz == NULL)
             {
                 return false;
             }
-            context->getRuntime()->addClass(context, clazz);
+            m_context->getRuntime()->addClass(m_context, clazz);
         }
         else if (token->type == TOK_IMPORT)
         {
@@ -56,7 +57,7 @@ bool Parser::parse(Context* context, vector<Token> tokens)
             }
 
             string end = id.end();
-            Class* clazz = context->getRuntime()->findClass(id.toString());
+            Class* clazz = m_context->getRuntime()->findClass(m_context, id.toString(), true);
 
 #ifdef DEBUG_PARSER
             printf("Parser::parser: import: %s: %s -> %p\n", id.toString().c_str(), end.c_str(), clazz);
@@ -84,18 +85,18 @@ bool Parser::parse(Context* context, vector<Token> tokens)
     return true;
 }
 
-Class* Parser::parseClass(Runtime* runtime)
+Class* Parser::parseClass()
 {
     Token* token;
 
-    token = nextToken();
-    if (token->type != TOK_IDENTIFIER)
+    Identifier classId;
+    bool res = parseIdentifier(classId);
+    if (!res)
     {
-        printf("Parser::parseClass: Expected class name\n");
         return NULL;
     }
 
-    string name = token->string;
+    string name = classId.toString();
     Class* superClass = NULL;
 
     token = nextToken();
@@ -107,7 +108,7 @@ Class* Parser::parseClass(Runtime* runtime)
             printf("Parser::parseClass: Expected class name\n");
             return NULL;
         }
-        superClass = runtime->findClass(token->string);
+        superClass = m_context->getRuntime()->findClass(m_context, token->string, true);
 #ifdef DEBUG_PARSER
         printf("Parser::parseClass: Class extends: %s: %p\n", token->string.c_str(), superClass);
 #endif
@@ -159,7 +160,7 @@ clazz->addField(varName);
             printf("Parser::parseClass: Function: %s\n", funcName.c_str());
 #endif
 
-            Function* function = parseFunction(runtime, clazz);
+            Function* function = parseFunction(clazz);
             if (function == NULL)
             {
                 delete clazz;
@@ -178,7 +179,7 @@ clazz->addField(varName);
     return clazz;
 }
 
-Function* Parser::parseFunction(Runtime* runtime, Class* clazz)
+Function* Parser::parseFunction(Class* clazz)
 {
     vector<Token*> paramTokens;
     bool res = parseList(paramTokens, TOK_IDENTIFIER);
@@ -216,7 +217,7 @@ Function* Parser::parseFunction(Runtime* runtime, Class* clazz)
     }
 
     CodeBlock* code;
-    code = parseCodeBlock(runtime, function);
+    code = parseCodeBlock(function);
     if (code == NULL)
     {
         return NULL;
@@ -329,7 +330,7 @@ varExpr,
     return true;
 }
 
-CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
+CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 {
     CodeBlock* code = new CodeBlock();
     code->m_function = function;
@@ -367,7 +368,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
 
                 // Reverse back up to the variable name and pretend it was just an assignment!
                 m_pos -= 2;
-                Expression* expr = parseExpression(runtime, code);
+                Expression* expr = parseExpression(code);
                 if (expr == NULL)
                 {
                     return NULL;
@@ -396,7 +397,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
             ForExpression* forExpr = new ForExpression(code);
             m_expressions.push_back(forExpr);
 
-            forExpr->initExpr = parseExpression(runtime, code);
+            forExpr->initExpr = parseExpression(code);
             if (forExpr->initExpr == NULL)
             {
                 delete code;
@@ -415,7 +416,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
                 return NULL;
             }
 
-            forExpr->testExpr = parseExpression(runtime, code);
+            forExpr->testExpr = parseExpression(code);
             if (forExpr->testExpr == NULL)
             {
                 delete code;
@@ -434,7 +435,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
                 return NULL;
             }
 
-            forExpr->incExpr = parseExpression(runtime, code);
+            forExpr->incExpr = parseExpression(code);
             if (forExpr->incExpr == NULL)
             {
                 delete code;
@@ -466,7 +467,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
 #ifdef DEBUG_PARSER
             printf("Parser::parseCodeBlock: FOR: Parsing Body...\n");
 #endif
-            forExpr->body = parseCodeBlock(runtime, function);
+            forExpr->body = parseCodeBlock(function);
             if (forExpr->body == NULL)
             {
                 delete code;
@@ -497,7 +498,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
             forExpr->initExpr = NULL;
             forExpr->incExpr = NULL;
 
-            forExpr->testExpr = parseExpression(runtime, code);
+            forExpr->testExpr = parseExpression(code);
             if (forExpr->testExpr == NULL)
             {
                 delete code;
@@ -527,7 +528,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
 #ifdef DEBUG_PARSER
             printf("Parser::parseCodeBlock: WHILE: Parsing Body...\n");
 #endif
-            forExpr->body = parseCodeBlock(runtime, function);
+            forExpr->body = parseCodeBlock(function);
             if (forExpr->body == NULL)
             {
                 delete code;
@@ -558,7 +559,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
             else
             {
                 m_pos--;
-                retExpr->returnValue = parseExpression(runtime, code);
+                retExpr->returnValue = parseExpression(code);
 
                 token = nextToken();
                 if (token->type != TOK_SEMICOLON)
@@ -574,7 +575,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
             m_pos--; // Rewind
 
             Expression* expression;
-            expression = parseExpression(runtime, code);
+            expression = parseExpression(code);
             if (expression == NULL)
             {
                 delete code;
@@ -597,7 +598,7 @@ CodeBlock* Parser::parseCodeBlock(Runtime* runtime, ScriptFunction* function)
     return code;
 }
 
-Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
+Expression* Parser::parseExpression(CodeBlock* code)
 {
     Expression* expression;
 
@@ -619,7 +620,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
 #endif
 
         vector<Expression*> newParams;
-        res = parseExpressionList(runtime, code, newParams);
+        res = parseExpressionList(code, newParams);
         if (!res)
         {
             printf("Parser::parseExpression: NEW: Failed to parse args?\n");
@@ -688,7 +689,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
 #endif
                 clazzname += ".";
                 clazzname += token->string;
-                clazz = runtime->findClass(clazzname);
+                clazz = m_context->getRuntime()->findClass(m_context, clazzname, false);
 #ifdef DEBUG_PARSER
                 printf("Parser::parseExpression:  -> class? %s = %p\n", clazzname.c_str(), clazz);
 #endif
@@ -726,7 +727,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
 #endif
             m_pos--;
             vector<Expression*> params;
-            res = parseExpressionList(runtime, code, params);
+            res = parseExpressionList(code, params);
             if (!res)
             {
             printf("Parser::parseExpression: -> Error in expression list\n");
@@ -785,7 +786,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
 #ifdef DEBUG_PARSER
         printf("Parser::parseExpression: Left bracket!\n");
 #endif
-        expression = parseExpression(runtime, code);
+        expression = parseExpression(code);
         Token* token = nextToken();
         if (token->type != TOK_BRACKET_RIGHT)
         {
@@ -894,7 +895,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
             addExpr->operType = OP_ADD;
             addExpr->left = copy;
             addExpr->left->parent = addExpr;
-            addExpr->right = parseExpression(runtime, code);
+            addExpr->right = parseExpression(code);
             if (addExpr->right == NULL)
             {
                 return NULL;
@@ -907,7 +908,7 @@ Expression* Parser::parseExpression(Runtime* runtime, CodeBlock* code)
         }
         else if (hasRightExpr)
         {
-            opExpr->right = parseExpression(runtime, code);
+            opExpr->right = parseExpression(code);
             if (opExpr->right == NULL)
             {
                 return NULL;
@@ -1051,7 +1052,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
     return true;
 }
 
-bool Parser::parseExpressionList(Runtime* runtime, CodeBlock* code, vector<Expression*>& list)
+bool Parser::parseExpressionList(CodeBlock* code, vector<Expression*>& list)
 {
     Token* token = nextToken();
     if (token->type != TOK_BRACKET_LEFT)
@@ -1069,7 +1070,7 @@ bool Parser::parseExpressionList(Runtime* runtime, CodeBlock* code, vector<Expre
         }
 
             m_pos--;
-            Expression* childExp = parseExpression(runtime, code);
+            Expression* childExp = parseExpression(code);
             if (childExp == NULL)
             {
                 return false;

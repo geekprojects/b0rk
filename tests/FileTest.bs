@@ -1,14 +1,14 @@
 
 import system.io.File;
 
-class FileTest
+class tests.FileTest
 {
     function main() static
     {
-var o = File.out;
-o.write("Hello");
+        var o = File.out;
+        o.write("Hello");
 
-File.out.write("world");
+        File.out.write("world");
     }
 }
 

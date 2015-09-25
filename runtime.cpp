@@ -9,6 +9,8 @@
 #include "system.h"
 #include "executor.h"
 #include "file.h"
+#include "lexer.h"
+#include "parser.h"
 
 using namespace std;
 
@@ -40,7 +42,7 @@ Runtime::Runtime()
     m_gcLastAlloc = 0;
     m_gcTime = 0;
 
-    m_arena.m_size = 4 * 1024 * 1024;
+    m_arena.m_size = 16 * 1024 * 1024;
     m_arena.m_start = (uint64_t)malloc(m_arena.m_size);
     memset((void*)m_arena.m_start, 0, m_arena.m_size);
     m_arena.m_head = NULL;
@@ -100,7 +102,7 @@ bool Runtime::addClass(Context* context, Class* clazz)
     return true;
 }
 
-Class* Runtime::findClass(string name)
+Class* Runtime::findClass(Context* context, string name, bool load)
 {
     map<string, Class*>::iterator it;
     it = m_classes.find(name);
@@ -108,6 +110,75 @@ Class* Runtime::findClass(string name)
     {
         return it->second;
     }
+
+    if (load)
+    {
+        return loadClass(context, name);
+    }
+    return NULL;
+}
+
+Class* Runtime::loadClass(Context* context, string name)
+{
+    string path = "";
+    size_t i;
+    for (i = 0; i < name.length(); i++)
+    {
+        char c = name[i];
+        if (c == '.')
+        {
+            c = '/';
+        }
+        path += c;
+    }
+    path += ".bs";
+
+#if 0
+    printf("Runtime::loadClass: Attempting to load class %s from file: %s\n", name.c_str(), path.c_str());
+#endif
+
+    FILE* fp = fopen(path.c_str(), "r");
+    if (fp == NULL)
+    {
+        printf("Runtime::loadClass: Unable to load class %s from file: %s\n", name.c_str(), path.c_str());
+        return NULL;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    size_t length = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    char* buffer = new char[length + 128];
+    memset(buffer + length, 0, 128);
+    fread(buffer, 1, length, fp);
+    fclose(fp);
+
+    Lexer lexer;
+    bool res = lexer.lexer(buffer, length);
+    if (!res)
+    {
+        delete[] buffer;
+        return NULL;
+    }
+
+    Parser parser(context);
+    res = parser.parse(lexer.getTokens());
+
+    delete[] buffer;
+    if (!res)
+    {
+        return 0;
+    }
+
+    map<string, Class*>::iterator it;
+    it = m_classes.find(name);
+    if (it != m_classes.end())
+    {
+        return it->second;
+    }
+
+    printf("Runtime::loadClass: ERROR: class %s not found in file: %s\n", name.c_str(), path.c_str());
+
     return NULL;
 }
 
@@ -213,7 +284,17 @@ bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int a
 #ifdef DEBUG_RUNTIME_NEW
     printf("Runtime::callConstructor: obj=%p, class=%s, super=%p\n", obj, clazz->getName().c_str(), clazz->getSuperClass());
 #endif
-    Function* ctor = clazz->findMethod(clazz->getName());
+
+    // The constructor should be named after the
+    // last part of the class name
+    string ctorName = clazz->getName();
+    size_t pos = ctorName.rfind('.');
+    if (pos != string::npos)
+    {
+        ctorName = ctorName.substr(pos + 1);
+    }
+
+    Function* ctor = clazz->findMethod(ctorName);
     if (ctor != NULL)
     {
         res = ctor->execute(context, obj, argCount);
@@ -252,6 +333,23 @@ void Runtime::gc()
     int64_t freed = 0;
     if (m_newObjects > m_gcLastAlloc)
     {
+
+        // Mark objects from static fields
+        map<string, Class*>::iterator it;
+        for (it = m_classes.begin(); it != m_classes.end(); it++)
+        {
+            int i;
+            Class* clazz = it->second;
+            for (i = 0; i < clazz->getStaticFieldCount(); i++)
+            {
+                Value v = clazz->getStaticField(i);
+                if (v.type == VALUE_OBJECT && isObjectValid(v.object))
+                {
+                    gcMarkObject(v.object, now);
+                }
+            }
+        }
+
         freed += gcArena(&m_arena, now);
         m_gcLastAlloc = m_newObjects;
     }

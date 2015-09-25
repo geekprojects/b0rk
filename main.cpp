@@ -13,52 +13,22 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    if (argc < 3)
+    if (argc < 2)
     {
         return 0;
     }
 
-    FILE* fp = fopen(argv[1], "r");
-    fseek(fp, 0, SEEK_END);
-    size_t length = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    char* buffer = new char[length + 128];
-    memset(buffer + length, 0, 128);
-    fread(buffer, 1, length, fp);
-    fclose(fp);
-
     Runtime* runtime = new Runtime();
     Context* context = runtime->createContext();
-    bool res;
 
-    Lexer lexer;
-    res = lexer.lexer(buffer, length);
-if (!res)
-{
-return 0;
-}
-
-    Parser parser;
-    res = parser.parse(context, lexer.getTokens());
-
-    delete[] buffer;
-if (!res)
-{
-return 0;
-}
-
-const char* className = argv[2];
-
-    Class* clazz = runtime->findClass(className);
-    //printf("main: %s = %p\n", className, clazz);
+    const char* className = argv[1];
+    Class* clazz = runtime->findClass(context, className);
     if (clazz == NULL)
     {
         return 0;
     }
 
     Function* mainFunc = clazz->findMethod("main");
-    //printf("main: main Func=%p\n", mainFunc);
     if (mainFunc == NULL)
     {
         return 0;
@@ -69,10 +39,9 @@ const char* className = argv[2];
         return 0;
     }
 
-
     mainFunc->execute(context, NULL, 0);
 
-    //delete runtime;
+    delete runtime;
 
     return 0;
 }
