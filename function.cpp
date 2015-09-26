@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "function.h"
-#include "string.h"
+#include "packages/system/lang/StringClass.h"
 
 using namespace std;
 

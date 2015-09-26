@@ -1,6 +1,7 @@
 #ifndef __BSCRIPT_VALUE_H_
 #define __BSCRIPT_VALUE_H_
 
+#include <string.h>
 #include <string>
 
 struct Object;

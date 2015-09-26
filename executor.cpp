@@ -1,6 +1,6 @@
 
 #include "executor.h"
-#include "string.h"
+#include "packages/system/lang/StringClass.h"
 
 #include <stdlib.h>
 #include <math.h>

@@ -1,10 +1,8 @@
 
 #undef DEBUG_STRING
 
-#include "string.h"
+#include "packages/system/lang/StringClass.h"
 #include "context.h"
-
-#include <string.h>
 
 using namespace std;
 

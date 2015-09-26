@@ -30,5 +30,10 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday memset strdup])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([
+    Makefile
+    packages/Makefile
+    packages/system/io/Makefile
+    packages/system/lang/Makefile
+    packages/system/Makefile])
 AC_OUTPUT

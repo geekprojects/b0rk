@@ -5,12 +5,12 @@
 #include <sys/time.h>
 
 #include "runtime.h"
-#include "string.h"
-#include "system.h"
 #include "executor.h"
-#include "file.h"
 #include "lexer.h"
 #include "parser.h"
+
+#include "packages/system/lang/StringClass.h"
+#include "packages/system/io/File.h"
 
 using namespace std;
 
@@ -52,7 +52,6 @@ Runtime::Runtime()
     m_arena.m_freeList.push_back(freeObj);
 
     Context* initContext = new Context(this);
-    addClass(initContext, new System());
     addClass(initContext, new String());
     addClass(initContext, new File());
     delete initContext;

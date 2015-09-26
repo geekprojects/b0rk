@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "file.h"
-#include "string.h"
+#include "packages/system/io/File.h"
+#include "packages/system/lang/StringClass.h"
 
 using namespace std;
 

@@ -1,6 +1,7 @@
 #ifndef __BSCRIPT_STRING_H_
 #define __BSCRIPT_STRING_H_
 
+#include <string>
 #include "class.h"
 
 class Context;
