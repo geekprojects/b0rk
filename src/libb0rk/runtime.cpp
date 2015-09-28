@@ -34,7 +34,7 @@ Runtime::Runtime()
 {
 
     m_classpath.push_back(".");
-    m_classpath.push_back(DATA_PATH);
+    m_classpath.push_back(DATA_PATH "/packages");
 
     m_newObjects = 0;
     m_newBytes = 0;
@@ -56,8 +56,8 @@ Runtime::Runtime()
     m_arena.m_freeList.push_back(freeObj);
 
     Context* initContext = new Context(this);
-    addClass(initContext, new String());
-    addClass(initContext, new File());
+    addClass(initContext, new String(), true);
+    addClass(initContext, new File(), true);
     delete initContext;
 
     m_executor = new Executor();
@@ -85,7 +85,7 @@ Runtime::~Runtime()
     free((void*)m_arena.m_start);
 }
 
-bool Runtime::addClass(Context* context, Class* clazz)
+bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
 {
     m_classes.insert(make_pair(clazz->getName(), clazz));
 
@@ -100,6 +100,11 @@ bool Runtime::addClass(Context* context, Class* clazz)
         {
             return false;
         }
+    }
+
+    if (findScript)
+    {
+        loadClass(context, clazz->getName(), true);
     }
 
     return true;
@@ -121,7 +126,7 @@ Class* Runtime::findClass(Context* context, string name, bool load)
     return NULL;
 }
 
-Class* Runtime::loadClass(Context* context, string name)
+Class* Runtime::loadClass(Context* context, string name, bool addToExisting)
 {
     string path = "";
     size_t i;
@@ -158,7 +163,10 @@ Class* Runtime::loadClass(Context* context, string name)
 
     if (fp == NULL)
     {
-        printf("Runtime::loadClass: Unable to load class %s\n", name.c_str());
+        if (!addToExisting)
+        {
+            fprintf(stderr, "Runtime::loadClass: Unable to load class %s\n", name.c_str());
+        }
         return NULL;
     }
 
@@ -180,7 +188,7 @@ Class* Runtime::loadClass(Context* context, string name)
     }
 
     Parser parser(context);
-    res = parser.parse(lexer.getTokens());
+    res = parser.parse(lexer.getTokens(), addToExisting);
 
     delete[] buffer;
     if (!res)

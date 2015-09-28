@@ -27,7 +27,7 @@ Token* Parser::nextToken()
     return result;
 }
 
-bool Parser::parse(vector<Token> tokens)
+bool Parser::parse(vector<Token> tokens, bool addToExisting)
 {
     m_pos = 0;
     m_tokens = tokens;
@@ -40,12 +40,11 @@ bool Parser::parse(vector<Token> tokens)
         if (token->type == TOK_CLASS)
         {
             Class* clazz;
-            clazz = parseClass();
+            clazz = parseClass(addToExisting);
             if (clazz == NULL)
             {
                 return false;
             }
-            m_context->getRuntime()->addClass(m_context, clazz);
         }
         else if (token->type == TOK_IMPORT)
         {
@@ -85,7 +84,7 @@ bool Parser::parse(vector<Token> tokens)
     return true;
 }
 
-Class* Parser::parseClass()
+Class* Parser::parseClass(bool addToExisting)
 {
     Token* token;
 
@@ -125,7 +124,22 @@ Class* Parser::parseClass()
 #ifdef DEBUG_PARSER
     printf("Parser::parseClass: Class name: %s\n", name.c_str());
 #endif
-    Class* clazz = new Class(superClass, name);
+
+    bool existing = false;
+    Class* clazz = NULL;
+    if (addToExisting)
+    {
+        clazz = m_context->getRuntime()->findClass(m_context, name, false);
+        if (clazz != NULL)
+        {
+            existing = true;
+        }
+    }
+
+    if (!existing)
+    {
+        clazz = new Class(superClass, name);
+    }
 
     while (m_pos < m_tokens.size())
     {
@@ -142,7 +156,7 @@ Class* Parser::parseClass()
 #ifdef DEBUG_PARSER
             printf("Parser::parseClass: Variable: %s\n", varName.c_str());
 #endif
-clazz->addField(varName);
+            clazz->addField(varName);
 
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
@@ -176,6 +190,10 @@ clazz->addField(varName);
             return NULL;
         }
     }
+if (!existing)
+{
+    m_context->getRuntime()->addClass(m_context, clazz);
+}
     return clazz;
 }
 

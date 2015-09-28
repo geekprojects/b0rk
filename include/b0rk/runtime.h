@@ -50,13 +50,13 @@ class Runtime
 
     bool callConstructor(Context* context, Object* obj, Class* clazz, int argCount);
 
-    Class* loadClass(Context* context, std::string name);
+    Class* loadClass(Context* context, std::string name, bool addToExisting = false);
 
  public:
     Runtime();
     ~Runtime();
 
-    bool addClass(Context* context, Class* clazz);
+    bool addClass(Context* context, Class* clazz, bool findScript = false);
     Class* findClass(Context* context, std::string name, bool load = true);
 
     Context* createContext();

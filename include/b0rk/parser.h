@@ -21,7 +21,7 @@ class Parser
     Token* nextToken();
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
-    Class* parseClass();
+    Class* parseClass(bool addToExisting);
     Function* parseFunction(Class* clazz);
 
     CodeBlock* parseCodeBlock(ScriptFunction* function);
@@ -40,7 +40,7 @@ class Parser
     Parser(Context* context);
     ~Parser();
 
-    bool parse(std::vector<Token> tokens);
+    bool parse(std::vector<Token> tokens, bool addToExisting = false);
 };
 
 #endif
