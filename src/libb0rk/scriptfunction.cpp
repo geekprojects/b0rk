@@ -25,7 +25,7 @@ ScriptFunction::~ScriptFunction()
 {
     delete m_code;
 
-    if (m_asmCode.code != NULL)
+    if (m_assembled && m_asmCode.code != NULL)
     {
         delete m_asmCode.code;
     }
