@@ -34,6 +34,8 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday memset strdup])
 
+CPPFLAGS="$CPPFLAGS -Wall -Werror -ggdb -O0"
+
 AC_CONFIG_FILES([
     Makefile
     src/Makefile
