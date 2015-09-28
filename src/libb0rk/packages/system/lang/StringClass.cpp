@@ -10,7 +10,7 @@ String::String()
     : Class(NULL, "system.lang.String")
 {
     addField("data"); // 0
-    addMethod("system.lang.String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
+    addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
     addMethod("operator+", new NativeFunction(this, (nativeFunction_t)&String::addOperator));
 }
 
