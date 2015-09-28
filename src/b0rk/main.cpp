@@ -25,17 +25,19 @@ int main(int argc, char** argv)
     Class* clazz = runtime->findClass(context, className);
     if (clazz == NULL)
     {
+        printf("%s: Unable to find class %s\n", argv[0], className);
         return 0;
     }
 
     Function* mainFunc = clazz->findMethod("main");
     if (mainFunc == NULL)
     {
+        printf("%s: No main method found in class\n", argv[0]);
         return 0;
     }
     if (!mainFunc->getStatic())
     {
-        printf("Main is not static!\n");
+        printf("%s: Main is not static!\n", argv[0]);
         return 0;
     }
 
