@@ -198,12 +198,27 @@ bool Lexer::lexer(char* buffer, int length)
             while (*pos != '\0')
             {
                 char strc = *(pos++);
-                if (strc == '\"')
+                if (strc == '\\')
+                {
+                    strc = *(pos++);
+                    if (strc == 'n')
+                    {
+                        str += "\n";
+                    }
+                    else
+                    {
+                        printf("Lexer: Unhandled backslash character: \\%c\n", strc);
+                        return false;
+                    }
+                }
+                else if (strc == '\"')
                 {
                     break;
                 }
-
-                str += strc;
+                else
+                {
+                    str += strc;
+                }
             }
 #ifdef DEBUG_LEXER
             printf("Lexer: Found String: %s\n", str.c_str());
