@@ -1,0 +1,8 @@
+class system.io.File
+{
+    function writeln(line)
+    {
+        write(line);
+        write("\n");
+    }
+}

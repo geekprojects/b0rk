@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "packages/system/io/File.h"
@@ -59,23 +60,21 @@ bool File::write(Context* context, Object* instance, int argCount)
         fd = 1;
     }
 
-    char buffer[1024];
-
     int i;
     for (i = 0; i < argCount; i++)
     {
-        int len;
         Value v = context->pop();
+        string str;
 
         if (v.type == VALUE_OBJECT && v.object->getClass()->getName() == "system.lang.String")
         {
-            len = snprintf(buffer, 1024, "%s\n", String::getString(context, v.object).c_str());
+            str = String::getString(context, v.object);
         }
         else
         {
-            len = snprintf(buffer, 1024, "%s\n", v.toString().c_str());
+            str = v.toString().c_str();
         }
-        ::write(fd, buffer, len);
+        ::write(fd, str.c_str(), str.length());
     }
 
     context->pushVoid();

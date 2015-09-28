@@ -27,16 +27,16 @@ class tests.Mandelbrot
 
     function generate()
     {
-        File.out.write("P2");
-        File.out.write("400 400");
-        File.out.write(maxIterations);
+        File.out.writeln("P2");
+        File.out.writeln("400 400");
+        File.out.writeln(maxIterations);
         var py;
         for (py = -2.0; py < 2.0; py += 0.01)
         {
             var px;
             for (px = -2.0; px < 2.0; px += 0.01)
             {
-                File.out.write(iterate(px, py));
+                File.out.writeln(iterate(px, py));
             }
         }
     }
