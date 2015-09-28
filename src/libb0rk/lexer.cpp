@@ -4,7 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "lexer.h"
+#include <b0rk/lexer.h>
 
 #undef DEBUG_LEXER
 

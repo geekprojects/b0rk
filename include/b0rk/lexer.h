@@ -1,7 +1,7 @@
 #ifndef __BSCRIPT_LEXER_H_
 #define __BSCRIPT_LEXER_H_
 
-#include "token.h"
+#include <b0rk/token.h>
 
 #include <string>
 #include <vector>

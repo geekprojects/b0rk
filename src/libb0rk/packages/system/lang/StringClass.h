@@ -2,7 +2,7 @@
 #define __BSCRIPT_STRING_H_
 
 #include <string>
-#include "class.h"
+#include <b0rk/class.h>
 
 class Context;
 

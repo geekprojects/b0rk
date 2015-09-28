@@ -1,5 +1,5 @@
 
-#include "class.h"
+#include <b0rk/class.h>
 
 using namespace std;
 

@@ -2,14 +2,18 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Beyond Script], [0.1], [ian@geekprojects.com])
+AC_INIT([b0rk], [0.1], [ian@geekprojects.com])
 AM_INIT_AUTOMAKE([-Wall -Werror])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([include/config.h])
 
 # Checks for programs.
 AM_PROG_AR
+AC_PROG_AWK
 AC_PROG_CXX
 AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
@@ -32,8 +36,14 @@ AC_CHECK_FUNCS([gettimeofday memset strdup])
 
 AC_CONFIG_FILES([
     Makefile
-    packages/Makefile
-    packages/system/io/Makefile
-    packages/system/lang/Makefile
-    packages/system/Makefile])
+    src/Makefile
+    src/libb0rk/Makefile
+    src/libb0rk/packages/Makefile
+    src/libb0rk/packages/system/io/Makefile
+    src/libb0rk/packages/system/lang/Makefile
+    src/libb0rk/packages/system/Makefile
+    src/b0rk/Makefile
+    include/Makefile
+    include/b0rk/Makefile
+])
 AC_OUTPUT

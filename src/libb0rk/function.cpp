@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "function.h"
+#include <b0rk/function.h>
 #include "packages/system/lang/StringClass.h"
 
 using namespace std;

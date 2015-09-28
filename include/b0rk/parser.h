@@ -1,10 +1,10 @@
 #ifndef __BSCRIPT_PARSER_H_
 #define __BSCRIPT_PARSER_H_
 
-#include "token.h"
-#include "expression.h"
-#include "class.h"
-#include "runtime.h"
+#include <b0rk/token.h>
+#include <b0rk/expression.h>
+#include <b0rk/class.h>
+#include <b0rk/runtime.h>
 
 #include <vector>
 

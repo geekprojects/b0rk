@@ -1,6 +1,6 @@
 
-#include "expression.h"
-#include "function.h"
+#include <b0rk/expression.h>
+#include <b0rk/function.h>
 
 using namespace std;
 

@@ -3,8 +3,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "function.h"
-#include "executor.h"
+#include <b0rk/function.h>
+#include <b0rk/executor.h>
 
 using namespace std;
 

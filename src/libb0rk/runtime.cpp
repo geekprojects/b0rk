@@ -4,10 +4,10 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include "runtime.h"
-#include "executor.h"
-#include "lexer.h"
-#include "parser.h"
+#include <b0rk/runtime.h>
+#include <b0rk/executor.h>
+#include <b0rk/lexer.h>
+#include <b0rk/parser.h>
 
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/io/File.h"
@@ -32,6 +32,10 @@ uint64_t getTimestamp()
 
 Runtime::Runtime()
 {
+
+    m_classpath.push_back(".");
+    m_classpath.push_back(DATA_PATH);
+
     m_newObjects = 0;
     m_newBytes = 0;
     m_currentObjects = 0;
@@ -133,13 +137,28 @@ Class* Runtime::loadClass(Context* context, string name)
     path += ".bs";
 
 #if 0
-    printf("Runtime::loadClass: Attempting to load class %s from file: %s\n", name.c_str(), path.c_str());
+    fprintf(stderr, "Runtime::loadClass: Attempting to load class %s from file: %s\n", name.c_str(), path.c_str());
 #endif
 
-    FILE* fp = fopen(path.c_str(), "r");
+    FILE* fp = NULL;
+    vector<string>::iterator cpit;
+
+    for (cpit = m_classpath.begin(); cpit != m_classpath.end(); cpit++)
+    {
+        string cppath = *cpit + "/" + path;
+        fp = fopen(cppath.c_str(), "r");
+#if 0
+        fprintf(stderr, "Runtime::loadClass: %s: %p\n", cppath.c_str(), fp);
+#endif
+        if (fp != NULL)
+        {
+            break;
+        }
+    }
+
     if (fp == NULL)
     {
-        printf("Runtime::loadClass: Unable to load class %s from file: %s\n", name.c_str(), path.c_str());
+        printf("Runtime::loadClass: Unable to load class %s\n", name.c_str());
         return NULL;
     }
 

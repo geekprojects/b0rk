@@ -1,6 +1,8 @@
 
 SUBDIRS=packages
 
+AM_CPPFLAGS = -DDATA_PATH=\"$(pkgdatadir)\"
+
 lib_LTLIBRARIES=libb0rk.la
 
 libb0rk_la_SOURCES=assembler.cpp context.cpp scriptfunction.cpp value.cpp class.cpp executor.cpp \

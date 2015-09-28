@@ -1,8 +1,8 @@
 #ifndef __BSCRIPT_ASSEMBLER_H_
 #define __BSCRIPT_ASSEMBLER_H_
 
-#include "expression.h"
-#include "opcodes.h"
+#include <b0rk/expression.h>
+#include <b0rk/opcodes.h>
 
 #include <stdint.h>
 

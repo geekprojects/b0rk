@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "value.h"
+#include <b0rk/value.h>
 
 class ScriptFunction;
 struct Expression;

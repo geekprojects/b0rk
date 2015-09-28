@@ -1,8 +1,8 @@
 #ifndef __BSCRIPT_CONTEXT_H_
 #define __BSCRIPT_CONTEXT_H_
 
-#include "runtime.h"
-#include "value.h"
+#include <b0rk/runtime.h>
+#include <b0rk/value.h>
 
 #include <vector>
 

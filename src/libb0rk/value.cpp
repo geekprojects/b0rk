@@ -1,6 +1,6 @@
 
-#include "value.h"
-#include "object.h"
+#include <b0rk/value.h>
+#include <b0rk/object.h>
 
 using namespace std;
 

@@ -4,8 +4,8 @@
 #include <vector>
 #include <string>
 
-#include "token.h"
-#include "value.h"
+#include <b0rk/token.h>
+#include <b0rk/value.h>
 
 struct CodeBlock;
 class ScriptFunction;

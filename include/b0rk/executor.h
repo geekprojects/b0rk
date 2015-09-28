@@ -1,8 +1,8 @@
 #ifndef __BSCRIPT_EXECUTOR_H_
 #define __BSCRIPT_EXECUTOR_H_
 
-#include "assembler.h"
-#include "context.h"
+#include <b0rk/assembler.h>
+#include <b0rk/context.h>
 
 class Executor
 {

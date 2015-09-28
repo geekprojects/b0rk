@@ -1,8 +1,8 @@
 #ifndef __BSCRIPT_CLASS_H_
 #define __BSCRIPT_CLASS_H_
 
-#include "function.h"
-#include "value.h"
+#include <b0rk/function.h>
+#include <b0rk/value.h>
 
 #include <map>
 #include <string>

@@ -1,9 +1,9 @@
 #ifndef __BSCRIPT_RUNTIME_H_
 #define __BSCRIPT_RUNTIME_H_
 
-#include "class.h"
-#include "context.h"
-#include "object.h"
+#include <b0rk/class.h>
+#include <b0rk/context.h>
+#include <b0rk/object.h>
 
 #include <map>
 #include <vector>
@@ -26,6 +26,7 @@ struct Arena
 class Runtime
 {
  private:
+    std::vector<std::string> m_classpath;
     std::map<std::string, Class*> m_classes;
 
     std::vector<Context*> m_contexts;

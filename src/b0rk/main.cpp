@@ -4,10 +4,10 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "lexer.h"
-#include "parser.h"
-#include "assembler.h"
-#include "executor.h"
+#include <b0rk/lexer.h>
+#include <b0rk/parser.h>
+#include <b0rk/assembler.h>
+#include <b0rk/executor.h>
 
 using namespace std;
 

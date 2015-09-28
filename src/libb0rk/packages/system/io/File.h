@@ -1,7 +1,7 @@
 #ifndef __BSCRIPT_BUILTIN_FILE_H_
 #define __BSCRIPT_BUILTIN_FILE_H_
 
-#include "class.h"
+#include <b0rk/class.h>
 
 class File : public Class
 {

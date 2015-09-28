@@ -1,11 +1,11 @@
 #ifndef __BSCRIPT_FUNCTION_H_
 #define __BSCRIPT_FUNCTION_H_
 
-#include "class.h"
-#include "context.h"
-#include "expression.h"
-#include "object.h"
-#include "assembler.h"
+#include <b0rk/class.h>
+#include <b0rk/context.h>
+#include <b0rk/expression.h>
+#include <b0rk/object.h>
+#include <b0rk/assembler.h>
 
 #include <vector>
 

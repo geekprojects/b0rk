@@ -1,9 +1,9 @@
 
 #undef DEBUG_ASSEMBLER
 
-#include "assembler.h"
-#include "runtime.h"
-#include "function.h"
+#include <b0rk/assembler.h>
+#include <b0rk/runtime.h>
+#include <b0rk/function.h>
 
 using namespace std;
 
