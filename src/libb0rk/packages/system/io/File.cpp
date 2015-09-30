@@ -66,7 +66,9 @@ bool File::write(Context* context, Object* instance, int argCount)
         Value v = context->pop();
         string str;
 
-        if (v.type == VALUE_OBJECT && v.object->getClass()->getName() == "system.lang.String")
+        if (v.type == VALUE_OBJECT &&
+            v.object != NULL &&
+            v.object->getClass()->getName() == "system.lang.String")
         {
             str = String::getString(context, v.object);
         }
