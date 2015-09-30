@@ -184,22 +184,37 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                     printf("Assembler::assembleExpression: CALL: Not a reference, must be THIS\n");
 #endif
 
-                    // Try class names?
-                    Function* func = m_function->getClass()->findMethod(callExpr->function);
-                    if (func == NULL)
+                    bool isVar = isVariable(block, NULL, callExpr->function);
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: CALL: %s: isVar=%d\n", callExpr->function.c_str(), isVar);
+#endif
+                    if (isVar)
                     {
-                        printf("Assembler::assembleExpression: CALL: Function on this not found\n");
-                        return false;
+                        VarExpression varExpr(block);
+                        varExpr.clazz = NULL;
+                        varExpr.var = callExpr->function;
+                        load(block, NULL, &varExpr);
+                        m_code.push_back(OPCODE_CALL_OBJ);
+                        m_code.push_back(count);
                     }
+                    else
+                    {
+                        // Try class names?
+                        Function* func = m_function->getClass()->findMethod(callExpr->function);
+                        if (func == NULL)
+                        {
+                            printf("Assembler::assembleExpression: CALL: Function on this not found\n");
+                            return false;
+                        }
 
-                    m_code.push_back(OPCODE_LOAD_VAR);
-                    m_code.push_back(0); // this
+                        m_code.push_back(OPCODE_LOAD_VAR);
+                        m_code.push_back(0); // this
 
-                    m_code.push_back(OPCODE_CALL);
-                    m_code.push_back((uint64_t)func);
-                    m_code.push_back(count);
+                        m_code.push_back(OPCODE_CALL);
+                        m_code.push_back((uint64_t)func);
+                        m_code.push_back(count);
+                    }
                 }
-
            }
         } break;
 
@@ -567,6 +582,16 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
             m_code.push_back(*dtoi);
         } break;
 
+        case EXPR_FUNCTION:
+        {
+            FunctionExpression* funcExpr = (FunctionExpression*)expr;
+#ifdef DEBUG_ASSEMBLER
+            printf("Assembler::assembleExpression: FUNCTION: NEW FUNCTION %p\n", funcExpr->function);
+#endif
+            m_code.push_back(OPCODE_NEW_FUNCTION);
+            m_code.push_back((uint64_t)funcExpr->function);
+        } break;
+
         default:
             printf("Assembler::assembleExpression: Unhandled expression: %d: %s\n", expr->type, expr->toString().c_str());
             return false;
@@ -647,7 +672,16 @@ bool Assembler::load(CodeBlock* block, Object* context, VarExpression* varExpr)
         return false;
     }
 
-    int id = block->getVarId(varExpr->var);
+    int id;
+    if (varExpr->var == "this")
+    {
+        id = 0;
+    }
+    else
+    {
+        id = block->getVarId(varExpr->var);
+    }
+
 #ifdef DEBUG_ASSEMBLER
     printf("Assembler::load: Local variable %s (%d)\n", varExpr->var.c_str(), id);
 #endif
@@ -660,7 +694,10 @@ bool Assembler::load(CodeBlock* block, Object* context, VarExpression* varExpr)
     }
     else
     {
-        id = m_function->getClass()->getFieldId(varExpr->var);
+        if (m_function->getClass() != NULL)
+        {
+            id = m_function->getClass()->getFieldId(varExpr->var);
+        }
 
 #ifdef DEBUG_ASSEMBLER
         printf("Assembler::load: Object field %s (%d)\n", varExpr->var.c_str(), id);
@@ -684,7 +721,16 @@ bool Assembler::load(CodeBlock* block, Object* context, VarExpression* varExpr)
 
 bool Assembler::store(CodeBlock* block, Object* context, string name)
 {
-    int id = block->getVarId(name);
+    int id;
+    if (name == "this")
+    {
+        id = 0;
+    }
+    else
+    {
+        id = block->getVarId(name);
+    }
+
 #ifdef DEBUG_ASSEMBLER
     printf("Assembler::store: Local variable %s (%d)\n", name.c_str(), id);
 #endif

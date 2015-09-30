@@ -8,6 +8,7 @@
 #include <b0rk/value.h>
 
 struct CodeBlock;
+class Function;
 class ScriptFunction;
 class Class;
 
@@ -29,6 +30,7 @@ enum ExpressionType
     EXPR_STRING,
     EXPR_INTEGER,
     EXPR_DOUBLE,
+    EXPR_FUNCTION,
 };
 
 struct Expression
@@ -155,6 +157,16 @@ struct DoubleExpression : public Expression
 
     virtual std::string toString();
 };
+
+struct FunctionExpression : public Expression
+{
+    Function* function;
+
+    FunctionExpression(CodeBlock* block);
+
+    virtual std::string toString();
+};
+
 
 #include "codeblock.h"
 

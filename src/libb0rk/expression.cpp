@@ -326,3 +326,16 @@ string DoubleExpression::toString()
     return "DOUBLE";
 }
 
+FunctionExpression::FunctionExpression(CodeBlock* block)
+    : Expression(block)
+{
+    type = EXPR_FUNCTION;
+}
+
+string FunctionExpression::toString()
+{
+    char buffer[256];
+    snprintf(buffer, 256, "{FUNCTION:%p}", function);
+    return string(buffer);
+}
+

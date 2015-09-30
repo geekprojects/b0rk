@@ -1,0 +1,35 @@
+/*
+ * 
+ */
+class tests.Functions
+{
+    var func;
+    var id;
+    function Functions(idParam)
+    {
+        id = idParam;
+        func = function(param)
+        {
+            system.io.File.out.writeln("Hello from Function! param=" + param);
+        };
+    }
+
+    function main() static
+    {
+        var func;
+        func = function()
+        {
+            system.io.File.out.writeln("Hello from func!");
+        };
+        var i;
+        for (i = 0; i < 10; i++)
+        {
+            func();
+        }
+
+        var funcObj = new tests.Functions("1");
+        funcObj.func(1);
+        new tests.Functions("2").func(2);
+    }
+}
+

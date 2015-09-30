@@ -10,6 +10,7 @@
 #include <b0rk/parser.h>
 
 #include "packages/system/lang/StringClass.h"
+#include "packages/system/lang/Function.h"
 #include "packages/system/io/File.h"
 
 using namespace std;
@@ -57,6 +58,7 @@ Runtime::Runtime()
 
     Context* initContext = new Context(this);
     addClass(initContext, new String(), true);
+    addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new File(), true);
     delete initContext;
 

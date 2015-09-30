@@ -203,7 +203,10 @@ Function* Parser::parseFunction(Class* clazz)
     bool res = parseList(paramTokens, TOK_IDENTIFIER);
     if (!res)
     {
-        delete clazz;
+        if (clazz != NULL)
+        {
+            delete clazz;
+        }
         return NULL;
     }
 
@@ -774,6 +777,18 @@ Expression* Parser::parseExpression(CodeBlock* code)
             expression = varExpr;
             m_pos--;
         }
+    }
+    else if (token->type == TOK_FUNCTION)
+    {
+        Function* func = parseFunction(NULL);
+#ifdef DEBUG_PARSER
+        printf("Parser::parseExpression: Function: %p\n", func);
+#endif
+        FunctionExpression* funcExpr = new FunctionExpression(code);
+        m_expressions.push_back(funcExpr);
+        funcExpr->function = func;
+        funcExpr->valueType = VALUE_OBJECT;
+        expression = funcExpr;
     }
     else if (token->type == TOK_STRING)
     {

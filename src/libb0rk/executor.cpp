@@ -400,7 +400,20 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                     continue;
                 }
 
-                Function* function = obj->getClass()->findMethod(funcName);
+                res = false;
+                Function* function;
+                int funcFieldId = obj->getClass()->getFieldId(funcName);
+                LOG("CALL_NAMED:  -> funcFieldId=%d", funcFieldId);
+                if (funcFieldId != -1)
+                {
+                    Value funcFieldValue = obj->getValue(funcFieldId);
+                    function = (Function*)(funcFieldValue.object->getValue(0).pointer);
+                }
+                else
+                {
+                    function = obj->getClass()->findMethod(funcName);
+                }
+
                 LOG("CALL_NAMED:  -> function=%p", function);
                 if (function == NULL)
                 {
@@ -410,6 +423,29 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                     continue;
                 }
                 res = function->execute(context, obj, count);
+                if (!res)
+                {
+                    running = false;
+                    success = false;
+                }
+            } break;
+
+            case OPCODE_CALL_OBJ:
+            {
+                int count = code.code[pc++];
+                res = false;
+
+                Value funcObjValue = context->pop();
+                if (funcObjValue.type == VALUE_OBJECT && funcObjValue.object != NULL)
+                {
+                    LOG("CALL_OBJ: function obj=%p, argCount=%d", funcObjValue.object, count);
+                    Function* function = (Function*)(funcObjValue.object->getValue(0).pointer);
+                    if (function != NULL)
+                    {
+                        LOG("CALL_OBJ: function=%p", function);
+                        res = function->execute(context, NULL, count);
+                    }
+                }
                 if (!res)
                 {
                     running = false;
@@ -451,6 +487,28 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Value v;
                 v.type = VALUE_OBJECT;
                 v.object = strObj;
+                context->push(v);
+            } break;
+
+            case OPCODE_NEW_FUNCTION:
+            {
+                Function* func = (Function*)code.code[pc++];
+
+                LOG("NEW_FUNCTION: %p", func);
+
+                Class* clazz = context->getRuntime()->findClass(context, "system.lang.Function", false);
+                LOG("NEW_FUNCTION: Function class=%p", clazz);
+
+                Value funcValue;
+                funcValue.type = VALUE_POINTER;
+                funcValue.pointer = func;
+                context->push(funcValue);
+                Object* funcObject = context->getRuntime()->newObject(context, clazz, 1);
+                LOG("NEW_FUNCTION: funcObject=%p", funcObject);
+
+                Value v;
+                v.type = VALUE_OBJECT;
+                v.object = funcObject;
                 context->push(v);
             } break;
 
