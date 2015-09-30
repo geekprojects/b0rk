@@ -1,0 +1,29 @@
+import system.io.File;
+
+/*
+ * Allocates lots of objects and doesn't do much with them
+ * This should cause the Garbage Collector to do a lot of
+ * work clearing up!
+ */
+class tests.GCStress
+{
+    var field1;
+    function GCTest()
+    {
+        field1 = new String("Hello");
+        new String("World");
+    }
+
+    function main() static
+    {
+        var i;
+        File.out.writeln("Creating lots of objects...");
+        for (i = 0; i < 1000000; i++)
+        {
+            var obj;
+            obj = new tests.GCStress();
+        }
+        File.out.writeln("Done!");
+    }
+}
+

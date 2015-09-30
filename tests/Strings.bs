@@ -1,0 +1,14 @@
+/*
+ * Simple String allocation and addition test
+ */
+class tests.Strings
+{
+    function main() static
+    {
+        var str = "hello";
+        str += " world";
+        str += new system.lang.String("!");
+        system.io.File.out.writeln("result: " + str);
+    }
+}
+
