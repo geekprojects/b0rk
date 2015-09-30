@@ -104,6 +104,12 @@ ValueType CodeBlock::getVarType(int id)
         }
         return VALUE_UNKNOWN;
     }
+
+    if (m_varTypes == NULL)
+    {
+        return VALUE_UNKNOWN;
+    }
+
     int thisId = id - m_startingVarId;
     return m_varTypes[thisId];
 }
