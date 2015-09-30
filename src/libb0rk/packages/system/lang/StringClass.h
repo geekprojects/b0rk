@@ -16,6 +16,8 @@ class String : public Class
 
     bool constructor(Context* context, Object* instance, int argCount);
     bool addOperator(Context* context, Object* instance, int argCount);
+    bool length(Context* context, Object* instance, int argCount);
+    bool at(Context* context, Object* instance, int argCount);
 
     static Object* createString(Context* context, const char* str);
     static std::string getString(Context* context, Object* obj);

@@ -12,6 +12,8 @@ String::String()
     addField("data"); // 0
     addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
     addMethod("operator+", new NativeFunction(this, (nativeFunction_t)&String::addOperator));
+    addMethod("length", new NativeFunction(this, (nativeFunction_t)&String::length));
+    addMethod("at", new NativeFunction(this, (nativeFunction_t)&String::at));
 }
 
 String::~String()
@@ -70,6 +72,33 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
     Value result;
     result.type = VALUE_OBJECT;
     result.object = createString(context, resultstr.c_str());
+    context->push(result);
+    return true;
+}
+
+bool String::length(Context* context, Object* instance, int argCount)
+{
+    int len = getString(context, instance).length();
+
+    Value result;
+    result.type = VALUE_INTEGER;
+    result.i = len;
+    context->push(result);
+    return true;
+}
+
+bool String::at(Context* context, Object* instance, int argCount)
+{
+    if (argCount != 1)
+    {
+        return false;
+    }
+    Value idx = context->pop();
+    char c = getString(context, instance).at(idx.i);
+
+    Value result;
+    result.type = VALUE_INTEGER;
+    result.i = c;
     context->push(result);
     return true;
 }

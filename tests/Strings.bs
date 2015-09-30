@@ -9,6 +9,13 @@ class tests.Strings
         str += " world";
         str += new system.lang.String("!");
         system.io.File.out.writeln("result: " + str);
+        system.io.File.out.writeln("length: " + str.length());
+
+        var i;
+        for (i = 0; i < str.length(); i++)
+        {
+            system.io.File.out.writeln(("char " + i) + " = " + str.at(i));
+        }
     }
 }
 
