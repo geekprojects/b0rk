@@ -1,5 +1,5 @@
 
-#undef DEBUG_PARSER
+#define DEBUG_PARSER
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -764,6 +764,24 @@ Expression* Parser::parseExpression(CodeBlock* code)
             callExpr->parameters = params;
             callExpr->valueType = VALUE_UNKNOWN;
             expression = callExpr;
+        }
+        else if (token->type == TOK_SQUARE_BRACKET_LEFT)
+        {
+            ArrayExpression* arrExpr = new ArrayExpression(code);
+            m_expressions.push_back(arrExpr);
+            arrExpr->clazz = clazz;
+            arrExpr->var = id;
+            arrExpr->indexExpr = parseExpression(code);
+#ifdef DEBUG_PARSER
+            printf("Parser::parseExpression: -> Array: %s[%s]\n", id.c_str(), arrExpr->indexExpr->toString().c_str());
+#endif
+            expression = arrExpr;
+            token = nextToken();
+            if (token->type != TOK_SQUARE_BRACKET_RIGHT)
+            {
+                printf("Parser::parseExpression: ERROR: Array: Expected ], got %s\n", token->string.c_str());
+                return NULL;
+            }
         }
         else
         {

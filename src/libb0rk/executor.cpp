@@ -1,6 +1,7 @@
 
 #include <b0rk/executor.h>
 #include "packages/system/lang/StringClass.h"
+#include "packages/system/lang/Array.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -123,6 +124,62 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 }
 
                 objValue.object->setValue(fieldId, value);
+            } break;
+
+            case OPCODE_LOAD_ARRAY:
+            {
+                Value indexValue = context->pop();
+                Value arrayValue = context->pop();
+
+                LOG("STORE_ARRAY: indexValue=%s", indexValue.toString().c_str());
+                LOG("STORE_ARRAY: arrayValue=%s", arrayValue.toString().c_str());
+
+                res = false;
+                if (arrayValue.type == VALUE_OBJECT && arrayValue.object != NULL)
+                {
+                    Object* array = arrayValue.object;
+                    Value valueValue;
+                    res = Array::load(array, indexValue, valueValue);
+                    context->push(valueValue);
+                }
+                else
+                {
+                    ERROR("STORE_ARRAY: Array is invalid: %s", arrayValue.toString().c_str());
+                }
+
+                if (!res)
+                {
+                    running = false;
+                    success = false;
+                }
+            } break;
+
+            case OPCODE_STORE_ARRAY:
+            {
+                Value indexValue = context->pop();
+                Value arrayValue = context->pop();
+                Value valueValue = context->pop();
+
+                LOG("STORE_ARRAY: indexValue=%s", indexValue.toString().c_str());
+                LOG("STORE_ARRAY: arrayValue=%s", arrayValue.toString().c_str());
+                LOG("STORE_ARRAY: valueValue=%s", valueValue.toString().c_str());
+
+                res = false;
+                if (arrayValue.type == VALUE_OBJECT && arrayValue.object != NULL)
+                {
+                    Object* array = arrayValue.object;
+                    res = Array::store(array, indexValue, valueValue);
+                }
+                else
+                {
+                    ERROR("STORE_ARRAY: Array is invalid: %s", arrayValue.toString().c_str());
+                }
+
+                if (!res)
+                {
+                    running = false;
+                    success = false;
+                }
             } break;
 
             case OPCODE_PUSHI:

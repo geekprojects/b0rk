@@ -9,6 +9,7 @@
 #include <b0rk/lexer.h>
 #include <b0rk/parser.h>
 
+#include "packages/system/lang/Array.h"
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/lang/Function.h"
 #include "packages/system/io/File.h"
@@ -57,6 +58,7 @@ Runtime::Runtime()
     m_arena.m_freeList.push_back(freeObj);
 
     Context* initContext = new Context(this);
+    addClass(initContext, new Array(), true);
     addClass(initContext, new String(), true);
     addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new File(), true);

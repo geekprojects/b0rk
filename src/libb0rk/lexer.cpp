@@ -27,6 +27,8 @@ SimpleToken tokenTable[] = {
     { "}", 1, TOK_BRACE_RIGHT },
     { "(", 1, TOK_BRACKET_LEFT },
     { ")", 1, TOK_BRACKET_RIGHT },
+    { "[", 1, TOK_SQUARE_BRACKET_LEFT },
+    { "]", 1, TOK_SQUARE_BRACKET_RIGHT },
     { "\"", 1, TOK_DOUBLE_QUOTE },
     { "'", 1, TOK_QUOTE },
     { "var", 3, TOK_VAR },

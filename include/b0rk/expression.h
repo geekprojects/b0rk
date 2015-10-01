@@ -27,6 +27,7 @@ enum ExpressionType
     EXPR_FOR,
     EXPR_RETURN,
     EXPR_VAR,
+    EXPR_ARRAY,
     EXPR_STRING,
     EXPR_INTEGER,
     EXPR_DOUBLE,
@@ -80,7 +81,8 @@ enum OpType
     OP_LOGICAL_AND,
     OP_INCREMENT,
     OP_LESS_THAN,
-    OP_REFERENCE
+    OP_REFERENCE,
+    OP_ARRAY
 };
 
 struct OperationExpression : public Expression
@@ -130,6 +132,17 @@ struct VarExpression : public Expression
 
     virtual std::string toString();
 };
+
+struct ArrayExpression : public VarExpression
+{
+    Expression* indexExpr;
+
+    ArrayExpression(CodeBlock* block);
+    virtual ~ArrayExpression() {}
+
+    virtual std::string toString();
+};
+
 
 struct StringExpression : public Expression
 {

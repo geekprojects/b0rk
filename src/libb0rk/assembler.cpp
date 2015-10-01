@@ -1,5 +1,5 @@
 
-#undef DEBUG_ASSEMBLER
+#define DEBUG_ASSEMBLER
 
 #include <b0rk/assembler.h>
 #include <b0rk/runtime.h>
@@ -354,9 +354,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
 
                 case OP_INCREMENT:
                 {
-                    if (opExpr->left->type != EXPR_VAR)
+                    if (opExpr->left->type != EXPR_VAR && opExpr->left->type != EXPR_ARRAY)
                     {
-                        printf("Assembler::assembleExpression: OPER: INCREMENT: Error: Left must be a variable!\n");
+                        printf("Assembler::assembleExpression: OPER: INCREMENT: Error: Left must be a variable or array!\n");
                         return false;
                     }
 
@@ -388,15 +388,39 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                     printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
 #endif
 
-                    if (opExpr->left->type != EXPR_VAR)
+                    if (opExpr->left->type == EXPR_VAR)
                     {
-                        printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable!\n");
-                        return false;
+                        VarExpression* varExpr = (VarExpression*)(opExpr->left);
+                        res = store(block, NULL, varExpr->var);
+                        if (!res)
+                        {
+                            return false;
+                        }
                     }
-                    VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    res = store(block, NULL, varExpr->var);
-                    if (!res)
+                    else if (opExpr->left->type == EXPR_ARRAY)
                     {
+                        ArrayExpression* arrExpr = (ArrayExpression*)(opExpr->left);
+#ifdef DEBUG_ASSEMBLER
+                        printf("Assembler::assembleExpression: OPER: SET ARRAY!\n");
+#endif
+                        // Load the array object
+                        res = load(block, NULL, arrExpr);
+                        if (!res)
+                        {
+                            return false;
+                        }
+
+                        res = assembleExpression(block, arrExpr->indexExpr);
+                        if (!res)
+                        {
+                            return false;
+                        }
+
+                        m_code.push_back(OPCODE_STORE_ARRAY);
+                    }
+                    else
+                    {
+                        printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable or array!\n");
                         return false;
                     }
                 } break;
@@ -518,6 +542,26 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
             {
                 return false;
             }
+        } break;
+
+        case EXPR_ARRAY:
+        {
+            ArrayExpression* arrExpr = (ArrayExpression*)expr;
+            printf("Assembler::assembleExpression: ARRAY!\n");
+            // Load the array object
+            res = load(block, NULL, arrExpr);
+            if (!res)
+            {
+                return false;
+            }
+
+            res = assembleExpression(block, arrExpr->indexExpr);
+            if (!res)
+            {
+                return false;
+            }
+
+            m_code.push_back(OPCODE_LOAD_ARRAY);
         } break;
 
         case EXPR_NEW:

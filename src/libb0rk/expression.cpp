@@ -293,6 +293,17 @@ string VarExpression::toString()
     return "{VAR:" + var + "}";
 }
 
+ArrayExpression::ArrayExpression(CodeBlock* block)
+    : VarExpression(block)
+{
+    type = EXPR_ARRAY;
+}
+
+string ArrayExpression::toString()
+{
+    return "{ARRAY:" + var + "[" + indexExpr->toString().c_str() + "]}";
+}
+
 StringExpression::StringExpression(CodeBlock* block)
     : Expression(block)
 {
@@ -312,7 +323,9 @@ IntegerExpression::IntegerExpression(CodeBlock* block)
 
 string IntegerExpression::toString()
 {
-    return "INTEGER";
+    char buffer[256];
+    snprintf(buffer, 256, "{INTEGER:%d}", i);
+    return string(buffer);
 }
 
 DoubleExpression::DoubleExpression(CodeBlock* block)
