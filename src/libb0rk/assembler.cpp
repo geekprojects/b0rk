@@ -1,5 +1,5 @@
 
-#define DEBUG_ASSEMBLER
+#undef DEBUG_ASSEMBLER
 
 #include <b0rk/assembler.h>
 #include <b0rk/runtime.h>

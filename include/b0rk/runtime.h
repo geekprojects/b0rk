@@ -29,6 +29,8 @@ class Runtime
     std::vector<std::string> m_classpath;
     std::map<std::string, Class*> m_classes;
 
+    Class* m_objectClass;
+
     std::vector<Context*> m_contexts;
 
     Arena m_arena;
@@ -58,6 +60,7 @@ class Runtime
 
     bool addClass(Context* context, Class* clazz, bool findScript = false);
     Class* findClass(Context* context, std::string name, bool load = true);
+    Class* getObjectClass() { return m_objectClass; }
 
     Context* createContext();
 

@@ -9,6 +9,7 @@
 #include <b0rk/lexer.h>
 #include <b0rk/parser.h>
 
+#include "packages/system/lang/Object.h"
 #include "packages/system/lang/Array.h"
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/lang/Function.h"
@@ -34,7 +35,7 @@ uint64_t getTimestamp()
 
 Runtime::Runtime()
 {
-
+    m_objectClass = NULL;
     m_classpath.push_back(".");
     m_classpath.push_back(DATA_PATH "/packages");
 
@@ -58,6 +59,8 @@ Runtime::Runtime()
     m_arena.m_freeList.push_back(freeObj);
 
     Context* initContext = new Context(this);
+    m_objectClass = new ObjectClass();
+    addClass(initContext, m_objectClass, true);
     addClass(initContext, new Array(), true);
     addClass(initContext, new String(), true);
     addClass(initContext, new FunctionClass(), true);
@@ -91,6 +94,11 @@ Runtime::~Runtime()
 
 bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
 {
+    if (findScript && m_objectClass != NULL && clazz != m_objectClass)
+    {
+        clazz->setSuperClass(m_objectClass);
+    }
+
     m_classes.insert(make_pair(clazz->getName(), clazz));
 
     clazz->initStaticFields();

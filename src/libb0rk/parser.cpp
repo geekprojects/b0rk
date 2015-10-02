@@ -111,8 +111,20 @@ Class* Parser::parseClass(bool addToExisting)
 #ifdef DEBUG_PARSER
         printf("Parser::parseClass: Class extends: %s: %p\n", token->string.c_str(), superClass);
 #endif
+        if (superClass == NULL)
+        {
+            printf("Parser::parseClass: Unable to find super class: %s\n", token->string.c_str());
+            return NULL;
+        }
 
         token = nextToken();
+    }
+    else
+    {
+#ifdef DEBUG_PARSER
+        superClass = m_context->getRuntime()->getObjectClass();
+#endif
+        printf("Parser::parseClass: Class extends: system.lang.Object: %p\n", superClass);
     }
 
     if (token->type != TOK_BRACE_LEFT)
@@ -190,10 +202,12 @@ Class* Parser::parseClass(bool addToExisting)
             return NULL;
         }
     }
-if (!existing)
-{
-    m_context->getRuntime()->addClass(m_context, clazz);
-}
+
+    if (!existing)
+    {
+        m_context->getRuntime()->addClass(m_context, clazz);
+    }
+
     return clazz;
 }
 

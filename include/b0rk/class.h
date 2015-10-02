@@ -28,6 +28,7 @@ class Class
     virtual ~Class();
 
     std::string getName() { return m_name; }
+    void setSuperClass(Class* sc) { m_superClass = sc; }
     Class* getSuperClass() { return m_superClass; }
 
     virtual size_t getFieldCount();
