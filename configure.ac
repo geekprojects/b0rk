@@ -47,5 +47,6 @@ AC_CONFIG_FILES([
     src/b0rk/Makefile
     include/Makefile
     include/b0rk/Makefile
+    b0rk.pc
 ])
 AC_OUTPUT

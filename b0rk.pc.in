@@ -1,0 +1,16 @@
+# b0rk pkg-config source file
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+bindir=@bindir@
+
+Name: b0rk
+Description: b0rk embeddable scriping language
+Version: 1.0.0
+Requires:
+Conflicts:
+Libs: L@libdir@ -lb0rk @LIBS@
+Cflags: -I@includedir@
+
