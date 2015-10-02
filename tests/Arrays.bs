@@ -5,16 +5,16 @@ class tests.Arrays
 {
     function main() static
     {
-var array = new system.lang.Array();
-array[0] = "hello";
-array[1] = "world";
-array["hello"] = 0;
-array["world"] = 0;
+        var array = new system.lang.Array();
+        array[0] = "hello";
+        array[1] = "world";
+        array["hello"] = 0;
+        array["world"] = 0;
 
-var hello = array[0];
-system.io.File.out.writeln(hello);
-system.io.File.out.writeln("Result: 0: " + array[0]);
-system.io.File.out.writeln("Result: hello: " + array["hello"]);
+        var hello = array[0];
+        system.io.File.out.writeln(hello);
+        system.io.File.out.writeln("Result: 0: " + array[0]);
+        system.io.File.out.writeln("Result: hello: " + array["hello"]);
     }
 }
 
