@@ -1,6 +1,7 @@
 #include <b0rk/context.h>
 
 using namespace std;
+using namespace b0rk;
 
 Context::Context(Runtime* runtime)
 {

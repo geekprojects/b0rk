@@ -3,6 +3,9 @@
 
 #include <b0rk/class.h>
 
+namespace b0rk
+{
+
 class File : public Class
 {
  private:
@@ -14,5 +17,6 @@ class File : public Class
     bool write(Context* context, Object* instance, int argCount);
     bool init(Context* context, Object* instance, int argCount);
 };
+}
 
 #endif

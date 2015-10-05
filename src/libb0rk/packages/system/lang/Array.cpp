@@ -6,6 +6,7 @@
 #include "packages/system/lang/Array.h"
 
 using namespace std;
+using namespace b0rk;
 
 Array::Array() : Class(NULL, "system.lang.Array")
 {

@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+namespace b0rk
+{
+
 struct SimpleToken
 {
     const char* str;
@@ -28,6 +31,8 @@ class Lexer
     bool lexer(char* buffer, int length);
 
     std::vector<Token>& getTokens() { return m_tokens; }
+};
+
 };
 
 #endif

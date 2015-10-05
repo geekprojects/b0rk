@@ -6,6 +6,9 @@
 
 #include <stdint.h>
 
+namespace b0rk
+{
+
 class Runtime;
 class Function;
 class ScriptFunction;
@@ -45,6 +48,8 @@ class Assembler
     ~Assembler();
 
     bool assemble(ScriptFunction* func, AssembledCode& asmCode);
+};
+
 };
 
 #endif

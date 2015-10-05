@@ -4,6 +4,9 @@
 #include <string.h>
 #include <string>
 
+namespace b0rk
+{
+
 struct Object;
 
 enum ValueType
@@ -36,6 +39,8 @@ struct Value
     }
 
     std::string toString();
+};
+
 };
 
 #endif

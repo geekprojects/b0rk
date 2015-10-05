@@ -6,6 +6,9 @@
 #include <string>
 #include <map>
 
+namespace b0rk
+{
+
 class ObjectClass : public Class
 {
  private:
@@ -16,6 +19,8 @@ class ObjectClass : public Class
 
     //bool constructor(Context* context, Object* instance, int argCount);
     bool toString(Context* context, Object* instance, int argCount);
+};
+
 };
 
 #endif

@@ -1,6 +1,9 @@
 #ifndef __BSCRIPT_OPCODES_H_
 #define __BSCRIPT_OPCODES_H_
 
+namespace b0rk
+{
+
 enum OpCode
 {
     OPCODE_LOAD_VAR          = 0x0100,
@@ -53,6 +56,8 @@ enum OpCode
     OPCODE_JMP         = 0x0600,
     OPCODE_BEQ         = 0x0601,
     OPCODE_BNE         = 0x0602
+};
+
 };
 
 #endif

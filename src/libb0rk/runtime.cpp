@@ -16,6 +16,7 @@
 #include "packages/system/io/File.h"
 
 using namespace std;
+using namespace b0rk;
 
 #undef DEBUG_GC
 

@@ -4,6 +4,9 @@
 #include <string>
 #include <b0rk/class.h>
 
+namespace b0rk
+{
+
 class Context;
 
 class String : public Class
@@ -21,6 +24,8 @@ class String : public Class
 
     static Object* createString(Context* context, const char* str);
     static std::string getString(Context* context, Object* obj);
+};
+
 };
 
 #endif

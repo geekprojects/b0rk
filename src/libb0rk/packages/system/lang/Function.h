@@ -3,6 +3,9 @@
 
 #include <b0rk/class.h>
 
+namespace b0rk
+{
+
 class FunctionClass : public Class
 {
  private:
@@ -12,6 +15,8 @@ class FunctionClass : public Class
     ~FunctionClass();
 
     bool constructor(Context* context, Object* instance, int argCount);
+};
+
 };
 
 #endif

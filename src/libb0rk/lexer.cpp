@@ -9,6 +9,7 @@
 #undef DEBUG_LEXER
 
 using namespace std;
+using namespace b0rk;
 
 SimpleToken tokenTable[] = {
     { ".", 1, TOK_DOT },

@@ -13,6 +13,7 @@
 #define INTEGER_VALUE(_v) (((_v).type == VALUE_INTEGER) ? (_v.i) : (int)(floor(_v.d)))
 
 using namespace std;
+using namespace b0rk;
 
 Executor::Executor()
 {

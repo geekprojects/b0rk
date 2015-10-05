@@ -7,6 +7,7 @@
 #include <b0rk/parser.h>
 
 using namespace std;
+using namespace b0rk;
 
 Parser::Parser(Context* context)
 {

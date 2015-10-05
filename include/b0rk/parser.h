@@ -8,6 +8,9 @@
 
 #include <vector>
 
+namespace b0rk
+{
+
 class Parser
 {
  private:
@@ -41,6 +44,8 @@ class Parser
     ~Parser();
 
     bool parse(std::vector<Token> tokens, bool addToExisting = false);
+};
+
 };
 
 #endif

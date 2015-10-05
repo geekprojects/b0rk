@@ -6,6 +6,7 @@
 #include "packages/system/lang/Object.h"
 
 using namespace std;
+using namespace b0rk;
 
 ObjectClass::ObjectClass() : Class(NULL, "system.lang.Object")
 {

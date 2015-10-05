@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+namespace b0rk
+{
+
 class Function;
 
 class Class
@@ -46,6 +49,8 @@ class Class
 
     void addMethod(std::string name, Function* function);
     virtual Function* findMethod(std::string name);
+};
+
 };
 
 #endif

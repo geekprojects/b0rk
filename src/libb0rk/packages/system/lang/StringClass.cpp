@@ -5,6 +5,7 @@
 #include <b0rk/context.h>
 
 using namespace std;
+using namespace b0rk;
 
 String::String()
     : Class(NULL, "system.lang.String")

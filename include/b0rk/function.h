@@ -9,6 +9,9 @@
 
 #include <vector>
 
+namespace b0rk
+{
+
 class Context;
 class Class;
 struct Object;
@@ -66,6 +69,8 @@ class ScriptFunction : public Function
 
 
     virtual bool execute(Context* context, Object* instance, int argCount);
+};
+
 };
 
 #endif

@@ -6,6 +6,9 @@
 
 #include <map>
 
+namespace b0rk
+{
+
 class Class;
 
 struct Object
@@ -18,6 +21,8 @@ struct Object
     Class* getClass() { return m_class; }
     Value getValue(int slot) { return m_values[slot]; }
     void setValue(int slot, Value v) { m_values[slot] = v; }
+};
+
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include <b0rk/function.h>
 
 using namespace std;
+using namespace b0rk;
 
 Expression::Expression(CodeBlock* _block)
 {

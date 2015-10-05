@@ -10,6 +10,7 @@
 #include <b0rk/executor.h>
 
 using namespace std;
+using namespace b0rk;
 
 int main(int argc, char** argv)
 {

@@ -4,6 +4,9 @@
 #include <b0rk/assembler.h>
 #include <b0rk/context.h>
 
+namespace b0rk
+{
+
 class Executor
 {
  private:
@@ -12,6 +15,8 @@ class Executor
     Executor();
 
     bool run(Context* context, Object* thisObj, AssembledCode& code, int argCount);
+};
+
 };
 
 #endif

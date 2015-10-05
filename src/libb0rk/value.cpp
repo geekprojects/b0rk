@@ -3,6 +3,7 @@
 #include <b0rk/object.h>
 
 using namespace std;
+using namespace b0rk;
 
 string Value::toString()
 {

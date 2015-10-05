@@ -2,6 +2,7 @@
 #include <b0rk/class.h>
 
 using namespace std;
+using namespace b0rk;
 
 Class::Class(Class* superClass, string name)
 {

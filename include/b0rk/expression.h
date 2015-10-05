@@ -7,6 +7,9 @@
 #include <b0rk/token.h>
 #include <b0rk/value.h>
 
+namespace b0rk
+{
+
 struct CodeBlock;
 class Function;
 class ScriptFunction;
@@ -178,6 +181,8 @@ struct FunctionExpression : public Expression
     FunctionExpression(CodeBlock* block);
 
     virtual std::string toString();
+};
+
 };
 
 

@@ -6,6 +6,7 @@
 #include "packages/system/lang/Function.h"
 
 using namespace std;
+using namespace b0rk;
 
 FunctionClass::FunctionClass() : Class(NULL, "system.lang.Function")
 {

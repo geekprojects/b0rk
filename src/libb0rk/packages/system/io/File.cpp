@@ -7,6 +7,7 @@
 #include "packages/system/lang/StringClass.h"
 
 using namespace std;
+using namespace b0rk;
 
 File::File() : Class(NULL, "system.io.File")
 {

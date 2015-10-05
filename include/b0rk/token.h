@@ -3,6 +3,9 @@
 
 #include <string>
 
+namespace b0rk
+{
+
 enum CharType
 {
     ALPHA,
@@ -58,6 +61,8 @@ struct Token
     std::string string;
     int i;
     double d;
+};
+
 };
 
 #endif

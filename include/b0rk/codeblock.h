@@ -6,6 +6,9 @@
 
 #include <b0rk/value.h>
 
+namespace b0rk
+{
+
 class ScriptFunction;
 struct Expression;
 
@@ -31,6 +34,8 @@ struct CodeBlock
     ValueType getVarType(int id);
 
     std::string toString();
+};
+
 };
 
 #endif

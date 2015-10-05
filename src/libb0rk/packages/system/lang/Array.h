@@ -6,6 +6,9 @@
 #include <string>
 #include <map>
 
+namespace b0rk
+{
+
 // TODO: HACK HACK HACK THIS WORKS BUT ISN'T RIGHT!
 struct ArrayContainer
 {
@@ -25,6 +28,8 @@ class Array : public Class
     static ArrayContainer* getContainer(Object* array);
     static bool load(Object* array, Value index, Value& value);
     static bool store(Object* array, Value index, Value value);
+};
+
 };
 
 #endif

@@ -10,6 +10,9 @@
 #include <list>
 #include <string>
 
+namespace b0rk
+{
+
 class Context;
 class Class;
 struct Object;
@@ -72,6 +75,8 @@ class Runtime
     void gcStats();
 
     Executor* getExecutor();
+};
+
 };
 
 #endif

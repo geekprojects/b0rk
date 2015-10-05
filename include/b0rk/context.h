@@ -6,6 +6,9 @@
 
 #include <vector>
 
+namespace b0rk
+{
+
 class Runtime;
 
 struct Frame
@@ -32,6 +35,8 @@ class Context
     void push(Value value);
     void pushVoid();
     Value pop();
+};
+
 };
 
 #endif

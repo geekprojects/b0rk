@@ -7,6 +7,7 @@
 #include <b0rk/executor.h>
 
 using namespace std;
+using namespace b0rk;
 
 ScriptFunction::ScriptFunction(Class* clazz, vector<string> args)
     : Function(clazz, args)
