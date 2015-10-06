@@ -52,6 +52,28 @@ NativeFunction::NativeFunction(Class* clazz, nativeFunction_t func)
 
 bool NativeFunction::execute(Context* context, Object* instance, int argCount)
 {
-    return (m_class->*m_native)(context, instance, argCount);
+    Value args[argCount];
+
+    // Populate the args array
+    // TODO: This will make objects in arrays invisible to the GC!
+    int i;
+    for (i = 0; i < argCount; i++)
+    {
+        args[(argCount - 1) - i] = context->pop();
+    }
+
+    Value result;
+    result.type = VALUE_VOID;
+    result.i = 0;
+
+    bool res = (m_class->*m_native)(context, instance, argCount, args, result);
+
+    if (!res)
+    {
+        return false;
+    }
+
+    context->push(result);
+    return true;
 }
 

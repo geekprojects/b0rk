@@ -18,14 +18,13 @@ FunctionClass::~FunctionClass()
 {
 }
 
-bool FunctionClass::constructor(Context* context, Object* instance, int argCount)
+bool FunctionClass::constructor(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
-Value funcValue = context->pop();
+    Value funcValue = args[0];
 
-instance->setValue(0, funcValue);
+    instance->setValue(0, funcValue);
 
-    // No result
-    context->pushVoid();
+    result.type = VALUE_VOID;
 
     return true;
 }

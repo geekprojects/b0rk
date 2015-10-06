@@ -1,5 +1,5 @@
 
-#define DEBUG_PARSER
+#undef DEBUG_PARSER
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,10 +122,10 @@ Class* Parser::parseClass(bool addToExisting)
     }
     else
     {
-#ifdef DEBUG_PARSER
         superClass = m_context->getRuntime()->getObjectClass();
-#endif
+#ifdef DEBUG_PARSER
         printf("Parser::parseClass: Class extends: system.lang.Object: %p\n", superClass);
+#endif
     }
 
     if (token->type != TOK_BRACE_LEFT)

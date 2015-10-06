@@ -18,7 +18,7 @@ class ObjectClass : public Class
     ~ObjectClass();
 
     //bool constructor(Context* context, Object* instance, int argCount);
-    bool toString(Context* context, Object* instance, int argCount);
+    bool toString(Context* context, Object* instance, int argCount, Value* args, Value& result);
 };
 
 };

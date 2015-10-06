@@ -17,10 +17,10 @@ class String : public Class
     String();
     ~String();
 
-    bool constructor(Context* context, Object* instance, int argCount);
-    bool addOperator(Context* context, Object* instance, int argCount);
-    bool length(Context* context, Object* instance, int argCount);
-    bool at(Context* context, Object* instance, int argCount);
+    bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool addOperator(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool length(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool at(Context* context, Object* instance, int argCount, Value* args, Value& result);
 
     static Object* createString(Context* context, const char* str);
     static std::string getString(Context* context, Object* obj);

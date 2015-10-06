@@ -38,7 +38,7 @@ class Function
     virtual bool execute(Context* context, Object* clazz, int argCount);
 };
 
-typedef bool(Class::*nativeFunction_t)(Context*, Object* instance, int argCount);
+typedef bool(Class::*nativeFunction_t)(Context*, Object* instance, int argCount, Value* args, Value& result);
 
 class NativeFunction : public Function
 {

@@ -19,7 +19,7 @@ Array::~Array()
 {
 }
 
-bool Array::constructor(Context* context, Object* instance, int argCount)
+bool Array::constructor(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
     ArrayContainer* ac = new ArrayContainer();
     Value acValue;
@@ -29,7 +29,7 @@ bool Array::constructor(Context* context, Object* instance, int argCount)
     instance->setValue(0, acValue);
 
     // No result
-    context->pushVoid();
+    result.type = VALUE_VOID;
 
     return true;
 }

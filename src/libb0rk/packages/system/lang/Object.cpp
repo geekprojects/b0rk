@@ -19,11 +19,12 @@ ObjectClass::~ObjectClass()
 {
 }
 
-bool ObjectClass::toString(Context* context, Object* instance, int argCount)
+bool ObjectClass::toString(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
-printf("ObjectClass::toString: Here!\n");
+    printf("ObjectClass::toString: Here!\n");
+
     // No result
-    context->pushVoid();
+    result.type = VALUE_VOID;
 
     return true;
 }

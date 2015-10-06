@@ -14,8 +14,8 @@ class File : public Class
     File();
     ~File();
 
-    bool write(Context* context, Object* instance, int argCount);
-    bool init(Context* context, Object* instance, int argCount);
+    bool write(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool init(Context* context, Object* instance, int argCount, Value* args, Value& result);
 };
 }
 

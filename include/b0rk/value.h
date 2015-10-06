@@ -33,10 +33,12 @@ struct Value
         double d;
     };
 
+/*
     Value()
     {
         type = VALUE_UNKNOWN;
     }
+*/
 
     std::string toString();
 };

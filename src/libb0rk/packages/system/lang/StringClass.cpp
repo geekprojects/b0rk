@@ -21,36 +21,33 @@ String::~String()
 {
 }
 
-bool String::constructor(Context* context, Object* instance, int argCount)
+bool String::constructor(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
 #ifdef DEBUG_STRING
     printf("String::constructor: argCount=%d\n", argCount);
 #endif
     if (argCount == 1)
     {
-        Value arg = context->pop();
         Value v;
-        if (arg.type == VALUE_OBJECT &&
-            arg.object != NULL &&
-            arg.object->getClass() == this)
+        if (args[0].type == VALUE_OBJECT &&
+            args[0].object != NULL &&
+            args[0].object->getClass() == this)
         {
-            v.pointer = strdup((const char*)(arg.object->getValue(0).pointer));
+            v.pointer = strdup((const char*)(args[0].object->getValue(0).pointer));
         }
         else
         {
-            v.pointer = strdup(arg.toString().c_str());
+            v.pointer = strdup(args[0].toString().c_str());
         }
         instance->setValue(0, v);
     }
 
-    // No result
-    context->pushVoid();
     return true;
 }
 
-bool String::addOperator(Context* context, Object* instance, int argCount)
+bool String::addOperator(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
-    Value rhs = context->pop();
+    Value rhs = args[0];
 
     string rhsStr = "";
     if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass() == this)
@@ -70,37 +67,34 @@ bool String::addOperator(Context* context, Object* instance, int argCount)
 
     string resultstr = getString(context, instance) + rhsStr;
 
-    Value result;
     result.type = VALUE_OBJECT;
     result.object = createString(context, resultstr.c_str());
-    context->push(result);
+
     return true;
 }
 
-bool String::length(Context* context, Object* instance, int argCount)
+bool String::length(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
     int len = getString(context, instance).length();
 
-    Value result;
     result.type = VALUE_INTEGER;
     result.i = len;
-    context->push(result);
+
     return true;
 }
 
-bool String::at(Context* context, Object* instance, int argCount)
+bool String::at(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
     if (argCount != 1)
     {
         return false;
     }
-    Value idx = context->pop();
+    Value idx = args[0];
     char c = getString(context, instance).at(idx.i);
 
-    Value result;
     result.type = VALUE_INTEGER;
     result.i = c;
-    context->push(result);
+
     return true;
 }
 

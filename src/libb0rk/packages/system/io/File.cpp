@@ -23,7 +23,7 @@ File::~File()
 {
 }
 
-bool File::init(Context* context, Object* instance, int argCount)
+bool File::init(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
     Class* fileClass = context->getRuntime()->findClass(context, "system.io.File");
     Object* outFile = context->getRuntime()->allocateObject(fileClass);
@@ -43,11 +43,12 @@ bool File::init(Context* context, Object* instance, int argCount)
     int outId = getStaticFieldId("out");
     fileClass->setStaticField(outId, outObjValue);
 
-    context->pushVoid();
+    result.type = VALUE_VOID;
+
     return true;
 }
 
-bool File::write(Context* context, Object* instance, int argCount)
+bool File::write(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
     int fd;
     if (instance != NULL)
@@ -64,7 +65,7 @@ bool File::write(Context* context, Object* instance, int argCount)
     int i;
     for (i = 0; i < argCount; i++)
     {
-        Value v = context->pop();
+        Value v = args[i];
         string str;
 
         if (v.type == VALUE_OBJECT &&
@@ -80,7 +81,8 @@ bool File::write(Context* context, Object* instance, int argCount)
         ::write(fd, str.c_str(), str.length());
     }
 
-    context->pushVoid();
+    result.type = VALUE_VOID;
+
     return true;
 }
 

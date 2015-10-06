@@ -23,7 +23,7 @@ class Array : public Class
     Array();
     ~Array();
 
-    bool constructor(Context* context, Object* instance, int argCount);
+    bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
 
     static ArrayContainer* getContainer(Object* array);
     static bool load(Object* array, Value index, Value& value);
