@@ -35,6 +35,7 @@ class Function
 
     int getArgId(std::string arg);
 
+    bool execute(Context* context, Object* clazz, int argCount, Value* argv, Value& result);
     virtual bool execute(Context* context, Object* clazz, int argCount);
 };
 

@@ -39,6 +39,23 @@ int Function::getArgId(string arg)
     return -1;
 }
 
+bool Function::execute(Context* context, Object* instance, int argCount, Value* argv, Value& result)
+{
+    int i;
+    for (i = 0; i < argCount; i++)
+    {
+        context->push(argv[i]);
+    }
+    bool res;
+    res = execute(context, instance, argCount);
+    if (!res)
+    {
+        return false;
+    }
+    result = context->pop();
+    return true;
+}
+
 bool Function::execute(Context* context, Object* instance, int argCount)
 {
     return false;
