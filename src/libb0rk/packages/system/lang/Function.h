@@ -15,6 +15,8 @@ class FunctionClass : public Class
     ~FunctionClass();
 
     bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
+
+    static Function* getFunction(Object* funcObj);
 };
 
 };

@@ -29,3 +29,13 @@ bool FunctionClass::constructor(Context* context, Object* instance, int argCount
     return true;
 }
 
+Function* FunctionClass::getFunction(Object* funcObj)
+{
+    if (funcObj != NULL &&
+        funcObj->getClass()->getName() == "system.lang.Function")
+    {
+        return (Function*)(funcObj->getValue(0)).object;
+    }
+    return NULL;
+}
+
