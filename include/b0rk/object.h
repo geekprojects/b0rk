@@ -11,11 +11,22 @@ namespace b0rk
 
 class Class;
 
+class NativeObject
+{
+ protected:
+    Object* m_object;
+
+ public:
+    NativeObject(Object* object) { m_object = object; }
+    virtual ~NativeObject() {}
+};
+
 struct Object
 {
     Class* m_class;
     size_t m_size;
     uint64_t m_gcMark;
+    NativeObject* m_nativeObject;
     Value m_values[0];
 
     Class* getClass() { return m_class; }

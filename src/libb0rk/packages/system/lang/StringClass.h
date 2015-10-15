@@ -9,6 +9,21 @@ namespace b0rk
 
 class Context;
 
+class StringNative : public NativeObject
+{
+ private:
+    std::string m_string;
+
+ public:
+    StringNative(Object* object, std::string str);
+
+    bool addOperator(Context* context, int argCount, Value* args, Value& result);
+    bool length(Context* context, int argCount, Value* args, Value& result);
+    bool at(Context* context, int argCount, Value* args, Value& result);
+
+    std::string getString() { return m_string; }
+};
+
 class String : public Class
 {
  private:
@@ -18,11 +33,8 @@ class String : public Class
     ~String();
 
     bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
-    bool addOperator(Context* context, Object* instance, int argCount, Value* args, Value& result);
-    bool length(Context* context, Object* instance, int argCount, Value* args, Value& result);
-    bool at(Context* context, Object* instance, int argCount, Value* args, Value& result);
 
-    static Object* createString(Context* context, const char* str);
+    static Object* createString(Context* context, std::string str);
     static std::string getString(Context* context, Object* obj);
 };
 

@@ -12,6 +12,8 @@ namespace b0rk
 {
 
 class Function;
+class Class;
+class Context;
 
 class Class
 {

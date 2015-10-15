@@ -14,6 +14,7 @@ namespace b0rk
 
 class Context;
 class Class;
+class NativeObject;
 struct Object;
 
 class Function
@@ -51,6 +52,20 @@ class NativeFunction : public Function
 
     virtual bool execute(Context* context, Object* instance, int argCount);
 };
+
+typedef bool(NativeObject::*nativeObjectFunction_t)(Context*, int argCount, Value* args, Value& result);
+
+class NativeObjectFunction : public Function
+{
+ private:
+    nativeObjectFunction_t m_native;
+
+ public:
+    NativeObjectFunction(Class* clazz, nativeObjectFunction_t func);
+
+    virtual bool execute(Context* context, Object* instance, int argCount);
+};
+
 
 class ScriptFunction : public Function
 {

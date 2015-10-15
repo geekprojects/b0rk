@@ -10,11 +10,11 @@ using namespace b0rk;
 String::String()
     : Class(NULL, "system.lang.String")
 {
-    addField("data"); // 0
     addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
-    addMethod("operator+", new NativeFunction(this, (nativeFunction_t)&String::addOperator));
-    addMethod("length", new NativeFunction(this, (nativeFunction_t)&String::length));
-    addMethod("at", new NativeFunction(this, (nativeFunction_t)&String::at));
+
+    addMethod("operator+", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::addOperator));
+    addMethod("length", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::length));
+    addMethod("at", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::at));
 }
 
 String::~String()
@@ -26,33 +26,54 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
 #ifdef DEBUG_STRING
     printf("String::constructor: argCount=%d\n", argCount);
 #endif
-    if (argCount == 1)
+
+    if (argCount == 0)
     {
-        Value v;
+        instance->m_nativeObject = new StringNative(instance, "");
+    }
+    else if (argCount == 1)
+    {
+        string str;
         if (args[0].type == VALUE_OBJECT &&
             args[0].object != NULL &&
             args[0].object->getClass() == this)
         {
-            v.pointer = strdup((const char*)(args[0].object->getValue(0).pointer));
+            StringNative* strNative = (StringNative*)(args[0].object->m_nativeObject);
+            str = strNative->getString();
         }
         else
         {
-            v.pointer = strdup(args[0].toString().c_str());
+            str = args[0].toString();
         }
-        instance->setValue(0, v);
+ 
+#ifdef DEBUG_STRING
+        printf("String::constructor: str=%s\n", str.c_str());
+#endif
+        instance->m_nativeObject = new StringNative(instance, str);
+    }
+    else
+    {
+        fprintf(stderr, "String::constructor: Expected 0 or 1 arguments, got %d\n", argCount);
+        return false;
     }
 
     return true;
 }
 
-bool String::addOperator(Context* context, Object* instance, int argCount, Value* args, Value& result)
+StringNative::StringNative(Object* instance, string str)
+    : NativeObject(instance)
+{
+    m_string = str;
+}
+
+bool StringNative::addOperator(Context* context, int argCount, Value* args, Value& result)
 {
     Value rhs = args[0];
 
     string rhsStr = "";
-    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass() == this)
+    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass()->getName() == "system.lang.String")
     {
-        rhsStr =  getString(context, rhs.object);
+        rhsStr =  String::getString(context, rhs.object);
 #ifdef DEBUG_STRING
         printf("String::addOperator: rhs (String): %s\n", rhsStr.c_str());
 #endif
@@ -65,32 +86,31 @@ bool String::addOperator(Context* context, Object* instance, int argCount, Value
 #endif
     }
 
-    string resultstr = getString(context, instance) + rhsStr;
+    string resultstr = m_string + rhsStr;
 
     result.type = VALUE_OBJECT;
-    result.object = createString(context, resultstr.c_str());
+    result.object = String::createString(context, resultstr);
 
     return true;
 }
 
-bool String::length(Context* context, Object* instance, int argCount, Value* args, Value& result)
+bool StringNative::length(Context* context, int argCount, Value* args, Value& result)
 {
-    int len = getString(context, instance).length();
-
     result.type = VALUE_INTEGER;
-    result.i = len;
+    result.i = m_string.length();
 
     return true;
 }
 
-bool String::at(Context* context, Object* instance, int argCount, Value* args, Value& result)
+bool StringNative::at(Context* context, int argCount, Value* args, Value& result)
 {
     if (argCount != 1)
     {
         return false;
     }
+
     Value idx = args[0];
-    char c = getString(context, instance).at(idx.i);
+    char c = m_string.at(idx.i);
 
     result.type = VALUE_INTEGER;
     result.i = c;
@@ -98,7 +118,7 @@ bool String::at(Context* context, Object* instance, int argCount, Value* args, V
     return true;
 }
 
-Object* String::createString(Context* context, const char* str)
+Object* String::createString(Context* context, std::string str)
 {
     Class* stringClass = context->getRuntime()->findClass(context, "system.lang.String");
 
@@ -108,10 +128,10 @@ Object* String::createString(Context* context, const char* str)
         return NULL;
     }
 
-    Value v;
-    v.type = VALUE_POINTER;
-    v.pointer = strdup(str);
-    object->setValue(0, v);
+    object->m_nativeObject = new StringNative(object, str);
+#ifdef DEBUG_STRING
+    printf("String::createString: str=%s\n", str.c_str());
+#endif
 
     return object;
 }
@@ -126,15 +146,6 @@ std::string String::getString(Context* context, Object* obj)
     {
         return "NOTASTRING";
     }
-    if (obj->m_class->getFieldCount() == 0)
-    {
-        return "INVALID";
-    }
-    if (obj->getValue(0).pointer == NULL)
-    {
-        return "NULL";
-    }
-    return string((const char*)obj->getValue(0).pointer);
+    return ((StringNative*)obj->m_nativeObject)->getString();
 }
-
 
