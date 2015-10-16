@@ -19,6 +19,8 @@ class NativeObject
  public:
     NativeObject(Object* object) { m_object = object; }
     virtual ~NativeObject() {}
+
+    Object* getB0rkObject() { return m_object; }
 };
 
 struct Object
