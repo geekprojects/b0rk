@@ -35,6 +35,7 @@ class String : public Class
     bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
 
     static Object* createString(Context* context, std::string str);
+    static std::string getString(Context* context, Value& value);
     static std::string getString(Context* context, Object* obj);
 };
 

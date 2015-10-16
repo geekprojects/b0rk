@@ -136,6 +136,18 @@ Object* String::createString(Context* context, std::string str)
     return object;
 }
 
+std::string String::getString(Context* context, Value& value)
+{
+    if (value.type == VALUE_OBJECT)
+    {
+        return getString(context, value.object);
+    }
+    else
+    {
+        return value.toString();
+    }
+}
+
 std::string String::getString(Context* context, Object* obj)
 {
     if (obj == NULL)
