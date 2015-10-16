@@ -40,6 +40,8 @@ class Runtime
 
     Executor* m_executor;
 
+    void* m_appData;
+
     int64_t m_newObjects;
     int64_t m_newBytes;
     int64_t m_currentObjects;
@@ -70,6 +72,9 @@ class Runtime
     Object* allocateObject(Class* clazz);
     Object* newObject(Context* context, Class* clazz, int argCount);
     bool isObjectValid(Object* obj);
+
+    void setAppData(void* data) { m_appData = data; }
+    void* getAppData() { return m_appData; }
 
     void gc();
     void gcStats();
