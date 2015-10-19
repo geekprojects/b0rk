@@ -27,6 +27,7 @@ enum ExpressionType
     EXPR_CALL,
     EXPR_NEW,
     EXPR_OPER,
+    EXPR_IF,
     EXPR_FOR,
     EXPR_RETURN,
     EXPR_VAR,
@@ -99,6 +100,18 @@ struct OperationExpression : public Expression
     virtual ~OperationExpression();
 
     void resolveType();
+
+    virtual std::string toString();
+};
+
+struct IfExpression : public Expression
+{
+    Expression* testExpr;
+    CodeBlock* trueBlock;
+    CodeBlock* falseBlock;
+
+    IfExpression(CodeBlock* block);
+    virtual ~IfExpression();
 
     virtual std::string toString();
 };

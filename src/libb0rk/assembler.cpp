@@ -439,6 +439,58 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
             }
         } break;
 
+        case EXPR_IF:
+        {
+            IfExpression* ifExpr = (IfExpression*)expr;
+
+            // Add the test
+            res = assembleExpression(block, ifExpr->testExpr);
+            if (!res)
+            {
+                return false;
+            }
+
+            // Check whether the test expression was true
+            m_code.push_back(OPCODE_PUSHI);
+            m_code.push_back(0);
+            m_code.push_back(OPCODE_CMP);
+
+            // If false
+            m_code.push_back(OPCODE_BEQ);
+            m_code.push_back(0); // Will be filled in with the end address
+            int bneToFalsePos = m_code.size() - 1;
+
+            // Add the body
+            res = assembleBlock(ifExpr->trueBlock);
+            if (!res)
+            {
+                return false;
+            }
+
+            int jmpToEndPos = -1;
+            if (ifExpr->falseBlock != NULL)
+            {
+                // Jump to end
+                m_code.push_back(OPCODE_JMP);
+                m_code.push_back(0);
+                jmpToEndPos = m_code.size() - 1;
+            }
+
+            m_code[bneToFalsePos] = m_code.size();
+            if (ifExpr->falseBlock != NULL)
+            {
+
+                // Add the body
+                res = assembleBlock(ifExpr->falseBlock);
+                if (!res)
+                {
+                    return false;
+                }
+
+                m_code[jmpToEndPos] = m_code.size();
+            }
+        } break;
+
         case EXPR_FOR:
         {
             ForExpression* forExpr = (ForExpression*)expr;

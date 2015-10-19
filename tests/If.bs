@@ -1,0 +1,22 @@
+import system.io.File;
+/*
+ * Simple String allocation and addition test
+ */
+class tests.If
+{
+    function main() static
+    {
+        var a = 2;
+        var b = 3;
+        if (a < b)
+        {
+            File.out.writeln("it works!");
+        }
+        else
+        {
+            File.out.writeln("it doesn't work :(");
+        }
+        File.out.writeln("Done!");
+    }
+}
+

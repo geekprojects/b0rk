@@ -9,6 +9,20 @@
 using namespace std;
 using namespace b0rk;
 
+#define EXPECT(_name, _expectType, _expectStr) \
+    token = nextToken(); \
+    if (token->type != _expectType) \
+    { \
+        printf("%s: " _name ": Expected " _expectStr ", got %s\n", __PRETTY_FUNCTION__, token->string.c_str()); \
+        delete code; \
+        return NULL; \
+    }
+
+#define EXPECT_BRACKET_LEFT(_name) EXPECT(_name, TOK_BRACKET_LEFT, "(")
+#define EXPECT_BRACKET_RIGHT(_name) EXPECT(_name, TOK_BRACKET_RIGHT, ")")
+#define EXPECT_BRACE_LEFT(_name) EXPECT(_name, TOK_BRACE_LEFT, "{")
+#define EXPECT_BRACE_RIGHT(_name) EXPECT(_name, TOK_BRACE_RIGHT, "}")
+
 Parser::Parser(Context* context)
 {
     m_context = context;
@@ -396,7 +410,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 
             token = nextToken();
 
-            if (token->type == TOK_EQUALS)
+            if (token->type == TOK_ASSIGN)
             {
 #ifdef DEBUG_PARSER
                 printf("Parser::parseClass: VAR equals!\n");
@@ -419,6 +433,52 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 delete code;
                 return NULL;
             }
+        }
+        else if (token->type == TOK_IF)
+        {
+            EXPECT_BRACKET_LEFT("IF");
+
+            IfExpression* ifExpr = new IfExpression(code);
+            m_expressions.push_back(ifExpr);
+
+            ifExpr->testExpr = parseExpression(code);
+            if (ifExpr->testExpr == NULL)
+            {
+                delete code;
+                return NULL;
+            }
+
+            EXPECT_BRACKET_RIGHT("IF");
+            EXPECT_BRACE_LEFT("IF");
+
+            ifExpr->trueBlock = parseCodeBlock(function);
+            if (ifExpr->trueBlock == NULL)
+            {
+                delete code;
+                return NULL;
+            }
+            ifExpr->trueBlock->m_parent = code;
+            code->m_childBlocks.push_back(ifExpr->trueBlock);
+
+            token = nextToken();
+            if (token->type == TOK_ELSE)
+            {
+                EXPECT_BRACE_LEFT("IF");
+
+                ifExpr->falseBlock = parseCodeBlock(function);
+                if (ifExpr->trueBlock == NULL)
+                {
+                    delete code;
+                    return NULL;
+                }
+                ifExpr->falseBlock->m_parent = code;
+                code->m_childBlocks.push_back(ifExpr->falseBlock);
+            }
+            else
+            {
+                m_pos--;
+            }
+            code->m_code.push_back(ifExpr);
         }
         else if (token->type == TOK_FOR)
         {
@@ -872,7 +932,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
     bool isOper = false;
     bool hasRightExpr = false;
     OpType oper = OP_NONE;
-    if (token->type == TOK_EQUALS)
+    if (token->type == TOK_ASSIGN)
     {
         oper = OP_SET;
         isOper = true;

@@ -215,6 +215,55 @@ string OperationExpression::toString()
     return str;
 }
 
+IfExpression::IfExpression(CodeBlock* block)
+    : Expression(block)
+{
+    type = EXPR_IF;
+    testExpr = NULL;
+    trueBlock = NULL;
+    falseBlock = NULL;
+}
+
+IfExpression::~IfExpression()
+{
+    if (testExpr != NULL)
+    {
+        delete testExpr;
+    }
+    if (trueBlock != NULL)
+    {
+        delete trueBlock;
+    }
+    if (falseBlock != NULL)
+    {
+        delete falseBlock;
+    }
+}
+
+string IfExpression::toString()
+{
+    std::string str = "IF (";
+    if (testExpr != NULL)
+    {
+        str += testExpr->toString();
+    }
+    str += ") {";
+    if (trueBlock != NULL)
+    {
+        str += trueBlock->toString();
+    }
+    str += "}";
+
+    if (falseBlock != NULL)
+    {
+        str += " ELSE {";
+        str += falseBlock->toString();
+        str += "}";
+    }
+    return str;
+}
+
+
 ForExpression::ForExpression(CodeBlock* block)
     : Expression(block)
 {
