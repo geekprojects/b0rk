@@ -37,7 +37,11 @@ enum OpCode
     OPCODE_PUSHI       = 0x0300,
     OPCODE_PUSHD       = 0x0301,
     OPCODE_PUSHVAR     = 0x0302,
-    OPCODE_PUSHCL      = 0x0310, // Push condition: Less than
+    OPCODE_PUSHCE      = 0x0310, // Push condition: Equals
+    OPCODE_PUSHCL      = 0x0311, // Push condition: Less than
+    OPCODE_PUSHCLE     = 0x0312, // Push condition: Less than or equal
+    OPCODE_PUSHCG      = 0x0313, // Push condition: Greater than
+    OPCODE_PUSHCGE     = 0x0314, // Push condition: Greater than or equal
     OPCODE_POP         = 0x0320,
 
     OPCODE_CALL        = 0x0400,

@@ -9,6 +9,28 @@
 using namespace std;
 using namespace b0rk;
 
+struct OpTable
+{
+    TokenType token;
+    OpType oper;
+    bool hasRightExpr;
+};
+OpTable opTable[] = {
+    {TOK_ASSIGN, OP_SET, true},
+    {TOK_PLUS, OP_ADD, true},
+    {TOK_MINUS, OP_SUB, true},
+    {TOK_ASTERISK, OP_MULTIPLY, true},
+    {TOK_LOGICAL_AND, OP_LOGICAL_AND, true},
+    {TOK_ADD_ASSIGN, OP_SET, true},
+    {TOK_EQUALS, OP_EQUALS, true},
+    {TOK_LESS_THAN, OP_LESS_THAN, true},
+    {TOK_LESS_THAN_EQUAL, OP_LESS_THAN_EQUAL, true},
+    {TOK_GREATER_THAN, OP_GREATER_THAN, true},
+    {TOK_GREATER_THAN_EQUAL, OP_GREATER_THAN_EQUAL, true},
+    {TOK_INCREMENT, OP_INCREMENT, false},
+    {TOK_DOT, OP_REFERENCE, true},
+};
+
 #define EXPECT(_name, _expectType, _expectStr) \
     token = nextToken(); \
     if (token->type != _expectType) \
@@ -929,73 +951,24 @@ Expression* Parser::parseExpression(CodeBlock* code)
     // See if we have an operation
     token = nextToken();
 
-    bool isOper = false;
-    bool hasRightExpr = false;
-    OpType oper = OP_NONE;
-    if (token->type == TOK_ASSIGN)
+    OpTable* entry = NULL;
+    int i;
+    for (i = 0; i < sizeof(opTable) / sizeof(OpTable); i++)
     {
-        oper = OP_SET;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_PLUS)
-    {
-        oper = OP_ADD;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_MINUS)
-    {
-        oper = OP_SUB;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_ASTERISK)
-    {
-        oper = OP_MULTIPLY;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_LOGICAL_AND)
-    {
-        oper = OP_LOGICAL_AND;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_ADD_ASSIGN)
-    {
-        // l += r -> l = l + r
-
-        oper = OP_SET;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_LESS_THAN)
-    {
-        oper = OP_LESS_THAN;
-        isOper = true;
-        hasRightExpr = true;
-    }
-    else if (token->type == TOK_INCREMENT)
-    {
-        oper = OP_INCREMENT;
-        isOper = true;
-        hasRightExpr = false;
-    }
-    else if (token->type == TOK_DOT)
-    {
-        oper = OP_REFERENCE;
-        isOper = true;
-        hasRightExpr = true;
+        if (token->type == opTable[i].token)
+        {
+            entry = &(opTable[i]);
+        }
     }
 
-    if (isOper)
+    if (entry != NULL)
     {
         OperationExpression* opExpr = new OperationExpression(code);
         m_expressions.push_back(opExpr);
-        opExpr->operType = oper;
+        opExpr->operType = entry->oper;
         opExpr->left = expression;
         opExpr->left->parent = opExpr;
+
         if (token->type == TOK_ADD_ASSIGN)
         {
             // l += r -> l = (l + r)
@@ -1032,7 +1005,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
             opExpr->right = addExpr;
             addExpr->parent = opExpr;
         }
-        else if (hasRightExpr)
+        else if (entry->hasRightExpr)
         {
             opExpr->right = parseExpression(code);
             if (opExpr->right == NULL)

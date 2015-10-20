@@ -56,7 +56,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
 
     for (arg = 0; arg < argCount; arg++)
     {
-        frame.localVars[arg + 1] = context->pop();
+        frame.localVars[(argCount - arg) + 0] = context->pop();
     }
     for (; arg < frame.localVarsCount; arg++)
     {
@@ -385,6 +385,16 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 context->push(result);
             } break;
 
+            case OPCODE_PUSHCE:
+            {
+                Value v;
+                v.type = VALUE_INTEGER;
+                v.i = flagZero;
+                context->push(v);
+                LOG("PUSHCE: %lld", v.i);
+                LOG("PUSHCE:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+            } break;
+
             case OPCODE_PUSHCL:
             {
                 Value v;
@@ -394,6 +404,37 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 LOG("PUSHCL: %lld", v.i);
                 LOG("PUSHCL:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
             } break;
+
+            case OPCODE_PUSHCLE:
+            {
+                Value v;
+                v.type = VALUE_INTEGER;
+                v.i = flagZero || (flagSign != flagOverflow);
+                context->push(v);
+                LOG("PUSHCLE: %lld", v.i);
+                LOG("PUSHCLE:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+            } break;
+
+            case OPCODE_PUSHCG:
+            {
+                Value v;
+                v.type = VALUE_INTEGER;
+                v.i = !flagZero && (flagSign == flagOverflow);
+                context->push(v);
+                LOG("PUSHCG: %lld", v.i);
+                LOG("PUSHCG:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+            } break;
+
+            case OPCODE_PUSHCGE:
+            {
+                Value v;
+                v.type = VALUE_INTEGER;
+                v.i = (flagSign == flagOverflow);
+                context->push(v);
+                LOG("PUSHCGE: %lld", v.i);
+                LOG("PUSHCGE:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
+            } break;
+
 
             case OPCODE_POP:
             {

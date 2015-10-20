@@ -99,6 +99,22 @@ bool Assembler::assembleBlock(CodeBlock* code)
     return true;
 }
 
+void Assembler::pushOperator(OpCode opcode, ValueType type)
+{
+    switch (type)
+    {
+        case VALUE_INTEGER:
+            m_code.push_back((int)opcode + 0x10);
+            break;
+        case VALUE_DOUBLE:
+            m_code.push_back((int)opcode + 0x20);
+            break;
+        default:
+            m_code.push_back(opcode);
+            break;
+    }
+}
+
 /*
  * An expression should always leave exactly one item on the stack
  * after execution
@@ -208,12 +224,21 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                             return false;
                         }
 
-                        m_code.push_back(OPCODE_LOAD_VAR);
-                        m_code.push_back(0); // this
+                        if (func->getStatic())
+                        {
+                            m_code.push_back(OPCODE_CALL_STATIC);
+                            m_code.push_back((uint64_t)func);
+                            m_code.push_back(count);
+                        }
+                        else
+                        {
+                            m_code.push_back(OPCODE_LOAD_VAR);
+                            m_code.push_back(0); // this
 
-                        m_code.push_back(OPCODE_CALL);
-                        m_code.push_back((uint64_t)func);
-                        m_code.push_back(count);
+                            m_code.push_back(OPCODE_CALL);
+                            m_code.push_back((uint64_t)func);
+                            m_code.push_back(count);
+                        }
                     }
                 }
            }
@@ -264,94 +289,73 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: ADD: type=%d\n", opExpr->operType);
 #endif
-                    switch (opExpr->valueType)
-                    {
-                        case VALUE_INTEGER:
-                            m_code.push_back(OPCODE_ADDI);
-                            break;
-                        case VALUE_DOUBLE:
-                            m_code.push_back(OPCODE_ADDD);
-                            break;
-                        default:
-                            m_code.push_back(OPCODE_ADD);
-                            break;
-                    }
+                    pushOperator(OPCODE_ADD, opExpr->valueType);
                     break;
 
                 case OP_SUB:
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: SUB\n");
 #endif
-                    switch (opExpr->valueType)
-                    {
-                        case VALUE_INTEGER:
-                            m_code.push_back(OPCODE_SUBI);
-                            break;
-                        case VALUE_DOUBLE:
-                            m_code.push_back(OPCODE_SUBD);
-                            break;
-                        default:
-                            m_code.push_back(OPCODE_SUB);
-                            break;
-                    }
+                    pushOperator(OPCODE_SUB, opExpr->valueType);
                     break;
 
                 case OP_MULTIPLY:
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: MULTIPLY\n");
 #endif
-                    switch (opExpr->valueType)
-                    {
-                        case VALUE_INTEGER:
-                            m_code.push_back(OPCODE_MULI);
-                            break;
-                        case VALUE_DOUBLE:
-                            m_code.push_back(OPCODE_MULD);
-                            break;
-                        default:
-                            m_code.push_back(OPCODE_MUL);
-                            break;
-                    }
+                    pushOperator(OPCODE_MUL, opExpr->valueType);
                     break;
 
                 case OP_LOGICAL_AND:
                 {
 #ifdef DEBUG_ASSEMBLER
-                    ValueType leftType = opExpr->left->valueType;
-                    ValueType rightType = opExpr->right->valueType;
                     printf("Assembler::assembleExpression: OPER: LOGICAL_AND (type=%d)\n", opExpr->valueType);
-                    printf("Assembler::assembleExpression: OPER: LOGICAL_AND left=%d, right=%d\n", leftType, rightType);
 #endif
-                    switch (opExpr->valueType)
-                    {
-                        case VALUE_INTEGER:
-                            m_code.push_back(OPCODE_ANDI);
-                            break;
-                        default:
-                            m_code.push_back(OPCODE_AND);
-                            break;
-                    }
+                    pushOperator(OPCODE_AND, opExpr->valueType);
                 } break;
+
+case OP_EQUALS:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: EQUALS\n");
+#endif
+                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    m_code.push_back(OPCODE_PUSHCE);
+                    break;
 
                 case OP_LESS_THAN:
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LESS_THAN\n");
 #endif
-                    switch (opExpr->valueType)
-                    {
-                        case VALUE_INTEGER:
-                            m_code.push_back(OPCODE_CMPI);
-                            break;
-                        case VALUE_DOUBLE:
-                            m_code.push_back(OPCODE_CMPD);
-                            break;
-                        default:
-                            m_code.push_back(OPCODE_CMP);
-                            break;
-                    }
- 
+                    pushOperator(OPCODE_CMP, opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCL);
                     break;
+
+                case OP_LESS_THAN_EQUAL:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: LESS_THAN_EQUAL\n");
+#endif
+                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    m_code.push_back(OPCODE_PUSHCLE);
+                    break;
+
+
+                case OP_GREATER_THAN:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
+#endif
+                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    m_code.push_back(OPCODE_PUSHCG);
+                    break;
+
+                case OP_GREATER_THAN_EQUAL:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
+#endif
+                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    m_code.push_back(OPCODE_PUSHCGE);
+                    break;
+
+
 
                 case OP_INCREMENT:
                 {

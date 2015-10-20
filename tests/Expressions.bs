@@ -1,0 +1,35 @@
+import system.io.File;
+/*
+ * Simple String allocation and addition test
+ */
+class tests.Expressions
+{
+
+function test(name, t, expected) static
+{
+File.out.write("Expression: " + name);
+File.out.write(": ");
+if (t == expected)
+{
+File.out.writeln("PASS");
+}
+else
+{
+File.out.writeln("FAIL");
+}
+}
+
+    function main() static
+    {
+        var a = 2;
+        var b = 3;
+test("- ", a - b, -1);
+test("+ ", a + b, 5);
+test("< ", a < b, 1);
+test("<=", a <= b, 1);
+test("> ", a > b, 0);
+test(">=", a >= b, 0);
+test("==", a == b, 0);
+    }
+}
+
