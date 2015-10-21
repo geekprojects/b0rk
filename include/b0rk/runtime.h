@@ -71,6 +71,9 @@ class Runtime
 
     Object* allocateObject(Class* clazz);
     Object* newObject(Context* context, Class* clazz, int argCount);
+    Object* newObject(Context* context, std::string clazz, int argCount);
+    Object* newObject(Context* context, Class* clazz, int argCount, Value* args);
+    Object* newObject(Context* context, std::string clazz, int argCount, Value* args);
     bool isObjectValid(Object* obj);
 
     void setAppData(void* data) { m_appData = data; }

@@ -308,6 +308,36 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
     return obj;
 }
 
+Object* Runtime::newObject(Context* context, string clazzName, int argCount)
+{
+    Class* clazz = findClass(context, clazzName);
+    if (clazz == NULL)
+    {
+        return NULL;
+    }
+    return newObject(context, clazz, argCount);
+}
+
+Object* Runtime::newObject(Context* context, Class* clazz, int argCount, Value* args)
+{
+    int i;
+    for (i = 0; i < argCount; i++)
+    {
+        context->push(args[i]);
+    }
+    return newObject(context, clazz, argCount);
+}
+
+Object* Runtime::newObject(Context* context, string clazzName, int argCount, Value* args)
+{
+    Class* clazz = findClass(context, clazzName);
+    if (clazz == NULL)
+    {
+        return NULL;
+    }
+    return newObject(context, clazz, argCount, args);
+}
+
 bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int argCount)
 {
     bool res;
