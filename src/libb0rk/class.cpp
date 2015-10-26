@@ -98,6 +98,7 @@ void Class::initStaticFields()
 
 void Class::addMethod(string name, Function* function)
 {
+    function->setName(name);
     m_methods.insert(make_pair(name, function));
 }
 

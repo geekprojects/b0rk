@@ -20,6 +20,7 @@ struct Object;
 class Function
 {
  protected:
+    std::string m_name;
     bool m_static;
     Class* m_class;
     std::vector<std::string> m_args;
@@ -30,6 +31,8 @@ class Function
     virtual ~Function();
 
     Class* getClass() { return m_class; }
+    void setName(std::string name) { m_name = name; }
+    std::string getFullName();
 
     void setStatic(bool isStatic) { m_static = isStatic; }
     bool getStatic() { return m_static; }
@@ -48,7 +51,7 @@ class NativeFunction : public Function
     nativeFunction_t m_native;
 
  public:
-    NativeFunction(Class* clazz, nativeFunction_t func);
+    NativeFunction(Class* clazz, nativeFunction_t func, bool isStatic = false);
 
     virtual bool execute(Context* context, Object* instance, int argCount);
 };

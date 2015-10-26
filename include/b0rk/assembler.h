@@ -19,6 +19,7 @@ struct Expression;
 
 struct AssembledCode
 {
+    ScriptFunction* function;
     uint64_t* code;
     int size;
     int localVars;

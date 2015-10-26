@@ -20,6 +20,7 @@ Assembler::~Assembler()
 bool Assembler::assemble(ScriptFunction* function, AssembledCode& asmCode)
 {
     m_function = function;
+    asmCode.function = function;
     return assemble(function->getCode(), asmCode);
 }
 
@@ -183,8 +184,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                     }
                     else
                     {
+#ifdef DEBUG_ASSEMBLER
                         printf("Assembler::assembleExpression: CALL: Parent is not null but not a reference!?\n");
-                        return false;
+                        printf("Assembler::assembleExpression: CALL: parent=%p\n", callExpr->parent);
+                        printf("Assembler::assembleExpression: CALL: parent=%s\n", callExpr->parent->toString().c_str());
+#endif
                     }
                 }
 
@@ -307,14 +311,13 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                     break;
 
                 case OP_LOGICAL_AND:
-                {
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LOGICAL_AND (type=%d)\n", opExpr->valueType);
 #endif
                     pushOperator(OPCODE_AND, opExpr->valueType);
-                } break;
+                    break;
 
-case OP_EQUALS:
+                case OP_EQUALS:
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: EQUALS\n");
 #endif

@@ -31,6 +31,9 @@ Executor::Executor()
 
 bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int argCount)
 {
+#ifdef DEBUG_EXECUTOR
+    printf("Executor::run: Entering %s\n", code.function->getFullName().c_str());
+#endif
     size_t pc = 0;
     bool res;
 
@@ -615,6 +618,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
             {
                 Value result = context->pop();
                 LOG("RETURN %s", result.toString().c_str());
+
                 Value frameCheck = context->pop();
                 if (frameCheck.type != VALUE_FRAME || frameCheck.pointer != &frame)
                 {
@@ -728,7 +732,11 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
         }
     }
 
-    context->getRuntime()->gc();
+    //context->getRuntime()->gc();
+
+#ifdef DEBUG_EXECUTOR
+    printf("Executor::run: Leaving %s\n", code.function->getFullName().c_str());
+#endif
 
     return success;
 }
