@@ -37,6 +37,7 @@ enum OpCode
     OPCODE_PUSHI       = 0x0300,
     OPCODE_PUSHD       = 0x0301,
     OPCODE_PUSHVAR     = 0x0302,
+    OPCODE_DUP         = 0x0303,
     OPCODE_PUSHCE      = 0x0310, // Push condition: Equals
     OPCODE_PUSHCL      = 0x0311, // Push condition: Less than
     OPCODE_PUSHCLE     = 0x0312, // Push condition: Less than or equal

@@ -205,6 +205,15 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 context->push(v);
             } break;
 
+            case OPCODE_DUP:
+            {
+                Value v;
+                v = context->pop();
+                LOG("DUP: %s", v.toString().c_str());
+                context->push(v);
+                context->push(v);
+            } break;;
+
             case OPCODE_ADD:
             {
                 Value v1 = context->pop();
