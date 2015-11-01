@@ -1,5 +1,6 @@
 
 #undef DEBUG_PARSER
+#undef DEBUG_PARSER_TYPES
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,13 +10,7 @@
 using namespace std;
 using namespace b0rk;
 
-struct OpTable
-{
-    TokenType token;
-    OpType oper;
-    bool hasRightExpr;
-};
-OpTable opTable[] = {
+OpDesc opTable[] = {
     {TOK_ASSIGN, OP_SET, true},
     {TOK_PLUS, OP_ADD, true},
     {TOK_MINUS, OP_SUB, true},
@@ -28,6 +23,7 @@ OpTable opTable[] = {
     {TOK_GREATER_THAN, OP_GREATER_THAN, true},
     {TOK_GREATER_THAN_EQUAL, OP_GREATER_THAN_EQUAL, true},
     {TOK_INCREMENT, OP_INCREMENT, false},
+    {TOK_DECREMENT, OP_DECREMENT, false},
     {TOK_DOT, OP_REFERENCE, true},
 };
 
@@ -63,6 +59,12 @@ Token* Parser::nextToken()
 #endif
     return result;
 }
+
+Token* Parser::peekToken()
+{
+    return &(m_tokens[m_pos]);
+}
+
 
 bool Parser::parse(vector<Token> tokens, bool addToExisting)
 {
@@ -314,28 +316,28 @@ bool Parser::resolveTypes()
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {
         Expression* expr = *exprIt;
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
         printf("Parser::resolveTypes: resolve: type=%d\n", expr->type);
 #endif
         if (expr->type == EXPR_OPER)
         {
             OperationExpression* opExpr = (OperationExpression*)expr;
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
             printf("Parser::resolveTypes: resolve: OPER: opType=%d, value type=%d\n", opExpr->operType, opExpr->valueType);
 #endif
             if (opExpr->valueType != VALUE_UNKNOWN)
             {
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
                 printf("Parser::resolveTypes: resolve:  -> left type=%d\n", opExpr->left->type);
 #endif
                 if (opExpr->operType == OP_SET && opExpr->left->type == EXPR_VAR)
                 {
                     VarExpression* varExpr = (VarExpression*)opExpr->left;
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
                     printf("Parser::resolveTypes: resolve: OPER SET: var=%s\n", varExpr->var.c_str());
 #endif
                         int varId = varExpr->block->getVarId(varExpr->var);
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
                         printf(
                             "Parser::resolveTypes: var %p: %s, id=%d, type=%d\n",
 varExpr,
@@ -366,7 +368,7 @@ varExpr,
             int varId = varExpr->block->getVarId(varExpr->var);
             if (varId == -1)
             {
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
                 printf(
                     "Parser::resolveTypes: VAR %p: %s, id=%d\n",
                     varExpr,
@@ -376,7 +378,7 @@ varExpr,
                 continue;
             }
             ValueType varType = varExpr->block->getVarType(varId);
-#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER_TYPES
             printf(
                 "Parser::resolveTypes: VAR %p: %s, id=%d, type=%d\n",
                 varExpr,
@@ -718,6 +720,210 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 
 Expression* Parser::parseExpression(CodeBlock* code)
 {
+    vector<Expression*> outputQueue;
+    vector<OperationExpression*> operatorStack;
+
+    int brackets = 0;
+
+    /*
+     * This is basically the Shunting Yard algorithm:
+     * https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+     */
+    while (true)
+    {
+        Token* token = nextToken();
+#ifdef DEBUG_PARSER
+        printf("Parser::parseExpression: token: %s\n", token->string.c_str());
+#endif
+
+        if (token->type == TOK_BRACKET_LEFT)
+        {
+            brackets++;
+        }
+        else if (token->type == TOK_BRACKET_RIGHT)
+        {
+            brackets--;
+            if (brackets < 0)
+            {
+                m_pos--;
+                break;
+            }
+        }
+        else if (token->type == TOK_SEMICOLON || token->type == TOK_COMMA)
+        {
+            m_pos--;
+            break;
+        }
+
+        OpDesc* entry = NULL;
+        int i;
+        for (i = 0; i < sizeof(opTable) / sizeof(OpDesc); i++)
+        {
+            if (token->type == opTable[i].token)
+            {
+                entry = &(opTable[i]);
+            }
+        }
+
+        if (entry != NULL)
+        {
+            OperationExpression* o1 = new OperationExpression(code, *entry);
+            m_expressions.push_back(o1);
+            o1->operType = entry->oper;
+#ifdef DEBUG_PARSER
+            printf("Parser::parseExpression:  -> is operator\n");
+#endif
+
+            if (operatorStack.size() > 0)
+            {
+                OperationExpression* o2 = (operatorStack.back());
+
+                if (o2 != NULL)
+                {
+
+#ifdef DEBUG_PARSER
+                    printf("Parser::parseExpression:  -> o1=%d, o2=%d\n", o1->operType, o2->operType);
+#endif
+
+                    if (o1->operType <= o2->operType)
+                    {
+#ifdef DEBUG_PARSER
+                        printf("Parser::parseExpression:  -> o1=%d, o2=%d\n", o1->operType, o2->operType);
+#endif
+                        outputQueue.push_back(o2);
+                        operatorStack.pop_back();
+                    }
+                }
+                else
+                {
+#ifdef DEBUG_PARSER
+                    printf("Parser::parseExpression: Popped left bracket!\n");
+#endif
+                }
+            }
+            operatorStack.push_back(o1);
+ 
+        }
+        else if (token->type == TOK_BRACKET_LEFT)
+        {
+#ifdef DEBUG_PARSER
+            printf("Parser::parseExpression:  -> Left bracket\n");
+#endif
+            operatorStack.push_back(NULL);
+        }
+        else if (token->type == TOK_BRACKET_RIGHT)
+        {
+#ifdef DEBUG_PARSER
+            printf("Parser::parseExpression:  -> Right bracket\n");
+#endif
+            while (true)
+            {
+                if (operatorStack.size() == 0)
+                {
+                    return NULL;
+                }
+                OperationExpression* op = operatorStack.back();
+                operatorStack.pop_back();
+                if (op == NULL)
+                {
+#ifdef DEBUG_PARSER
+                    printf("Parser::parseExpression:    -> Found left bracket!\n");
+#endif
+                    break;
+                }
+                else
+                {
+                    outputQueue.push_back(op);
+                }
+            }
+        }
+        else
+        {
+            m_pos--;
+            Expression* valueExpr = parseExpressionValue(code);
+            outputQueue.push_back(valueExpr);
+#ifdef DEBUG_PARSER
+            printf("Parser::parseExpression:  -> value=%s\n", valueExpr->toString().c_str());
+#endif
+        }
+    }
+
+    vector<OperationExpression*>::reverse_iterator opIt;
+    for (opIt = operatorStack.rbegin(); opIt != operatorStack.rend(); opIt++)
+    {
+        outputQueue.push_back(*opIt);
+    }
+#ifdef DEBUG_PARSER
+    printf("Parser::parseExpression: Finished expression, building tree\n");
+#endif
+
+    Expression* expr = buildTree(code, outputQueue);
+#ifdef DEBUG_PARSER
+    printf("Parser::parseExpression: Tree: %s\n", expr->toString().c_str());
+#endif
+
+    return expr;
+}
+
+Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
+{
+    Expression* expr = queue.back();
+    queue.pop_back();
+
+    if (expr->type == EXPR_OPER)
+    {
+        OperationExpression* opExpr = (OperationExpression*)expr;
+        if (opExpr->operDesc.hasRightExpr)
+        {
+            opExpr->right = buildTree(code, queue);
+            opExpr->right->parent = opExpr;
+        }
+        opExpr->left = buildTree(code, queue);
+        opExpr->left->parent = opExpr;
+
+        if (opExpr->operDesc.token == TOK_ADD_ASSIGN)
+        {
+            // l += r -> l = (l + r)
+
+            // Make a copy of the left hand side rather than reuse or cleaning up
+            // at the end tries to free it twice!
+            Expression* copy;
+            if (opExpr->left->type == EXPR_VAR)
+            {
+                VarExpression* varExpr = new VarExpression(code);
+                m_expressions.push_back(varExpr);
+                varExpr->var = ((VarExpression*)opExpr->left)->var;
+                copy = varExpr;
+            }
+            else
+            {
+                printf("Parser::parseExpression: TOK_ADD_ASSIGN: Unhandled left type: %d: %s\n", opExpr->left->type, opExpr->left->toString().c_str());
+                return NULL;
+            }
+
+            OpDesc addDesc = {TOK_PLUS, OP_ADD, true};
+            OperationExpression* addExpr = new OperationExpression(code, addDesc);
+            m_expressions.push_back(addExpr);
+            addExpr->operType = OP_ADD;
+            addExpr->left = copy;
+            addExpr->left->parent = addExpr;
+            addExpr->right = opExpr->right;
+            addExpr->right->parent = addExpr;
+            addExpr->resolveType();
+
+            opExpr->right = addExpr;
+            addExpr->parent = opExpr;
+        }
+    }
+    else
+    {
+    }
+
+    return expr;
+}
+
+Expression* Parser::parseExpressionValue(CodeBlock* code)
+{
     Expression* expression;
 
     bool res;
@@ -754,17 +960,6 @@ Expression* Parser::parseExpression(CodeBlock* code)
     }
     else if (token->type == TOK_IDENTIFIER)
     {
-/*
-        m_pos--; // Rewind
-
-        Identifier id;
-        res = parseIdentifier(id);
-        if (!res)
-        {
-            return NULL;
-        }
-*/
-
         string id = token->string;
         Class* clazz = NULL;
 
@@ -929,106 +1124,15 @@ Expression* Parser::parseExpression(CodeBlock* code)
         doubleExpr->valueType = VALUE_DOUBLE;
         expression = doubleExpr;
     }
-    else if (token->type == TOK_BRACKET_LEFT)
-    {
-#ifdef DEBUG_PARSER
-        printf("Parser::parseExpression: Left bracket!\n");
-#endif
-        expression = parseExpression(code);
-        Token* token = nextToken();
-        if (token->type != TOK_BRACKET_RIGHT)
-        {
-            printf("Parser::parseExpression: Expected ), got %s\n", token->string.c_str());
-            return NULL;
-        }
-    }
     else
     {
         printf("Parser::parseExpression: Unhandled token type: %d: %s\n", token->type, token->string.c_str());
         return NULL;
     }
+    return expression;
+}
 
-    // See if we have an operation
-    token = nextToken();
-
-    OpTable* entry = NULL;
-    int i;
-    for (i = 0; i < sizeof(opTable) / sizeof(OpTable); i++)
-    {
-        if (token->type == opTable[i].token)
-        {
-            entry = &(opTable[i]);
-        }
-    }
-
-    if (entry != NULL)
-    {
-        OperationExpression* opExpr = new OperationExpression(code);
-        m_expressions.push_back(opExpr);
-        opExpr->operType = entry->oper;
-        opExpr->left = expression;
-        opExpr->left->parent = opExpr;
-
-        if (token->type == TOK_ADD_ASSIGN)
-        {
-            // l += r -> l = (l + r)
-
-            // Make a copy of the left hand side rather than reuse or cleaning up
-            // at the end tries to free it twice!
-            Expression* copy;
-            if (expression->type == EXPR_VAR)
-            {
-                VarExpression* varExpr = new VarExpression(code);
-                m_expressions.push_back(varExpr);
-                varExpr->var = ((VarExpression*)expression)->var;
-                copy = varExpr;
-            }
-            else
-            {
-                printf("Parser::parseExpression: TOK_ADD_ASSIGN: Unhandled left type: %d: %s\n", expression->type, expression->toString().c_str());
-                return NULL;
-            }
-
-            OperationExpression* addExpr = new OperationExpression(code);
-            m_expressions.push_back(addExpr);
-            addExpr->operType = OP_ADD;
-            addExpr->left = copy;
-            addExpr->left->parent = addExpr;
-            addExpr->right = parseExpression(code);
-            if (addExpr->right == NULL)
-            {
-                return NULL;
-            }
-            addExpr->right->parent = addExpr;
-            addExpr->resolveType();
-
-            opExpr->right = addExpr;
-            addExpr->parent = opExpr;
-        }
-        else if (entry->hasRightExpr)
-        {
-            opExpr->right = parseExpression(code);
-            if (opExpr->right == NULL)
-            {
-                return NULL;
-            }
-            opExpr->right->parent = opExpr;
-        }
-        else
-        {
-            opExpr->right = NULL;
-        }
-
-        if (opExpr->operType == OP_REFERENCE)
-        {
-            // To ensure the references get loaded in the correct order,
-            // we must swap the left and right!
-            // There must be a better, more correct way of doing this?
-            Expression* tmp = opExpr->left;
-            opExpr->left = opExpr->right;
-            opExpr->right = tmp;
-        }
-
+#if 0
         if (opExpr->left != NULL && opExpr->right != NULL)
         {
             if (opExpr->left->type == EXPR_INTEGER && opExpr->right->type == EXPR_INTEGER)
@@ -1069,7 +1173,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
     }
 
     return expression;
-}
+#endif
 
 bool Parser::parseIdentifier(Identifier& id)
 {

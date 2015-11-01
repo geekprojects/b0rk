@@ -62,6 +62,10 @@ bool Assembler::assembleBlock(CodeBlock* code)
     {
         Expression* expr = code->m_code[i];
 
+#ifdef DEBUG_ASSEMBLER
+printf("Assembler::assembleBlock: expr: %s\n", expr->toString().c_str());
+#endif
+
         bool res;
         res = assembleExpression(code, expr);
         if (!res)
@@ -78,7 +82,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
 #ifdef DEBUG_ASSEMBLER
                 printf("Assembler::assembleBlock: Checking reference: %s\n", pos->toString().c_str());
 #endif
-                pos = ((OperationExpression*)pos)->left;
+                pos = ((OperationExpression*)pos)->right;
             }
             if (pos != NULL && pos->type == EXPR_CALL)
             {
@@ -120,7 +124,7 @@ void Assembler::pushOperator(OpCode opcode, ValueType type)
  * An expression should always leave exactly one item on the stack
  * after execution
  */
-bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expression* reference)
+bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference)
 {
     bool res;
 
@@ -131,6 +135,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
             CallExpression* callExpr = (CallExpression*)expr;
             std::vector<Expression*>::iterator it;
             int count = 0;
+#ifdef DEBUG_ASSEMBLER
+            printf("Assembler::assembleExpression: CALL: Arguments...\n");
+#endif
             for (it = callExpr->parameters.begin(); it != callExpr->parameters.end(); it++)
             {
                 res = assembleExpression(block, *it);
@@ -146,7 +153,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
 
             if (reference != NULL)
             {
-                res = assembleReference(block, (OperationExpression*)reference);
+                res = assembleReference(block, reference);
                 if (!res)
                 {
                     return false;
@@ -214,7 +221,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                         VarExpression varExpr(block);
                         varExpr.clazz = NULL;
                         varExpr.var = callExpr->function;
-                        load(block, NULL, &varExpr);
+                        load(block, &varExpr, reference);
                         m_code.push_back(OPCODE_CALL_OBJ);
                         m_code.push_back(count);
                     }
@@ -251,6 +258,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
         case EXPR_OPER:
         {
             OperationExpression* opExpr = (OperationExpression*)expr;
+#ifdef DEBUG_ASSEMBLER
+            printf("Assembler::assembleExpression: OPER: operType=%d\n", opExpr->operType);
+#endif
 
             if (opExpr->operType == OP_REFERENCE && reference == NULL)
             {
@@ -258,7 +268,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                 Expression* refChild = expr;
                 while (IS_REFERENCE(refChild))
                 {
-                    refChild = ((OperationExpression*)refChild)->left;
+                    refChild = ((OperationExpression*)refChild)->right;
                 }
 
                 if (refChild == NULL)
@@ -266,6 +276,9 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                     printf("Assembler::assembleExpression: OPER: Reference isn't used!?\n");
                     return false;
                 }
+#ifdef DEBUG_ASSEMBLER
+                printf("Assembler::assembleExpression: OPER: Reference: Assembling nearest non-ref child: %s\n", refChild->toString().c_str());
+#endif
                 return assembleExpression(block, refChild, opExpr);
             }
 
@@ -373,11 +386,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                     printf("Assembler::assembleExpression: OPER: POST INCREMENT %d", 0);
 #endif
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    res = load(block, NULL, varExpr);
+                    res = load(block, varExpr, reference);
                     if (!res)
                     {
                         return false;
                     }
+                    //m_code.push_back(OPCODE_DUP);
                     m_code.push_back(OPCODE_PUSHI);
                     m_code.push_back(1);
                     m_code.push_back(OPCODE_ADDI);
@@ -412,7 +426,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                         printf("Assembler::assembleExpression: OPER: SET ARRAY!\n");
 #endif
                         // Load the array object
-                        res = load(block, NULL, arrExpr);
+                        res = load(block, arrExpr, reference);
                         if (!res)
                         {
                             return false;
@@ -431,6 +445,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                         printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable or array!\n");
                         return false;
                     }
+opExpr->resultOnStack = false;
                 } break;
 
                 case OP_REFERENCE:
@@ -557,6 +572,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
                 {
                     return false;
                 }
+                if (forExpr->incExpr->resultOnStack)
+                {
+                    // Discard result
+                    m_code.push_back(OPCODE_POP);
+                }
             }
 
 #ifdef DEBUG_ASSEMBLER
@@ -597,7 +617,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
         case EXPR_VAR:
         {
             VarExpression* varExpr = (VarExpression*)expr;
-            res = load(block, NULL, varExpr);
+#ifdef DEBUG_ASSEMBLER
+            printf("Assembler::assembleExpression: VAR: var=%s\n", varExpr->var.c_str());
+#endif
+
+            res = load(block, varExpr, reference);
             if (!res)
             {
                 return false;
@@ -609,7 +633,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
             ArrayExpression* arrExpr = (ArrayExpression*)expr;
             printf("Assembler::assembleExpression: ARRAY!\n");
             // Load the array object
-            res = load(block, NULL, arrExpr);
+            res = load(block, arrExpr, reference);
             if (!res)
             {
                 return false;
@@ -707,16 +731,19 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Expressio
 bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
 {
     bool res;
+#ifdef DEBUG_ASSEMBLER
+    printf("Assembler::assembleReference: Assembling Reference: %s\n", expr->toString().c_str());
+#endif
 
-    res = assembleExpression(block, expr->right);
+    res = assembleExpression(block, expr->left);
     if (!res)
     {
         return false;
     }
 
-    if (IS_REFERENCE(expr->left))
+    if (IS_REFERENCE(expr->right))
     {
-        return assembleReference(block, (OperationExpression*)(expr->left));
+        return assembleReference(block, (OperationExpression*)(expr->right));
     }
 
     return true;
@@ -756,8 +783,20 @@ bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
     return false;
 }
 
-bool Assembler::load(CodeBlock* block, Object* context, VarExpression* varExpr)
+bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpression* reference)
 {
+    bool res;
+    if (reference != NULL)
+    {
+        res = assembleReference(block, (OperationExpression*)reference);
+        if (!res)
+        {
+            return false;
+        }
+        printf("Assembler::load: TODO: Var from reference\n");
+        return false;
+    }
+
     if (varExpr->clazz != NULL)
     {
 
@@ -818,6 +857,14 @@ bool Assembler::load(CodeBlock* block, Object* context, VarExpression* varExpr)
         else
         {
             printf("Assembler::load: Error: Unknown variable: %s\n", varExpr->var.c_str());
+            if (m_function->getClass() != NULL)
+            {
+                printf("Assembler::load:  -> class=%s\n", m_function->getClass()->getName().c_str());
+            }
+            else
+            {
+                printf("Assembler::load:  -> class=NULL\n");
+            }
             return false;
         }
     }

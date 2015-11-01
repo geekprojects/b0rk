@@ -36,12 +36,12 @@ class Assembler
     void pushOperator(OpCode opcode, ValueType type);
 
     bool assemble(CodeBlock* block, AssembledCode& asmCode);
-    bool assembleExpression(CodeBlock* block, Expression* expr, Expression* reference = NULL);
+    bool assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference = NULL);
     bool assembleReference(CodeBlock* block, OperationExpression* expr);
     bool assembleBlock(CodeBlock* block);
 
     bool isVariable(CodeBlock* block, Object* context, std::string name);
-    bool load(CodeBlock* block, Object* context, VarExpression* var);
+    bool load(CodeBlock* block, VarExpression* var, OperationExpression* reference);
     bool store(CodeBlock* block, Object* context, std::string name);
 
     Function* findFunction(CodeBlock* block, Identifier id);

@@ -45,6 +45,8 @@ struct Expression
     ExpressionType type;
     ValueType valueType;
 
+    bool resultOnStack;
+
     Expression(CodeBlock* block);
     virtual ~Expression();
 
@@ -79,28 +81,37 @@ enum OpType
 {
     OP_NONE,
     OP_SET,
-    OP_ADD,
-    OP_SUB,
-    OP_MULTIPLY,
     OP_LOGICAL_AND,
-    OP_INCREMENT,
     OP_EQUALS,
     OP_LESS_THAN,
     OP_LESS_THAN_EQUAL,
     OP_GREATER_THAN,
     OP_GREATER_THAN_EQUAL,
+    OP_ADD,
+    OP_SUB,
+    OP_MULTIPLY,
+    OP_INCREMENT,
+    OP_DECREMENT,
     OP_REFERENCE,
     OP_ARRAY
+};
+
+struct OpDesc
+{
+    TokenType token;
+    OpType oper;
+    bool hasRightExpr;
 };
 
 struct OperationExpression : public Expression
 {
 
     OpType operType;
+    OpDesc operDesc;
     Expression* left;
     Expression* right;
 
-    OperationExpression(CodeBlock* block);
+    OperationExpression(CodeBlock* block, OpDesc desc);
     virtual ~OperationExpression();
 
     void resolveType();

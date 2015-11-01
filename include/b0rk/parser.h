@@ -22,13 +22,18 @@ class Parser
     size_t m_pos;
 
     Token* nextToken();
+    Token* peekToken();
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
     Class* parseClass(bool addToExisting);
     Function* parseFunction(Class* clazz);
 
     CodeBlock* parseCodeBlock(ScriptFunction* function);
+
     Expression* parseExpression(CodeBlock* code);
+    Expression* parseExpressionValue(CodeBlock* code);
+    Expression* buildTree(CodeBlock* code, std::vector<Expression*>& queue);
+
     bool parseIdentifier(Identifier& id);
     bool parseList(std::vector<Token*>& list, TokenType type);
     bool parseExpressionList(CodeBlock* code, std::vector<Expression*>& list);

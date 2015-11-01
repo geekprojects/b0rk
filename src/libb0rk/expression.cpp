@@ -10,6 +10,7 @@ Expression::Expression(CodeBlock* _block)
     parent = NULL;
     block = _block;
     valueType = VALUE_UNKNOWN;
+    resultOnStack = false;
 }
 
 Expression::~Expression()
@@ -64,10 +65,13 @@ std::string NewExpression::toString()
     return "NEW " + clazz.toString() + "(" + argsToString() + ")";
 }
 
-OperationExpression::OperationExpression(CodeBlock* block)
+OperationExpression::OperationExpression(CodeBlock* block, OpDesc desc)
     : Expression(block)
 {
     type = EXPR_OPER;
+    resultOnStack = true;
+    operType = desc.oper;
+    operDesc = desc;
     left = NULL;
     right = NULL;
 }
@@ -206,7 +210,11 @@ string OperationExpression::toString()
             str += "FRAME";
             break;
     }
-    str += ":" + left->toString();
+    str += ":";
+    if (left != NULL)
+    {
+        str += left->toString();
+    }
     if (right != NULL)
     {
         str += "," + right->toString();
