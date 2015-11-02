@@ -36,7 +36,7 @@ class Assembler
     void pushOperator(OpCode opcode, ValueType type);
 
     bool assemble(CodeBlock* block, AssembledCode& asmCode);
-    bool assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference = NULL);
+    bool assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference = NULL, bool needResult = false);
     bool assembleReference(CodeBlock* block, OperationExpression* expr);
     bool assembleBlock(CodeBlock* block);
 

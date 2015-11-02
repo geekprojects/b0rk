@@ -67,7 +67,7 @@ printf("Assembler::assembleBlock: expr: %s\n", expr->toString().c_str());
 #endif
 
         bool res;
-        res = assembleExpression(code, expr);
+        res = assembleExpression(code, expr, NULL, false);
         if (!res)
         {
             return false;
@@ -91,14 +91,6 @@ printf("Assembler::assembleBlock: expr: %s\n", expr->toString().c_str());
 #endif
                 isRefCall = true;
             }
-        }
-
-        if (isRefCall || code->m_code[i]->type == EXPR_CALL || code->m_code[i]->type == EXPR_NEW)
-        {
-#ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleBlock: Call outside of expression!\n");
-#endif
-            m_code.push_back(OPCODE_POP);
         }
     }
     return true;
@@ -124,7 +116,7 @@ void Assembler::pushOperator(OpCode opcode, ValueType type)
  * An expression should always leave exactly one item on the stack
  * after execution
  */
-bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference)
+bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference, bool needResult)
 {
     bool res;
 
@@ -140,7 +132,8 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #endif
             for (it = callExpr->parameters.begin(); it != callExpr->parameters.end(); it++)
             {
-                res = assembleExpression(block, *it);
+                Expression* param = *it;
+                res = assembleExpression(block, param, NULL, true);
                 if (!res)
                 {
                     return false;
@@ -252,7 +245,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                         }
                     }
                 }
-           }
+            }
+            if (!needResult)
+            {
+                m_code.push_back(OPCODE_POP);
+                expr->resultOnStack = false;
+            }
         } break;
 
         case EXPR_OPER:
@@ -279,12 +277,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                 printf("Assembler::assembleExpression: OPER: Reference: Assembling nearest non-ref child: %s\n", refChild->toString().c_str());
 #endif
-                return assembleExpression(block, refChild, opExpr);
+                return assembleExpression(block, refChild, opExpr, needResult);
             }
 
             if (opExpr->right != NULL)
             {
-                res = assembleExpression(block, opExpr->right);
+                res = assembleExpression(block, opExpr->right, NULL, true);
                 if (!res)
                 {
                     return false;
@@ -293,7 +291,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
             if (opExpr->operType != OP_SET && opExpr->operType != OP_INCREMENT)
             {
-                res = assembleExpression(block, opExpr->left);
+                res = assembleExpression(block, opExpr->left, NULL, true);
                 if (!res)
                 {
                     return false;
@@ -371,8 +369,6 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     m_code.push_back(OPCODE_PUSHCGE);
                     break;
 
-
-
                 case OP_INCREMENT:
                 {
                     if (opExpr->left->type != EXPR_VAR && opExpr->left->type != EXPR_ARRAY)
@@ -391,7 +387,13 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     {
                         return false;
                     }
-                    //m_code.push_back(OPCODE_DUP);
+                    if (needResult)
+                    {
+                        m_code.push_back(OPCODE_DUP);
+                    }
+
+                    expr->resultOnStack = needResult;
+
                     m_code.push_back(OPCODE_PUSHI);
                     m_code.push_back(1);
                     m_code.push_back(OPCODE_ADDI);
@@ -409,6 +411,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: -> left=%p\n", opExpr->left);
                     printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
 #endif
+                    if (needResult)
+                    {
+                        m_code.push_back(OPCODE_DUP);
+                    }
+                    expr->resultOnStack = needResult;
 
                     if (opExpr->left->type == EXPR_VAR)
                     {
@@ -432,7 +439,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                             return false;
                         }
 
-                        res = assembleExpression(block, arrExpr->indexExpr);
+                        res = assembleExpression(block, arrExpr->indexExpr, NULL, true);
                         if (!res)
                         {
                             return false;
@@ -445,7 +452,6 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                         printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable or array!\n");
                         return false;
                     }
-opExpr->resultOnStack = false;
                 } break;
 
                 case OP_REFERENCE:
@@ -466,7 +472,7 @@ opExpr->resultOnStack = false;
             IfExpression* ifExpr = (IfExpression*)expr;
 
             // Add the test
-            res = assembleExpression(block, ifExpr->testExpr);
+            res = assembleExpression(block, ifExpr->testExpr, NULL, true);
             if (!res)
             {
                 return false;
@@ -523,7 +529,7 @@ opExpr->resultOnStack = false;
             // Add the init
             if (forExpr->initExpr != NULL)
             {
-                res = assembleExpression(block, forExpr->initExpr);
+                res = assembleExpression(block, forExpr->initExpr, NULL, false);
                 if (!res)
                 {
                     return false;
@@ -535,7 +541,7 @@ opExpr->resultOnStack = false;
 #endif
             // Add the test
             int loopTop = m_code.size();
-            res = assembleExpression(block, forExpr->testExpr);
+            res = assembleExpression(block, forExpr->testExpr, NULL, true);
             if (!res)
             {
                 return false;
@@ -567,15 +573,10 @@ opExpr->resultOnStack = false;
             // Increment
             if (forExpr->incExpr != NULL)
             {
-                res = assembleExpression(block, forExpr->incExpr);
+                res = assembleExpression(block, forExpr->incExpr, NULL, false);
                 if (!res)
                 {
                     return false;
-                }
-                if (forExpr->incExpr->resultOnStack)
-                {
-                    // Discard result
-                    m_code.push_back(OPCODE_POP);
                 }
             }
 
@@ -605,7 +606,7 @@ opExpr->resultOnStack = false;
             }
             else
             {
-                res = assembleExpression(block, retExpr->returnValue);
+                res = assembleExpression(block, retExpr->returnValue, NULL, true);
                 if (!res)
                 {
                     return false;
@@ -620,6 +621,7 @@ opExpr->resultOnStack = false;
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: VAR: var=%s\n", varExpr->var.c_str());
 #endif
+            expr->resultOnStack = true;
 
             res = load(block, varExpr, reference);
             if (!res)
@@ -639,7 +641,7 @@ opExpr->resultOnStack = false;
                 return false;
             }
 
-            res = assembleExpression(block, arrExpr->indexExpr);
+            res = assembleExpression(block, arrExpr->indexExpr, NULL, true);
             if (!res)
             {
                 return false;
@@ -666,7 +668,7 @@ opExpr->resultOnStack = false;
             std::vector<Expression*>::iterator it;
             for (it = newExpr->parameters.begin(); it != newExpr->parameters.end(); it++)
             {
-                res = assembleExpression(block, *it);
+                res = assembleExpression(block, *it, NULL, true);
                 if (!res)
                 {
                     return false;
@@ -724,6 +726,18 @@ opExpr->resultOnStack = false;
             printf("Assembler::assembleExpression: Unhandled expression: %d: %s\n", expr->type, expr->toString().c_str());
             return false;
     }
+
+    if (needResult && !expr->resultOnStack)
+    {
+        printf("Assembler::assembleExpression: ERROR: Result required, but none returned by expression!\n");
+        printf("Assembler::assembleExpression: ERROR:  -> %s\n", expr->toString().c_str());
+    }
+    else if (!needResult && expr->resultOnStack)
+    {
+        printf("Assembler::assembleExpression: ERROR: Result not required, but returned by expression!\n");
+        printf("Assembler::assembleExpression: ERROR:  -> %s\n", expr->toString().c_str());
+    }
+
     return true;
 }
 
@@ -735,7 +749,7 @@ bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
     printf("Assembler::assembleReference: Assembling Reference: %s\n", expr->toString().c_str());
 #endif
 
-    res = assembleExpression(block, expr->left);
+    res = assembleExpression(block, expr->left, NULL, true);
     if (!res)
     {
         return false;

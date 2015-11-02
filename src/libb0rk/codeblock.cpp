@@ -30,7 +30,7 @@ CodeBlock::~CodeBlock()
 
     if (m_varTypes != NULL)
     {
-        delete[] m_varTypes;
+        //delete[] m_varTypes;
     }
 }
 

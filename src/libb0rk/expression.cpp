@@ -21,6 +21,7 @@ CallExpression::CallExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_CALL;
+    resultOnStack = true;
 }
 
 CallExpression::~CallExpression()
@@ -238,14 +239,6 @@ IfExpression::~IfExpression()
     {
         delete testExpr;
     }
-    if (trueBlock != NULL)
-    {
-        delete trueBlock;
-    }
-    if (falseBlock != NULL)
-    {
-        delete falseBlock;
-    }
 }
 
 string IfExpression::toString()
@@ -325,6 +318,9 @@ ReturnExpression::ReturnExpression(CodeBlock* block)
 {
     type = EXPR_RETURN;
     returnValue = NULL;
+
+    // This is a special case. The result isn't on *this* frame's stack, but the callee's stack!
+    resultOnStack = false;
 }
 
 string ReturnExpression::toString()
@@ -366,6 +362,7 @@ StringExpression::StringExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_STRING;
+    resultOnStack = true;
 }
 
 string StringExpression::toString()
@@ -377,6 +374,7 @@ IntegerExpression::IntegerExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_INTEGER;
+    resultOnStack = true;
 }
 
 string IntegerExpression::toString()
@@ -390,6 +388,7 @@ DoubleExpression::DoubleExpression(CodeBlock* block)
     : Expression(block)
 {
     type = EXPR_DOUBLE;
+    resultOnStack = true;
 }
 
 string DoubleExpression::toString()
