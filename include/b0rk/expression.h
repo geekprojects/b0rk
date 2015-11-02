@@ -100,6 +100,7 @@ struct OpDesc
 {
     TokenType token;
     OpType oper;
+    bool hasLeftExpr;
     bool hasRightExpr;
 };
 

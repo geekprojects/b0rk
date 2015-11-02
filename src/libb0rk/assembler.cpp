@@ -289,7 +289,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 }
             }
 
-            if (opExpr->operType != OP_SET && opExpr->operType != OP_INCREMENT)
+            if (opExpr->operType != OP_SET && opExpr->operType != OP_INCREMENT && opExpr->operType != OP_DECREMENT)
             {
                 res = assembleExpression(block, opExpr->left, NULL, true);
                 if (!res)
@@ -370,16 +370,17 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     break;
 
                 case OP_INCREMENT:
+                case OP_DECREMENT:
                 {
                     if (opExpr->left->type != EXPR_VAR && opExpr->left->type != EXPR_ARRAY)
                     {
-                        printf("Assembler::assembleExpression: OPER: INCREMENT: Error: Left must be a variable or array!\n");
+                        printf("Assembler::assembleExpression: OPER: xCREMENT: Error: Left must be a variable or array!\n");
                         return false;
                     }
 
 
 #ifdef DEBUG_ASSEMBLER
-                    printf("Assembler::assembleExpression: OPER: POST INCREMENT %d", 0);
+                    printf("Assembler::assembleExpression: OPER: POST xCREMENT %d", 0);
 #endif
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
                     res = load(block, varExpr, reference);
@@ -396,7 +397,16 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                     m_code.push_back(OPCODE_PUSHI);
                     m_code.push_back(1);
-                    m_code.push_back(OPCODE_ADDI);
+
+                    if (opExpr->operType == OP_INCREMENT)
+                    {
+                        m_code.push_back(OPCODE_ADDI);
+                    }
+                    else
+                    {
+                        m_code.push_back(OPCODE_SUBI);
+                    }
+
                     res = store(block, NULL, varExpr->var);
                     if (!res)
                     {

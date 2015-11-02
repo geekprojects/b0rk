@@ -24,6 +24,7 @@ SimpleToken tokenTable[] = {
     { ">", 1, TOK_GREATER_THAN },
     { "+=", 2, TOK_ADD_ASSIGN },
     { "++", 2, TOK_INCREMENT },
+    { "--", 2, TOK_DECREMENT },
     { "+", 1, TOK_PLUS },
     { "-", 1, TOK_MINUS },
     { "*", 1, TOK_ASTERISK },

@@ -11,20 +11,20 @@ using namespace std;
 using namespace b0rk;
 
 OpDesc opTable[] = {
-    {TOK_ASSIGN, OP_SET, true},
-    {TOK_PLUS, OP_ADD, true},
-    {TOK_MINUS, OP_SUB, true},
-    {TOK_ASTERISK, OP_MULTIPLY, true},
-    {TOK_LOGICAL_AND, OP_LOGICAL_AND, true},
-    {TOK_ADD_ASSIGN, OP_SET, true},
-    {TOK_EQUALS, OP_EQUALS, true},
-    {TOK_LESS_THAN, OP_LESS_THAN, true},
-    {TOK_LESS_THAN_EQUAL, OP_LESS_THAN_EQUAL, true},
-    {TOK_GREATER_THAN, OP_GREATER_THAN, true},
-    {TOK_GREATER_THAN_EQUAL, OP_GREATER_THAN_EQUAL, true},
-    {TOK_INCREMENT, OP_INCREMENT, false},
-    {TOK_DECREMENT, OP_DECREMENT, false},
-    {TOK_DOT, OP_REFERENCE, true},
+    {TOK_ASSIGN, OP_SET, true, true},
+    {TOK_PLUS, OP_ADD, true, true},
+    {TOK_MINUS, OP_SUB, true, true},
+    {TOK_ASTERISK, OP_MULTIPLY, true, true},
+    {TOK_LOGICAL_AND, OP_LOGICAL_AND, true, true},
+    {TOK_ADD_ASSIGN, OP_SET, true, true},
+    {TOK_EQUALS, OP_EQUALS, true, true},
+    {TOK_LESS_THAN, OP_LESS_THAN, true, true},
+    {TOK_LESS_THAN_EQUAL, OP_LESS_THAN_EQUAL, true, true},
+    {TOK_GREATER_THAN, OP_GREATER_THAN, true, true},
+    {TOK_GREATER_THAN_EQUAL, OP_GREATER_THAN_EQUAL, true, true},
+    {TOK_INCREMENT, OP_INCREMENT, true, false},
+    {TOK_DECREMENT, OP_DECREMENT, true, false},
+    {TOK_DOT, OP_REFERENCE, true, true},
 };
 
 #define EXPECT(_name, _expectType, _expectStr) \

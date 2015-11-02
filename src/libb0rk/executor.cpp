@@ -352,6 +352,17 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 context->push(result);
             } break;
 
+            case OPCODE_SUBI:
+            {
+                Value v1 = context->pop();
+                Value v2 = context->pop();
+                Value result;
+                result.type = VALUE_INTEGER;
+                result.i = v1.i - v2.i;
+                LOG("SUBI: %lld - %lld = %lld", v1.i, v2.i, result.i);
+                context->push(result);
+            } break;
+
             case OPCODE_ADDD:
             {
                 Value v1 = context->pop();
