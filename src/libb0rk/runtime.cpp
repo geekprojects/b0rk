@@ -8,6 +8,7 @@
 #include <b0rk/executor.h>
 #include <b0rk/lexer.h>
 #include <b0rk/parser.h>
+#include <b0rk/compiler.h>
 
 #include "packages/system/lang/Object.h"
 #include "packages/system/lang/Array.h"
@@ -445,18 +446,20 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
     for (ctxit = m_contexts.begin(); ctxit != m_contexts.end(); ctxit++)
     {
         Context* ctx = *ctxit;
-        vector<Value>::iterator stackit;
-        for (stackit = ctx->getStack().begin(); stackit != ctx->getStack().end(); stackit++)
+        int s;
+
+        for (s = 0; s < ctx->getStackSize(); s++)
         {
-            if ((*stackit).type == VALUE_OBJECT && isObjectValid((*stackit).object))
+            Value* v = &(ctx->getStack()[s]);
+            if (v->type == VALUE_OBJECT && isObjectValid(v->object))
             {
                 //printf("Runtime::gc: Stacked Object: %p\n", (*stackit).object);
-                gcMarkObject((*stackit).object, mark);
+                gcMarkObject(v->object, mark);
             }
-            else if ((*stackit).type == VALUE_FRAME && (*stackit).pointer != NULL)
+            else if (v->type == VALUE_FRAME && v->pointer != NULL)
             {
                 //printf("Runtime::gc: Stacked Frame: %p\n", (*stackit).pointer);
-                Frame* frame = (Frame*)((*stackit).pointer);
+                Frame* frame = (Frame*)(v->pointer);
                 int i;
                 for (i = 0; i < frame->localVarsCount; i++)
                 {
@@ -564,11 +567,11 @@ void Runtime::gcMarkObject(Object* obj, uint64_t mark)
 {
     obj->m_gcMark = mark;
 
-if (obj->m_class == NULL)
-{
-printf("Runtime::gcMarkObject: WTF? class is NULL");
-return;
-}
+    if (B0RK_UNLIKELY(obj->m_class == NULL))
+    {
+        printf("Runtime::gcMarkObject: WTF? class is NULL");
+        return;
+    }
 
     int i;
     for (i = 0; i < obj->m_class->getFieldCount(); i++)

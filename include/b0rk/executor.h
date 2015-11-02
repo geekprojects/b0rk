@@ -13,6 +13,7 @@ class Executor
 
  public:
     Executor();
+    ~Executor();
 
     bool run(Context* context, Object* thisObj, AssembledCode& code, int argCount);
 };

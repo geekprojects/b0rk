@@ -1,4 +1,5 @@
 #include <b0rk/context.h>
+#include <b0rk/compiler.h>
 
 using namespace std;
 using namespace b0rk;
@@ -32,7 +33,7 @@ void Context::push(Value value)
 #ifdef DEBUG_STACK
     printf("Context::push: %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
 #endif
-    if (m_stackPos >= m_stackSize)
+    if (B0RK_UNLIKELY(m_stackPos >= m_stackSize))
     {
         fprintf(stderr, "Context::push: STACK OVERFLOW\n");
         return;
@@ -49,7 +50,7 @@ void Context::pushVoid()
 
 Value Context::pop()
 {
-    if (m_stackPos <= 0)
+    if (B0RK_UNLIKELY(m_stackPos <= 0))
     {
         Value voidValue;
         voidValue.type = VALUE_VOID;

@@ -1,5 +1,6 @@
 
 #include <b0rk/executor.h>
+#include <b0rk/compiler.h>
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/lang/Array.h"
 
@@ -8,6 +9,7 @@
 #include <float.h>
 
 #undef DEBUG_EXECUTOR
+#undef DEBUG_EXECUTOR_STATS
 
 #define DOUBLE_VALUE(_v) (((_v).type == VALUE_DOUBLE) ? (_v.d) : (double)(_v.i))
 #define INTEGER_VALUE(_v) (((_v).type == VALUE_INTEGER) ? (_v.i) : (int)(floor(_v.d)))
@@ -15,8 +17,33 @@
 using namespace std;
 using namespace b0rk;
 
+#ifdef DEBUG_EXECUTOR_STATS
+int g_stats[OPCODE_MAX];
+#endif
+
 Executor::Executor()
 {
+#ifdef DEBUG_EXECUTOR_STATS
+    int i;
+    for (i = 0; i < OPCODE_MAX; i++)
+    {
+        g_stats[i] = 0;
+    }
+#endif
+}
+
+Executor::~Executor()
+{
+#ifdef DEBUG_EXECUTOR_STATS
+    int i;
+    for (i = 0; i < OPCODE_MAX; i++)
+    {
+        if (g_stats[i] > 0)
+        {
+            printf("Executor::~Executor: %04x: %d\n", i, g_stats[i]);
+        }
+    }
+#endif
 }
 
 #ifdef DEBUG_EXECUTOR
@@ -75,6 +102,11 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
     {
         uint64_t thisPC = pc;
         uint64_t opcode = code.code[pc++];
+
+#ifdef DEBUG_EXECUTOR_STATS
+        g_stats[opcode]++;
+#endif
+
         success = false;
         switch (opcode)
         {
@@ -482,7 +514,6 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                     success = false;
                 }
             } break;
-
  
             case OPCODE_CALL_STATIC:
             {
@@ -507,14 +538,14 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Object* obj = objValue.object;
                 LOG("CALL_NAMED:  -> obj class=%s, ", obj->getClass()->getName().c_str());
 
-                if (obj == NULL)
+                if (B0RK_UNLIKELY(obj == NULL))
                 {
                     ERROR("CALL_NAMED: object is null! %p", obj);
                     running = false;
                     success = false;
                     continue;
                 }
-                else if (obj->getClass() == NULL)
+                else if (B0RK_UNLIKELY(obj->getClass() == NULL))
                 {
                     ERROR("CALL_NAMED: object with no class!? obj=%p", obj);
                     running = false;
@@ -537,7 +568,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 }
 
                 LOG("CALL_NAMED:  -> function=%p", function);
-                if (function == NULL)
+                if (B0RK_UNLIKELY(function == NULL))
                 {
                     ERROR("CALL_NAMED: function not found! class=%s, function=%s", obj->getClass()->getName().c_str(), funcName.c_str());
                     running = false;
@@ -545,7 +576,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                     continue;
                 }
                 res = function->execute(context, obj, count);
-                if (!res)
+                if (B0RK_UNLIKELY(!res))
                 {
                     running = false;
                     success = false;
@@ -558,17 +589,17 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 res = false;
 
                 Value funcObjValue = context->pop();
-                if (funcObjValue.type == VALUE_OBJECT && funcObjValue.object != NULL)
+                if (B0RK_LIKELY(funcObjValue.type == VALUE_OBJECT && funcObjValue.object != NULL))
                 {
                     LOG("CALL_OBJ: function obj=%p, argCount=%d", funcObjValue.object, count);
                     Function* function = (Function*)(funcObjValue.object->getValue(0).pointer);
-                    if (function != NULL)
+                    if (B0RK_LIKELY(function != NULL))
                     {
                         LOG("CALL_OBJ: function=%p", function);
                         res = function->execute(context, NULL, count);
                     }
                 }
-                if (!res)
+                if (B0RK_UNLIKELY(!res))
                 {
                     running = false;
                     success = false;
@@ -581,7 +612,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 int count = code.code[pc++];
                 LOG("NEW: class=%s", clazz->getName().c_str());
                 Object* obj = context->getRuntime()->newObject(context, clazz, count);
-                if (obj != NULL)
+                if (B0RK_LIKELY(obj != NULL))
                 {
                     Value v;
                     v.type = VALUE_OBJECT;
@@ -713,7 +744,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 LOG("CMPD: left=%0.2f, right=%0.2f, result=%0.2f (%0.2f)", leftDouble, rightDouble, result, resultAbs);
                 flagZero = (resultAbs < FLT_EPSILON);
                 flagSign = (result < 0.0 && !flagZero);
-                    flagOverflow = !flagZero || flagSign;
+                flagOverflow = !flagZero || flagSign;
  
                 LOG("CMPD:  -> zero=%d, sign=%d, overflow=%d", flagZero, flagSign, flagOverflow);
             } break;
