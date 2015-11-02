@@ -5,45 +5,42 @@ import system.io.File;
 class tests.Expressions
 {
 
-function test(name, t, expected) static
-{
-File.out.write("Expression: " + name);
-File.out.write(": ");
-if (t == expected)
-{
-File.out.writeln("PASS");
-}
-else
-{
-File.out.write("FAIL: expected=" + expected);
-File.out.writeln(" got=" + t);
-}
-}
+    function test(name, t, expected) static
+    {
+        File.out.write("Expression: " + name);
+        File.out.write(": ");
+        if (t == expected)
+        {
+            File.out.writeln("PASS");
+        }
+        else
+        {
+            File.out.write("FAIL: expected=" + expected);
+            File.out.writeln(" got=" + t);
+        }
+    }
 
     function main() static
     {
         var a = 2;
         var b = 3;
-test("- ", a - b, -1);
-test("+ ", a + b, 5);
-test("< ", a < b, 1);
-test("<=", a <= b, 1);
-test("> ", a > b, 0);
-test(">=", a >= b, 0);
-test("==", a == b, 0);
-test("Precedence", (1 + a * b), 7);
+        test("- ", a - b, -1);
+        test("+ ", a + b, 5);
+        test("< ", a < b, 1);
+        test("<=", a <= b, 1);
+        test("> ", a > b, 0);
+        test(">=", a >= b, 0);
+        test("==", a == b, 0);
 
-/*
-{MULTIPLY-UNKNOWN:{VAR:a},{ADD-UNKNOWN:{VAR:b},{INTEGER:1}}}
- */
-test("Precedence", (a * b + 1), 7);
+        test("Precedence", (1 + a * b), 7);
+        test("Precedence", (a * b + 1), 7);
+        test("Precedence", ((1 + a) * b), 9);
+        test("Precedence", (a * (b + 1)), 8);
+        test("Precedence", (a * b + 1 * a), 8);
 
-test("Precedence", ((1 + a) * b), 9);
-test("Precedence", (a * (b + 1)), 8);
-test("Precedence", (a * b + 1 * a), 8);
-
-var i = 1;
-test("Precedence", i++, 1);
+        var i = 1;
+        test("Precedence", i++, 1);
+        test("Precedence", i--, 2);
 
     }
 }
