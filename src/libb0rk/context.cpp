@@ -6,6 +6,10 @@ using namespace b0rk;
 Context::Context(Runtime* runtime)
 {
     m_runtime = runtime;
+
+    m_stackPos = 0;
+    m_stackSize = 1024;
+    m_stack = new Value[m_stackSize];
 }
 
 Context::~Context()
@@ -28,7 +32,12 @@ void Context::push(Value value)
 #ifdef DEBUG_STACK
     printf("Context::push: %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
 #endif
-    m_stack.push_back(value);
+    if (m_stackPos >= m_stackSize)
+    {
+        fprintf(stderr, "Context::push: STACK OVERFLOW\n");
+        return;
+    }
+    m_stack[m_stackPos++] = value;
 }
 
 void Context::pushVoid()
@@ -40,11 +49,19 @@ void Context::pushVoid()
 
 Value Context::pop()
 {
-    Value value = m_stack.back();
-    m_stack.pop_back();
+    if (m_stackPos <= 0)
+    {
+        Value voidValue;
+        voidValue.type = VALUE_VOID;
+        fprintf(stderr, "Context::push: STACK UNDERFLOW\n");
+        return voidValue;
+    }
+
+    Value value = m_stack[--m_stackPos];
 #ifdef DEBUG_STACK
     printf("Context::pop : %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
 #endif
+
     return value;
 }
 

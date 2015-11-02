@@ -22,7 +22,9 @@ class Context
  private:
     Runtime* m_runtime;
 
-    std::vector<Value> m_stack;
+    int m_stackPos;
+    int m_stackSize;
+    Value* m_stack;
 
  public:
     Context(Runtime* runtime);
@@ -30,7 +32,8 @@ class Context
 
     Runtime* getRuntime() { return m_runtime; }
 
-    std::vector<Value>& getStack() { return m_stack; }
+    int getStackSize() { return m_stackSize; }
+    Value* getStack() { return m_stack; }
 
     void push(Value value);
     void pushVoid();
