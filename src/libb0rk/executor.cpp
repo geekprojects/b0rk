@@ -48,16 +48,17 @@ Executor::~Executor()
 
 #ifdef DEBUG_EXECUTOR
 #define LOG(_fmt, _args...) \
-    printf("Executor::run: %04llx: 0x%llx " _fmt "\n", thisPC, opcode, _args);
+    printf("Executor::run: %s:%04llx: 0x%llx " _fmt "\n", functionName.c_str(), thisPC, opcode, _args);
 #else
 #define LOG(_fmt, _args...)
 #endif
 
 #define ERROR(_fmt, _args...) \
-    printf("Executor::run: %04llx: 0x%llx ERROR: " _fmt "\n", thisPC, opcode, _args);
+    printf("Executor::run: %s:%04llx: 0x%llx ERROR: " _fmt "\n", functionName.c_str(), thisPC, opcode, _args);
 
 bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int argCount)
 {
+    string functionName = code.function->getFullName();
 #ifdef DEBUG_EXECUTOR
     printf("Executor::run: Entering %s\n", code.function->getFullName().c_str());
 #endif
@@ -132,6 +133,72 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
                 Value result = objValue.object->getValue(fieldId);
                 context->push(result);
             } break;
+
+            case OPCODE_LOAD_FIELD_NAMED:
+            {
+                Object* nameObj = context->pop().object;
+                Value objValue = context->pop();
+                string varName = String::getString(context, nameObj);
+                LOG("LOAD_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, varName.c_str());
+
+                if (objValue.type == VALUE_OBJECT && objValue.object != NULL)
+                {
+                    Object* obj = objValue.object;
+                    Class* clazz = obj->getClass();
+
+                    int id = clazz->getFieldId(varName);
+                    if (id != -1)
+                    {
+
+                        LOG("LOAD_FIELD_NAMED: class=%s, obj=%p, name=%s, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
+
+                        context->push(obj->getValue(id));
+                    }
+                    else
+                    {
+                        running = false;
+                        success = false;
+                    }
+                }
+                else
+                {
+                    running = false;
+                    success = false;
+                }
+            } break;
+
+            case OPCODE_STORE_FIELD_NAMED:
+            {
+                Value nameValue = context->pop();
+                Value objValue = context->pop();
+                Value value = context->pop();
+                string varName = String::getString(context, nameValue);
+                LOG("STORE_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, varName.c_str());
+
+                if (objValue.type == VALUE_OBJECT && objValue.object != NULL)
+                {
+                    Object* obj = objValue.object;
+                    Class* clazz = obj->getClass();
+
+                    int id = clazz->getFieldId(varName);
+                    if (id != -1)
+                    {
+                        LOG("STORE_FIELD_NAMED: class=%s, obj=%p, name=%s, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
+                        obj->setValue(id, value);
+                    }
+                    else
+                    {
+                        running = false;
+                        success = false;
+                    }
+                }
+                else
+                {
+                    running = false;
+                    success = false;
+                }
+            } break;
+
 
             case OPCODE_LOAD_STATIC_FIELD:
             {
@@ -519,7 +586,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode& code, int a
             {
                 Function* function = (Function*)code.code[pc++];
                 int count = code.code[pc++];
-                LOG("CALL: %p", function);
+                LOG("CALL_STATIC: %p", function);
                 res = function->execute(context, NULL, count);
                 if (!res)
                 {

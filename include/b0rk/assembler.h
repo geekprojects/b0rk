@@ -42,7 +42,7 @@ class Assembler
 
     bool isVariable(CodeBlock* block, Object* context, std::string name);
     bool load(CodeBlock* block, VarExpression* var, OperationExpression* reference);
-    bool store(CodeBlock* block, Object* context, std::string name);
+    bool store(CodeBlock* block, VarExpression* var, OperationExpression* reference);
 
     Function* findFunction(CodeBlock* block, Identifier id);
 

@@ -63,7 +63,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
         Expression* expr = code->m_code[i];
 
 #ifdef DEBUG_ASSEMBLER
-printf("Assembler::assembleBlock: expr: %s\n", expr->toString().c_str());
+        printf("Assembler::assembleBlock: expr: %s\n", expr->toString().c_str());
 #endif
 
         bool res;
@@ -407,7 +407,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                         m_code.push_back(OPCODE_SUBI);
                     }
 
-                    res = store(block, NULL, varExpr->var);
+                    res = store(block, varExpr, reference);
                     if (!res)
                     {
                         return false;
@@ -416,21 +416,43 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                 case OP_SET:
                 {
+
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: SET\n");
                     printf("Assembler::assembleExpression: OPER: -> left=%p\n", opExpr->left);
                     printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
 #endif
+
                     if (needResult)
                     {
                         m_code.push_back(OPCODE_DUP);
                     }
+
                     expr->resultOnStack = needResult;
 
-                    if (opExpr->left->type == EXPR_VAR)
+                    ExpressionType type = opExpr->left->type;
+                    Expression* dest = opExpr->left;
+                    if (IS_REFERENCE(dest))
                     {
-                        VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                        res = store(block, NULL, varExpr->var);
+#ifdef DEBUG_ASSEMBLER
+                        printf("Assembler::assembleExpression: OPER: -> Dest is reference\n");
+#endif
+                        reference = (OperationExpression*)dest;
+                        type = EXPR_VAR;
+                        dest = opExpr->left;
+                        while (IS_REFERENCE(dest))
+                        {
+                            dest = ((OperationExpression*)dest)->right;
+                        }
+#ifdef DEBUG_ASSEMBLER
+                        printf("Assembler::assembleExpression: OPER: -> first non reference=%s\n", dest->toString().c_str());
+#endif
+                    }
+
+                    if (type == EXPR_VAR)
+                    {
+                        VarExpression* varExpr = (VarExpression*)dest;
+                        res = store(block, varExpr, reference);
                         if (!res)
                         {
                             return false;
@@ -737,6 +759,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             return false;
     }
 
+#ifdef DEBUG_ASSEMBLER
     if (needResult && !expr->resultOnStack)
     {
         printf("Assembler::assembleExpression: ERROR: Result required, but none returned by expression!\n");
@@ -747,6 +770,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         printf("Assembler::assembleExpression: ERROR: Result not required, but returned by expression!\n");
         printf("Assembler::assembleExpression: ERROR:  -> %s\n", expr->toString().c_str());
     }
+#endif
 
     return true;
 }
@@ -817,8 +841,11 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         {
             return false;
         }
-        printf("Assembler::load: TODO: Var from reference\n");
-        return false;
+        //printf("Assembler::load: TODO: Var from reference\n");
+        m_code.push_back(OPCODE_NEW_STRING);
+        m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
+        m_code.push_back(OPCODE_LOAD_FIELD_NAMED);
+        return true;
     }
 
     if (varExpr->clazz != NULL)
@@ -894,8 +921,24 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
     }
 }
 
-bool Assembler::store(CodeBlock* block, Object* context, string name)
+bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpression* reference)
 {
+    if (reference != NULL)
+    {
+        bool res = assembleReference(block, reference);
+        if (!res)
+        {
+            return false;
+        }
+        printf("Assembler::store: Var from reference: %s\n", varExpr->var.c_str());
+        m_code.push_back(OPCODE_NEW_STRING);
+        m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
+        m_code.push_back(OPCODE_STORE_FIELD_NAMED);
+        return true;
+    }
+
+    string name = varExpr->var;
+
     int id;
     if (name == "this")
     {
