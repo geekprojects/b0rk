@@ -120,6 +120,9 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
             return false;
         }
     }
+
+    resolveTypes();
+
     return true;
 }
 
@@ -299,7 +302,6 @@ Function* Parser::parseFunction(Class* clazz)
 
     code->setStartingVarId(paramTokens.size() + 1);
 
-    resolveTypes();
 
     function->setCode(code);
 
@@ -841,6 +843,10 @@ Expression* Parser::parseExpression(CodeBlock* code)
         {
             m_pos--;
             Expression* valueExpr = parseExpressionValue(code);
+            if (valueExpr == NULL)
+            {
+                return NULL;
+            }
             outputQueue.push_back(valueExpr);
 #ifdef DEBUG_PARSER
             printf("Parser::parseExpression:  -> value=%s\n", valueExpr->toString().c_str());
@@ -876,9 +882,17 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
         if (opExpr->operDesc.hasRightExpr)
         {
             opExpr->right = buildTree(code, queue);
+            if (opExpr->right == NULL)
+            {
+                return NULL;
+            }
             opExpr->right->parent = opExpr;
         }
         opExpr->left = buildTree(code, queue);
+        if (opExpr->left == NULL)
+        {
+            return NULL;
+        }
         opExpr->left->parent = opExpr;
 
         if (opExpr->operDesc.token == TOK_ADD_ASSIGN)
