@@ -1,12 +1,16 @@
-
-class Maths
+/*
+ * Simple String allocation and addition test
+ */
+class tests.Maths
 {
     function main() static
     {
-        var a;
-        System.log("LOLWTFBBQ! I'm going to do some adding!!");
-        a = 1 + (2.1 * 30);
-        System.log(a);
+var i;
+for (i = 0; i < 10; i++)
+{
+var r = system.lang.Maths.randomInt(1, 10);
+system.io.File.out.writeln("randomInt: r=" + r);
+}
     }
 }
 
