@@ -15,6 +15,7 @@ Context::Context(Runtime* runtime)
 
 Context::~Context()
 {
+    delete[] m_stack;
 }
 
 string spaces(int c)

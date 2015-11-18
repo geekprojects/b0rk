@@ -14,6 +14,8 @@ Class::Class(Class* superClass, string name)
     {
         m_fieldStartId = m_superClass->getFieldCount();
     }
+
+    m_staticValues = NULL;
 }
 
 Class::~Class()
@@ -22,6 +24,11 @@ Class::~Class()
     for (methIt = m_methods.begin(); methIt != m_methods.end(); methIt++)
     {
         delete methIt->second;
+    }
+
+    if (m_staticValues != NULL)
+    {
+        delete[] m_staticValues;
     }
 }
 
