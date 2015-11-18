@@ -47,6 +47,7 @@ class Runtime
     int64_t m_currentObjects;
     int64_t m_currentBytes;
     int64_t m_collectedObjects;
+    int64_t m_arenaTotal;
 
     bool m_gcEnabled;
     int64_t m_gcLastAlloc;

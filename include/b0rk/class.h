@@ -51,6 +51,8 @@ class Class
 
     void addMethod(std::string name, Function* function);
     virtual Function* findMethod(std::string name);
+
+    virtual bool deleteOnExit() { return true; }
 };
 
 };

@@ -47,6 +47,7 @@ Runtime::Runtime()
     m_currentObjects = 0;
     m_currentBytes = 0;
     m_collectedObjects = 0;
+    m_arenaTotal = 0;
 
     m_gcEnabled = true;
     m_gcLastAlloc = 0;
@@ -60,6 +61,7 @@ Runtime::Runtime()
     Object* freeObj = (Object*)m_arena.m_start;
     freeObj->m_size = m_arena.m_size;
     m_arena.m_freeList.push_back(freeObj);
+    m_arenaTotal += m_arena.m_size;
 
     Context* initContext = new Context(this);
     m_objectClass = new ObjectClass();
@@ -83,7 +85,11 @@ Runtime::~Runtime()
     map<std::string, Class*>::iterator it;
     for (it = m_classes.begin(); it != m_classes.end(); it++)
     {
-        delete it->second;
+        Class* clazz = it->second;
+        if (clazz->deleteOnExit())
+        {
+            delete clazz;
+        }
     }
 
     vector<Context*>::iterator ctxIt;
@@ -296,6 +302,21 @@ Object* Runtime::allocateObject(Class* clazz)
 
 Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
 {
+    if (m_gcEnabled)
+    {
+        // Check available space before we disable GC
+#ifdef DEBUG_GC
+        printf("Runtime::newObject: Space Check: %lld/%lld = %0.2f%%\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
+#endif
+        if (m_currentBytes >= (m_arenaTotal / 4) * 3)
+        {
+#ifdef DEBUG_GC
+            printf("Runtime::newObject: Less than 25%% of arena available, GCing\n");
+#endif
+            gc();
+        }
+    }
+
     // Disable GC otherwise it could collect the new object before we're finished!
     bool enabled = m_gcEnabled;
     m_gcEnabled = false;
@@ -486,7 +507,7 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
 
         if (obj->m_class != NULL)
         {
-            if (obj->m_gcMark == mark)
+            if (obj->m_gcMark == mark || obj->m_gcMark == B0RK_GC_EXTERNAL)
             {
                 m_currentObjects++;
                 m_currentBytes += obj->m_size;
@@ -495,7 +516,9 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
             {
                 // This object hasn't been marked, collect it!
 
+#if 0
                 // Free up any private pointers (Mostly Strings)
+                // XXX: This ends up freeing things it shouldn't (Functions)
                 int i;
                 for (i = 0; i < obj->m_class->getFieldCount(); i++)
                 {
@@ -504,6 +527,7 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
                         free(obj->m_values[i].pointer);
                     }
                 }
+#endif
 
                 freed += obj->m_size;
 #ifdef DEBUG_GC
@@ -567,7 +591,10 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
 
 void Runtime::gcMarkObject(Object* obj, uint64_t mark)
 {
-    obj->m_gcMark = mark;
+    if (obj->m_gcMark != B0RK_GC_EXTERNAL)
+    {
+        obj->m_gcMark = mark;
+    }
 
     if (B0RK_UNLIKELY(obj->m_class == NULL))
     {
