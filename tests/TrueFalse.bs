@@ -1,0 +1,14 @@
+/*
+ * Test true and false keywords
+ */
+class tests.TrueFalse
+{
+    function main() static
+    {
+        var t = true;
+        var f = false;
+        system.io.File.out.writeln("true: " + t);
+        system.io.File.out.writeln("false: " + f);
+    }
+}
+

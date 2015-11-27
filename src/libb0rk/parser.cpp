@@ -1114,6 +1114,22 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
         funcExpr->valueType = VALUE_OBJECT;
         expression = funcExpr;
     }
+    else if (token->type == TOK_LITERAL)
+    {
+        if (token->string == "true" || token->string == "false")
+        {
+            IntegerExpression* intExpr = new IntegerExpression(code);
+            m_expressions.push_back(intExpr);
+            intExpr->i = (token->string == "true");
+            intExpr->valueType = VALUE_INTEGER;
+            expression = intExpr;
+        }
+        else
+        {
+            printf("Parser::parseExpression: Unhandled Literal type: %d: %s\n", token->type, token->string.c_str());
+            return NULL;
+        }
+    }
     else if (token->type == TOK_STRING)
     {
         StringExpression* strExpr = new StringExpression(code);

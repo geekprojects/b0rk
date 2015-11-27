@@ -49,6 +49,8 @@ SimpleToken tokenTable[] = {
     { "for", 3, TOK_FOR },
     { "while", 5, TOK_WHILE },
     { "return", 6, TOK_RETURN },
+    { "true", 4, TOK_LITERAL },
+    { "false", 5, TOK_LITERAL },
 };
 
 Lexer::Lexer()

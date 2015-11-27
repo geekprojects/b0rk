@@ -55,6 +55,7 @@ enum TokenType
     TOK_WHILE,
     TOK_RETURN,
     TOK_IDENTIFIER,
+    TOK_LITERAL,
     TOK_STRING,
     TOK_INTEGER,
     TOK_DOUBLE,
