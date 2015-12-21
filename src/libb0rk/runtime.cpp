@@ -104,6 +104,14 @@ Runtime::~Runtime()
 
 bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
 {
+
+    Class* existing = findClass(context, clazz->getName(), false);
+    if (existing != NULL)
+    {
+        printf("Runtime::addClass: Class already loaded: %s\n", clazz->getName().c_str());
+        return false;
+    }
+
     if (findScript && m_objectClass != NULL && clazz != m_objectClass)
     {
         clazz->setSuperClass(m_objectClass);
@@ -388,6 +396,10 @@ bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int a
     }
 
     Function* ctor = clazz->findMethod(ctorName);
+#ifdef DEBUG_RUNTIME_NEW
+    printf("Runtime::callConstructor: constructor name: %s = %p\n", ctorName.c_str(), ctor);
+#endif
+
     if (ctor != NULL)
     {
         res = ctor->execute(context, obj, argCount);
