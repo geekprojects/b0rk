@@ -957,6 +957,26 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
         printf("Parser::parseExpression: NEW: class: %s\n", id.toString().c_str());
 #endif
 
+        if (id.identifier.size() == 1)
+        {
+            // Check for imported classes
+            // TODO: These will override any local vars
+            //       Is that right?
+            map<string, Class*>::iterator it = m_imports.find(id.identifier.at(0));
+            if (it != m_imports.end())
+            {
+                string clazz = (it->second)->getName();
+#ifdef DEBUG_PARSER
+                printf(
+                    "Parser::parseExpression: NEW: Found imported class: %s -> %s\n",
+                    id.identifier.at(0).c_str(),
+                    clazz.c_str());
+#endif
+
+                id = Identifier::makeIdentifier(clazz);
+            }
+         }
+
         vector<Expression*> newParams;
         res = parseExpressionList(code, newParams);
         if (!res)
@@ -1345,5 +1365,33 @@ string Identifier::toString()
         str += *it;
     }
     return str;
+}
+
+Identifier Identifier::makeIdentifier(string name)
+{
+    Identifier res;
+    unsigned int pos;
+    string buf = "";
+    for (pos = 0; pos < name.length(); pos++)
+    {
+        char c = name.at(pos);
+        if (c == '.')
+        {
+            if (buf.length() > 0)
+            {
+                res.identifier.push_back(buf);
+                buf = "";
+            }
+        }
+        else
+        {
+            buf += c;
+        }
+    }
+    if (buf.length() > 0)
+    {
+        res.identifier.push_back(buf);
+    }
+    return res;
 }
 

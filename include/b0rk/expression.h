@@ -20,6 +20,8 @@ struct Identifier
     std::vector<std::string> identifier;
     std::string end();
     std::string toString();
+
+    static Identifier makeIdentifier(std::string name);
 };
 
 enum ExpressionType
