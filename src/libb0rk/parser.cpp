@@ -143,13 +143,15 @@ Class* Parser::parseClass(bool addToExisting)
     token = nextToken();
     if (token->type == TOK_EXTENDS)
     {
-        token = nextToken();
-        if (token->type != TOK_IDENTIFIER)
+        Identifier superClassId;
+        res = parseIdentifier(superClassId);
+        if (!res)
         {
-            printf("Parser::parseClass: Expected class name\n");
+            printf("Parser::parseClass: Unable to parse superclass\n");
             return NULL;
         }
-        superClass = m_context->getRuntime()->findClass(m_context, token->string, true);
+
+        superClass = m_context->getRuntime()->findClass(m_context, superClassId.toString(), true);
 #ifdef DEBUG_PARSER
         printf("Parser::parseClass: Class extends: %s: %p\n", token->string.c_str(), superClass);
 #endif
