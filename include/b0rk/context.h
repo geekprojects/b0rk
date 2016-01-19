@@ -3,6 +3,7 @@
 
 #include <b0rk/runtime.h>
 #include <b0rk/value.h>
+#include <b0rk/compiler.h>
 
 #include <vector>
 
@@ -28,16 +29,50 @@ class Context
 
  public:
     Context(Runtime* runtime);
-    ~Context();
+    virtual ~Context();
 
     Runtime* getRuntime() { return m_runtime; }
 
     int getStackSize() { return m_stackSize; }
     Value* getStack() { return m_stack; }
 
-    void push(Value value);
-    void pushVoid();
-    Value pop();
+    inline void push(Value value)
+    {
+#ifdef DEBUG_STACK
+        printf("Context::push: %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
+#endif
+        if (B0RK_UNLIKELY(m_stackPos >= m_stackSize))
+        {
+            fprintf(stderr, "Context::push: STACK OVERFLOW\n");
+            return;
+        }
+        m_stack[m_stackPos++] = value;
+    }
+
+    inline void pushVoid()
+    {
+        Value voidValue;
+        voidValue.type = VALUE_VOID;
+        push(voidValue);
+    }
+
+    inline Value pop()
+    {
+        if (B0RK_UNLIKELY(m_stackPos <= 0))
+        {
+            Value voidValue;
+            voidValue.type = VALUE_VOID;
+            fprintf(stderr, "Context::push: STACK UNDERFLOW\n");
+            return voidValue;
+        }
+
+        Value value = m_stack[--m_stackPos];
+#ifdef DEBUG_STACK
+        printf("Context::pop : %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
+#endif
+
+        return value;
+    }
 };
 
 };
