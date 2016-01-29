@@ -355,9 +355,14 @@ varExpr,
                         }
                 }
             }
+            else if (opExpr->left != NULL && opExpr->right != NULL &&
+                opExpr->left->valueType != VALUE_UNKNOWN &&
+                opExpr->left->valueType == opExpr->right->valueType)
+            {
+                opExpr->valueType = opExpr->left->valueType;
+            }
         }
     }
-
 
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {
@@ -881,6 +886,7 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
     if (expr->type == EXPR_OPER)
     {
         OperationExpression* opExpr = (OperationExpression*)expr;
+
         if (opExpr->operDesc.hasRightExpr)
         {
             opExpr->right = buildTree(code, queue);
@@ -897,7 +903,52 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
         }
         opExpr->left->parent = opExpr;
 
-        if (opExpr->operDesc.token == TOK_ADD_ASSIGN)
+        if (opExpr->operType == OP_MULTIPLY || opExpr->operType == OP_ADD)
+        {
+            if (opExpr->left->type == EXPR_DOUBLE && opExpr->right->type == EXPR_DOUBLE)
+            {
+                fprintf(stderr, "Parser::buildTree: Optmise two Doubles: %s", opExpr->toString().c_str());
+                DoubleExpression* dblExpr = new DoubleExpression(code);
+                double leftd = ((DoubleExpression*)opExpr->left)->d;
+                double rightd = ((DoubleExpression*)opExpr->right)->d;
+                switch (opExpr->operType)
+                {
+                    case OP_ADD:
+                        dblExpr->d = leftd + rightd;
+                        break;
+                    case OP_MULTIPLY:
+                        dblExpr->d = leftd * rightd;
+                        break;
+                    default:
+                        // Should never get here!
+                        break;
+                }
+                dblExpr->parent = opExpr->parent;
+                expr = dblExpr;
+            }
+            else if (opExpr->left->type == EXPR_INTEGER && opExpr->right->type == EXPR_INTEGER)
+            {
+                fprintf(stderr, "Parser::buildTree: Optmise two Integers: %s", opExpr->toString().c_str());
+                IntegerExpression* intExpr = new IntegerExpression(code);
+                int64_t lefti = ((IntegerExpression*)opExpr->left)->i;
+                int64_t righti = ((IntegerExpression*)opExpr->right)->i;
+                switch (opExpr->operType)
+                {
+                    case OP_ADD:
+                        intExpr->i = lefti + righti;
+                        break;
+                    case OP_MULTIPLY:
+                        intExpr->i = lefti * righti;
+                        break;
+                    default:
+                        // Should never get here!
+                        break;
+                }
+                intExpr->parent = opExpr->parent;
+                expr = intExpr;
+            }
+        }
+        else if (opExpr->operDesc.token == TOK_ADD_ASSIGN)
         {
             // l += r -> l = (l + r)
 
