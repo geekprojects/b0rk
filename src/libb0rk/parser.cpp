@@ -496,7 +496,18 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type == TOK_ELSE)
             {
-                EXPECT_BRACE_LEFT("IF");
+                token = nextToken();
+                if (token->type != TOK_IF && token->type != TOK_BRACE_LEFT)
+                {
+                    printf("%s: IF ELSE: Expected if or {, got %s\n", __PRETTY_FUNCTION__, token->string.c_str());
+                    delete code;
+                    return NULL;
+                }
+
+                if (token->type == TOK_IF)
+                {
+                    m_pos--;
+                }
 
                 ifExpr->falseBlock = parseCodeBlock(function);
                 if (ifExpr->trueBlock == NULL)
