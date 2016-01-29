@@ -45,9 +45,6 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
 
     for (i = 0; i < m_code.size(); i++)
     {
-#if 0
-        printf("%04x: 0x%llx\n", i, m_code[i]);
-#endif
         asmCode.code[i] = m_code[i];
     }
 
@@ -111,6 +108,23 @@ void Assembler::pushOperator(OpCode opcode, ValueType type)
             break;
     }
 }
+
+void Assembler::pushCMP(ValueType type)
+{
+    switch (type)
+    {
+        case VALUE_INTEGER:
+            m_code.push_back(OPCODE_CMPI);
+            break;
+        case VALUE_DOUBLE:
+            m_code.push_back(OPCODE_CMPD);
+            break;
+        default:
+            m_code.push_back(OPCODE_CMP);
+            break;
+    }
+}
+
 
 /*
  * An expression should always leave exactly one item on the stack
@@ -332,7 +346,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: EQUALS\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCE);
                     break;
 
@@ -340,7 +354,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LESS_THAN\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCL);
                     break;
 
@@ -348,7 +362,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LESS_THAN_EQUAL\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCLE);
                     break;
 
@@ -357,7 +371,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCG);
                     break;
 
@@ -365,7 +379,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCGE);
                     break;
 
@@ -503,21 +517,8 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         {
             IfExpression* ifExpr = (IfExpression*)expr;
 
-            // Add the test
-            res = assembleExpression(block, ifExpr->testExpr, NULL, true);
-            if (!res)
-            {
-                return false;
-            }
-
-            // Check whether the test expression was true
-            m_code.push_back(OPCODE_PUSHI);
-            m_code.push_back(0);
-            m_code.push_back(OPCODE_CMP);
-
-            // If false
-            m_code.push_back(OPCODE_BEQ);
-            m_code.push_back(0); // Will be filled in with the end address
+            // Add the condition test
+            res = assembleTest(block, ifExpr->testExpr);
             int bneToFalsePos = m_code.size() - 1;
 
             // Add the body
@@ -573,20 +574,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #endif
             // Add the test
             int loopTop = m_code.size();
-            res = assembleExpression(block, forExpr->testExpr, NULL, true);
-            if (!res)
-            {
-                return false;
-            }
-
-            // Check whether the test expression was true
-            m_code.push_back(OPCODE_PUSHI);
-            m_code.push_back(0);
-            m_code.push_back(OPCODE_CMP);
-
-            // If true
-            m_code.push_back(OPCODE_BEQ);
-            m_code.push_back(0); // Will be filled in with the end address
+            res = assembleTest(block, forExpr->testExpr);
             int bneToEndPos = m_code.size() - 1;
 
 #ifdef DEBUG_ASSEMBLER
@@ -775,6 +763,62 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
     return true;
 }
 
+bool Assembler::assembleTest(CodeBlock* block, Expression* testExpr)
+{
+    bool res = assembleExpression(block, testExpr, NULL, true);
+    if (!res)
+    {
+        return false;
+    }
+
+    int branchOpcode = -1;
+    if (m_code.size() > 2)
+    {
+        // Optimisation: Can we collapse the compare in the test expression and our own CMP?
+        uint64_t last0 = m_code[m_code.size() - 2];
+
+        if (last0 == OPCODE_CMP || last0 == OPCODE_CMPI || OPCODE_CMPD)
+        {
+            uint64_t last1 = m_code[m_code.size() - 1];
+
+            // Note that we flip the condition as we want to branch if
+            // the condition is false, i.e. skip the true block
+            switch (last1)
+            {
+                case OPCODE_PUSHCE:
+                    fprintf(stderr, "Assembler::assembleTest: Test was CMP/PUSHCE!\n");
+                    m_code.pop_back();
+                    branchOpcode = OPCODE_BNE;
+                    break;
+                case OPCODE_PUSHCL:
+                    fprintf(stderr, "Assembler::assembleTest: Test was CMP/PUSHCL!\n");
+                    m_code.pop_back();
+                    branchOpcode = OPCODE_BGE;
+                    break;
+                case OPCODE_PUSHCLE:
+                    fprintf(stderr, "Assembler::assembleExpression: Test was CMP/PUSHCLE!\n");
+                    m_code.pop_back();
+                    branchOpcode = OPCODE_BG;
+                    break;
+            }
+        }
+    }
+
+    if (branchOpcode == -1)
+    {
+        // Check whether the test expression was *false*
+        m_code.push_back(OPCODE_PUSHI);
+        m_code.push_back(0);
+        m_code.push_back(OPCODE_CMPI);
+        branchOpcode = OPCODE_BEQ;
+    }
+
+    // If false, skip to the end
+    m_code.push_back(branchOpcode);
+    m_code.push_back(0); // Will be filled in with the end address
+
+    return true;
+}
 
 bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
 {

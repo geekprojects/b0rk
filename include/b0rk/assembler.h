@@ -34,9 +34,11 @@ class Assembler
     std::vector<uint64_t> m_code;
 
     void pushOperator(OpCode opcode, ValueType type);
+    void pushCMP(ValueType type);
 
     bool assemble(CodeBlock* block, AssembledCode& asmCode);
     bool assembleExpression(CodeBlock* block, Expression* expr, OperationExpression* reference = NULL, bool needResult = false);
+    bool assembleTest(CodeBlock* block, Expression* testExpr);
     bool assembleReference(CodeBlock* block, OperationExpression* expr);
     bool assembleBlock(CodeBlock* block);
 
