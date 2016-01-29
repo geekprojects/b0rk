@@ -9,13 +9,8 @@ namespace b0rk
 
 class Executor;
 
-typedef bool(*OpFunc)(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame);
-
 class Executor
 {
- private:
-    OpFunc m_operations[OPCODE_MAX];
-
  public:
     Executor();
     ~Executor();

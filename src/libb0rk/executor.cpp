@@ -39,11 +39,11 @@ static bool opcodeLoadVar(uint64_t thisPC, uint64_t opcode, Context* context, Fr
     int varId = frame->fetch();
     context->push(frame->localVars[varId]);
     LOG("LOAD_VAR: v%d: %s", varId, frame->localVars[varId].toString().c_str());
-g_loadVarCount++;
-if (varId == 0)
-{
-g_loadVarThisCount++;
-}
+    g_loadVarCount++;
+    if (varId == 0)
+    {
+        g_loadVarThisCount++;
+    }
     return true;
 }
 
@@ -345,12 +345,6 @@ static bool opcodeMul(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         {
             result.type = VALUE_DOUBLE;
             result.d = v1.d * v2.d;
-            LOG("MUL: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
-        }
-        else if (v1.type == VALUE_DOUBLE && v2.type == VALUE_DOUBLE)
-        {
-            result.type = VALUE_DOUBLE;
-            result.d = v1.d * v2.d
             LOG("MUL: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
         }
         else if (v1.type == VALUE_DOUBLE || v2.type == VALUE_DOUBLE)
@@ -694,14 +688,14 @@ static bool opcodeReturn(uint64_t thisPC, uint64_t opcode, Context* context, Fra
     frame->flags.zero = (result == 0); \
     frame->flags.sign = (result < 0); \
     frame->flags.overflow = !frame->flags.zero || frame->flags.sign; \
-    LOG("CMP: left=%i, right=%i, result=%lld", _left.i, _right.i, result); \
+    LOG("CMP: left=%lld, right=%lld, result=%lld", _left.i, _right.i, result); \
 }
 
 #define CMP_DOUBLE(_left, _right) \
 { \
     double result = _right.d - _left.d; \
     LOG("CMP: left=%0.2f, right=%0.2f, result=%0.2f", _left.d, _right.d, result); \
-    frame->flags.zero = (result > -FLT_EPSILON && result < FLT_EPSILON); \
+    frame->flags.zero = (result > -DBL_EPSILON && result < DBL_EPSILON); \
     frame->flags.sign = (result < 0.0 && !frame->flags.zero); \
     frame->flags.overflow = !frame->flags.zero || frame->flags.sign; \
 }
@@ -724,7 +718,7 @@ static bool opcodeCmp(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         double rightDouble = DOUBLE_VALUE(right);
         double result = rightDouble - leftDouble;
         LOG("CMP: left=%0.2f, right=%0.2f, result=%0.2f", leftDouble, rightDouble, result);
-        frame->flags.zero = (result > -FLT_EPSILON && result < FLT_EPSILON);
+        frame->flags.zero = (result > -DBL_EPSILON && result < DBL_EPSILON);
         frame->flags.sign = (result < 0.0 && !frame->flags.zero);
         frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
     }
@@ -774,7 +768,7 @@ static bool opcodeBEq(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     return true;
 }
 
-static bool opcodeBNe(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+static bool opcodeBNE(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     uint64_t dest = frame->fetch();
     LOG("BNE: frame->flags.zero=%d, dest=0x%llx", frame->flags.zero, dest);
@@ -794,51 +788,6 @@ Executor::Executor()
         g_stats[i] = 0;
     }
 #endif
-
-memset(m_operations, 0, sizeof(m_operations));
-
-m_operations[OPCODE_LOAD_VAR] = opcodeLoadVar;
-m_operations[OPCODE_STORE_VAR] = opcodeStoreVar;
-m_operations[OPCODE_LOAD_FIELD] = opcodeLoadField;
-m_operations[OPCODE_LOAD_FIELD_NAMED] = opcodeLoadFieldNamed;
-m_operations[OPCODE_STORE_FIELD_NAMED] = opcodeStoreFieldNamed;
-m_operations[OPCODE_LOAD_STATIC_FIELD] = opcodeLoadStaticField;
-m_operations[OPCODE_STORE_FIELD] = opcodeStoreField;
-m_operations[OPCODE_LOAD_ARRAY] = opcodeLoadArray;
-m_operations[OPCODE_STORE_ARRAY] = opcodeStoreArray;
-m_operations[OPCODE_PUSHI] = opcodePushI;
-m_operations[OPCODE_PUSHD] = opcodePushD;
-m_operations[OPCODE_DUP] = opcodeDup;
-m_operations[OPCODE_ADD] = opcodeAdd;
-m_operations[OPCODE_SUB] = opcodeSub;
-m_operations[OPCODE_MUL] = opcodeMul;
-m_operations[OPCODE_AND] = opcodeAnd;
-m_operations[OPCODE_ADDI] = opcodeAddI;
-m_operations[OPCODE_SUBI] = opcodeSubI;
-m_operations[OPCODE_ADDD] = opcodeAddD;
-m_operations[OPCODE_SUBD] = opcodeSubD;
-m_operations[OPCODE_MULI] = opcodeMulI;
-m_operations[OPCODE_MULD] = opcodeMulD;
-m_operations[OPCODE_PUSHCE] = opcodePushCE;
-m_operations[OPCODE_PUSHCL] = opcodePushCL;
-m_operations[OPCODE_PUSHCLE] = opcodePushCLE;
-m_operations[OPCODE_PUSHCG] = opcodePushCG;
-m_operations[OPCODE_PUSHCGE] = opcodePushCGE;
-m_operations[OPCODE_POP] = opcodePop;
-m_operations[OPCODE_CALL] = opcodeCall;
-m_operations[OPCODE_CALL_STATIC] = opcodeCallStatic;
-m_operations[OPCODE_CALL_NAMED] = opcodeCallNamed;
-m_operations[OPCODE_CALL_OBJ] = opcodeCallObj;
-m_operations[OPCODE_NEW] = opcodeNew;
-m_operations[OPCODE_NEW_STRING] = opcodeNewString;
-m_operations[OPCODE_NEW_FUNCTION] = opcodeNewFunction;
-m_operations[OPCODE_RETURN] = opcodeReturn;
-m_operations[OPCODE_CMP] = opcodeCmp;
-m_operations[OPCODE_CMPI] = opcodeCmpI;
-m_operations[OPCODE_CMPD] = opcodeCmpD;
-m_operations[OPCODE_JMP] = opcodeJmp;
-m_operations[OPCODE_BEQ] = opcodeBEq;
-m_operations[OPCODE_BNE] = opcodeBNe;
 }
 
 Executor::~Executor()
@@ -907,23 +856,57 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
         g_stats[opcode]++;
 #endif
 
-        if (opcode < OPCODE_MAX)
+        switch (opcode)
         {
-            OpFunc opFunc = m_operations[opcode];
-            if (opFunc != NULL)
-            {
-                success = opFunc(thisPC, opcode, context, &frame);
-                if (!success)
-                {
-                    frame.running = false;
-                }
-            }
+            case OPCODE_LOAD_VAR: success = opcodeLoadVar(thisPC, opcode, context, &frame); break;
+            case OPCODE_STORE_VAR: success = opcodeStoreVar(thisPC, opcode, context, &frame); break;
+            case OPCODE_LOAD_FIELD: success = opcodeLoadField(thisPC, opcode, context, &frame); break;
+            case OPCODE_LOAD_FIELD_NAMED: success = opcodeLoadFieldNamed(thisPC, opcode, context, &frame); break;
+            case OPCODE_STORE_FIELD_NAMED: success = opcodeStoreFieldNamed(thisPC, opcode, context, &frame); break;
+            case OPCODE_LOAD_STATIC_FIELD: success = opcodeLoadStaticField(thisPC, opcode, context, &frame); break;
+            case OPCODE_STORE_FIELD: success = opcodeStoreField(thisPC, opcode, context, &frame); break;
+            case OPCODE_LOAD_ARRAY: success = opcodeLoadArray(thisPC, opcode, context, &frame); break;
+            case OPCODE_STORE_ARRAY: success = opcodeStoreArray(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHI: success = opcodePushI(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHD: success = opcodePushD(thisPC, opcode, context, &frame); break;
+            case OPCODE_DUP: success = opcodeDup(thisPC, opcode, context, &frame); break;
+            case OPCODE_ADD: success = opcodeAdd(thisPC, opcode, context, &frame); break;
+            case OPCODE_SUB: success = opcodeSub(thisPC, opcode, context, &frame); break;
+            case OPCODE_MUL: success = opcodeMul(thisPC, opcode, context, &frame); break;
+            case OPCODE_AND: success = opcodeAnd(thisPC, opcode, context, &frame); break;
+            case OPCODE_ADDI: success = opcodeAddI(thisPC, opcode, context, &frame); break;
+            case OPCODE_SUBI: success = opcodeSubI(thisPC, opcode, context, &frame); break;
+            case OPCODE_ADDD: success = opcodeAddD(thisPC, opcode, context, &frame); break;
+            case OPCODE_SUBD: success = opcodeSubD(thisPC, opcode, context, &frame); break;
+            case OPCODE_MULI: success = opcodeMulI(thisPC, opcode, context, &frame); break;
+            case OPCODE_MULD: success = opcodeMulD(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHCE: success = opcodePushCE(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHCL: success = opcodePushCL(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHCLE: success = opcodePushCLE(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHCG: success = opcodePushCG(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHCGE: success = opcodePushCGE(thisPC, opcode, context, &frame); break;
+            case OPCODE_POP: success = opcodePop(thisPC, opcode, context, &frame); break;
+            case OPCODE_CALL: success = opcodeCall(thisPC, opcode, context, &frame); break;
+            case OPCODE_CALL_STATIC: success = opcodeCallStatic(thisPC, opcode, context, &frame); break;
+            case OPCODE_CALL_NAMED: success = opcodeCallNamed(thisPC, opcode, context, &frame); break;
+            case OPCODE_CALL_OBJ: success = opcodeCallObj(thisPC, opcode, context, &frame); break;
+            case OPCODE_NEW: success = opcodeNew(thisPC, opcode, context, &frame); break;
+            case OPCODE_NEW_STRING: success = opcodeNewString(thisPC, opcode, context, &frame); break;
+            case OPCODE_NEW_FUNCTION: success = opcodeNewFunction(thisPC, opcode, context, &frame); break;
+            case OPCODE_RETURN: success = opcodeReturn(thisPC, opcode, context, &frame); break;
+            case OPCODE_CMP: success = opcodeCmp(thisPC, opcode, context, &frame); break;
+            case OPCODE_CMPI: success = opcodeCmpI(thisPC, opcode, context, &frame); break;
+            case OPCODE_CMPD: success = opcodeCmpD(thisPC, opcode, context, &frame); break;
+            case OPCODE_JMP: success = opcodeJmp(thisPC, opcode, context, &frame); break;
+            case OPCODE_BEQ: success = opcodeBEq(thisPC, opcode, context, &frame); break;
+            case OPCODE_BNE: success = opcodeBNE(thisPC, opcode, context, &frame); break;
+            default:
+                success = false;
         }
-        else
+
+        if (B0RK_UNLIKELY(!success))
         {
-            //ERROR("Unhandled opcode: 0x%llx", opcode);
             frame.running = false;
-            success = false;
         }
     }
 
