@@ -15,9 +15,9 @@ class Runtime;
 
 struct Flags
 {
-    int zero:1;
-    int sign:1;
-    int overflow:1;
+    unsigned int zero:1;
+    unsigned int sign:1;
+    unsigned int overflow:1;
 };
 
 struct Frame
