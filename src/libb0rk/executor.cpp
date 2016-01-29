@@ -779,6 +779,52 @@ static bool opcodeBNE(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     return true;
 }
 
+static bool opcodeBL(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    uint64_t dest = frame->fetch();
+    LOG("BL: frame->flags.zero=%d, dest=0x%llx", frame->flags.zero, dest);
+    if (frame->flags.sign != frame->flags.overflow)
+    {
+        frame->pc = dest;
+    }
+    return true;
+}
+
+static bool opcodeBLE(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    uint64_t dest = frame->fetch();
+    LOG("BLE: flags.sign=%d, flags.overflow=%d, dest=0x%llx", frame->flags.zero, frame->flags.overflow, dest);
+    if (!frame->flags.zero || (frame->flags.sign == frame->flags.overflow))
+    {
+        frame->pc = dest;
+    }
+    return true;
+}
+
+static bool opcodeBG(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    uint64_t dest = frame->fetch();
+    LOG("BG: flags.sign=%d, flags.overflow=%d, dest=0x%llx", frame->flags.zero, frame->flags.overflow, dest);
+    if (frame->flags.zero || (frame->flags.sign != frame->flags.overflow))
+    {
+        frame->pc = dest;
+    }
+    return true;
+}
+
+static bool opcodeBGE(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    uint64_t dest = frame->fetch();
+    LOG("BGE: flags.sign=%d, flags.overflow=%d, dest=0x%llx", frame->flags.zero, frame->flags.overflow, dest);
+    if (frame->flags.sign == frame->flags.overflow)
+    {
+        frame->pc = dest;
+    }
+    return true;
+}
+
+
+
 Executor::Executor()
 {
 #ifdef DEBUG_EXECUTOR_STATS
@@ -900,6 +946,10 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_JMP: success = opcodeJmp(thisPC, opcode, context, &frame); break;
             case OPCODE_BEQ: success = opcodeBEq(thisPC, opcode, context, &frame); break;
             case OPCODE_BNE: success = opcodeBNE(thisPC, opcode, context, &frame); break;
+            case OPCODE_BL: success = opcodeBL(thisPC, opcode, context, &frame); break;
+            case OPCODE_BLE: success = opcodeBLE(thisPC, opcode, context, &frame); break;
+            case OPCODE_BG: success = opcodeBG(thisPC, opcode, context, &frame); break;
+            case OPCODE_BGE: success = opcodeBGE(thisPC, opcode, context, &frame); break;
             default:
                 success = false;
         }

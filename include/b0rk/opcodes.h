@@ -63,8 +63,12 @@ enum OpCode
     OPCODE_JMP         = 0x70,
     OPCODE_BEQ         = 0x71,
     OPCODE_BNE         = 0x72,
+    OPCODE_BL          = 0x73,
+    OPCODE_BLE         = 0x74,
+    OPCODE_BG          = 0x75,
+    OPCODE_BGE         = 0x76,
 
-    OPCODE_MAX         = 0x73
+    OPCODE_MAX         = 0x77
 };
 
 };
