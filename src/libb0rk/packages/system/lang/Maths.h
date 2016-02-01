@@ -20,6 +20,7 @@ class Maths : public Class
     ~Maths();
 
     bool randomInt(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool round(Context* context, Object* instance, int argCount, Value* args, Value& result);
 };
 
 };
