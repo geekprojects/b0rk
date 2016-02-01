@@ -1,4 +1,3 @@
-
 #include <b0rk/executor.h>
 #include <b0rk/compiler.h>
 #include "packages/system/lang/StringClass.h"
@@ -230,6 +229,18 @@ static bool opcodePushD(uint64_t thisPC, uint64_t opcode, Context* context, Fram
     return true;
 }
 
+static bool opcodePushObj(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v;
+    v.type = VALUE_OBJECT;
+    Object* obj = (Object*)frame->fetch();
+    v.object = obj;
+    LOG("PUSHD: %p", obj);
+    context->push(v);
+    return true;
+}
+
+
 static bool opcodeDup(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value v;
@@ -364,6 +375,48 @@ static bool opcodeMul(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     return true;
 }
 
+static bool opcodeDiv(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v1 = context->pop();
+    if (v1.type == VALUE_OBJECT)
+    {
+        // TODO: This should have been figured out by the assembler?
+        Class* clazz = v1.object->getClass();
+        LOG("MUL OBJECT: class=%s", clazz->getName().c_str());
+        Function* addFunc = clazz->findMethod("operator/");
+        LOG("MUL OBJECT: / operator=%p", addFunc);
+        bool res = addFunc->execute(context, v1.object, 1);
+        if (!res)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        Value v2 = context->pop();
+        Value result;
+        if (v1.type == VALUE_DOUBLE && v2.type == VALUE_DOUBLE)
+        {
+            result.type = VALUE_DOUBLE;
+            result.d = v1.d / v2.d;
+            LOG("DIV: %0.2f / %0.2f = %0.2f", v1.d, v2.d, result.d);
+        }
+        else if (v1.type == VALUE_DOUBLE || v2.type == VALUE_DOUBLE)
+        {
+            result.type = VALUE_DOUBLE;
+            result.d = DOUBLE_VALUE(v1) / DOUBLE_VALUE(v2);
+            LOG("DIV: %0.2f / %0.2f = %0.2f", v1.d, v2.d, result.d);
+        }
+        else
+        {
+            result.type = VALUE_INTEGER;
+            result.i = v1.i / v2.i;
+            LOG("DIV: %lld / %lld = %lld", v1.i, v2.i, result.i);
+        }
+        context->push(result);
+    }
+    return true;
+}
 
 static bool opcodeAnd(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
@@ -617,24 +670,6 @@ static bool opcodeNew(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         ERROR("NEW: Failed to create new object! class=%s\n", clazz->getName().c_str());
         return false;
     }
-    return true;
-}
-
-static bool opcodeNewString(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
-{
-    const char* str = (const char*)frame->fetch();
-    LOG("NEW_STRING: %s", str);
-    Object* strObj = String::createString(context, str);
-    if (strObj == NULL)
-    {
-        return false;
-    }
-
-    Value v;
-    v.type = VALUE_OBJECT;
-    v.object = strObj;
-    context->push(v);
-
     return true;
 }
 
@@ -915,10 +950,12 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_STORE_ARRAY: success = opcodeStoreArray(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHI: success = opcodePushI(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHD: success = opcodePushD(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHOBJ: success = opcodePushObj(thisPC, opcode, context, &frame); break;
             case OPCODE_DUP: success = opcodeDup(thisPC, opcode, context, &frame); break;
             case OPCODE_ADD: success = opcodeAdd(thisPC, opcode, context, &frame); break;
             case OPCODE_SUB: success = opcodeSub(thisPC, opcode, context, &frame); break;
             case OPCODE_MUL: success = opcodeMul(thisPC, opcode, context, &frame); break;
+            case OPCODE_DIV: success = opcodeDiv(thisPC, opcode, context, &frame); break;
             case OPCODE_AND: success = opcodeAnd(thisPC, opcode, context, &frame); break;
             case OPCODE_ADDI: success = opcodeAddI(thisPC, opcode, context, &frame); break;
             case OPCODE_SUBI: success = opcodeSubI(thisPC, opcode, context, &frame); break;
@@ -937,7 +974,6 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_CALL_NAMED: success = opcodeCallNamed(thisPC, opcode, context, &frame); break;
             case OPCODE_CALL_OBJ: success = opcodeCallObj(thisPC, opcode, context, &frame); break;
             case OPCODE_NEW: success = opcodeNew(thisPC, opcode, context, &frame); break;
-            case OPCODE_NEW_STRING: success = opcodeNewString(thisPC, opcode, context, &frame); break;
             case OPCODE_NEW_FUNCTION: success = opcodeNewFunction(thisPC, opcode, context, &frame); break;
             case OPCODE_RETURN: success = opcodeReturn(thisPC, opcode, context, &frame); break;
             case OPCODE_CMP: success = opcodeCmp(thisPC, opcode, context, &frame); break;
@@ -951,6 +987,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_BG: success = opcodeBG(thisPC, opcode, context, &frame); break;
             case OPCODE_BGE: success = opcodeBGE(thisPC, opcode, context, &frame); break;
             default:
+                fprintf(stderr, "Executor::run: %s:%04llx: 0x%llx ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
                 success = false;
         }
 
