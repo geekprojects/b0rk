@@ -15,6 +15,7 @@ OpDesc opTable[] = {
     {TOK_PLUS, OP_ADD, true, true},
     {TOK_MINUS, OP_SUB, true, true},
     {TOK_ASTERISK, OP_MULTIPLY, true, true},
+    {TOK_SLASH_FORWARD, OP_DIVIDE, true, true},
     {TOK_LOGICAL_AND, OP_LOGICAL_AND, true, true},
     {TOK_ADD_ASSIGN, OP_SET, true, true},
     {TOK_EQUALS, OP_EQUALS, true, true},
