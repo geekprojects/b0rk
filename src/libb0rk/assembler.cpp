@@ -5,6 +5,8 @@
 #include <b0rk/runtime.h>
 #include <b0rk/function.h>
 
+#include "packages/system/lang/StringClass.h"
+
 using namespace std;
 using namespace b0rk;
 
@@ -208,8 +210,10 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                 if (inReference)
                 {
-                    m_code.push_back(OPCODE_NEW_STRING);
-                    m_code.push_back((uint64_t)strdup(callExpr->function.c_str()));
+                    m_code.push_back(OPCODE_PUSHOBJ);
+                    Object* strObj = String::createString(m_context, callExpr->function);
+                    m_code.push_back((uint64_t)strObj);
+                    strObj->setExternalGC();
                     m_code.push_back(OPCODE_CALL_NAMED);
                     m_code.push_back(count);
                 }
@@ -341,6 +345,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #endif
                     pushOperator(OPCODE_DIV, opExpr->valueType);
                     break;
+
 
                 case OP_LOGICAL_AND:
 #ifdef DEBUG_ASSEMBLER
@@ -714,8 +719,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: STRING: NEW STRING: %s\n", strExpr->str.c_str());
 #endif
-            m_code.push_back(OPCODE_NEW_STRING);
-            m_code.push_back((uint64_t)strdup(strExpr->str.c_str()));
+
+            m_code.push_back(OPCODE_PUSHOBJ);
+            Object* strObj = String::createString(m_context, strExpr->str);
+            m_code.push_back((uint64_t)strObj);
+            strObj->setExternalGC();
         } break;
 
         case EXPR_INTEGER:
@@ -892,9 +900,12 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         {
             return false;
         }
-        //printf("Assembler::load: TODO: Var from reference\n");
-        m_code.push_back(OPCODE_NEW_STRING);
-        m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
+
+        m_code.push_back(OPCODE_PUSHOBJ);
+        Object* strObj = String::createString(m_context, varExpr->var);
+        m_code.push_back((uint64_t)strObj);
+        strObj->setExternalGC();
+
         m_code.push_back(OPCODE_LOAD_FIELD_NAMED);
         return true;
     }
@@ -982,8 +993,12 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
             return false;
         }
         printf("Assembler::store: Var from reference: %s\n", varExpr->var.c_str());
-        m_code.push_back(OPCODE_NEW_STRING);
+
+        m_code.push_back(OPCODE_PUSHOBJ);
         m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
+        Object* strObj = String::createString(m_context, varExpr->var);
+        m_code.push_back((uint64_t)strObj);
+
         m_code.push_back(OPCODE_STORE_FIELD_NAMED);
         return true;
     }
