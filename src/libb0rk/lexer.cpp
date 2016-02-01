@@ -28,6 +28,7 @@ SimpleToken tokenTable[] = {
     { "+", 1, TOK_PLUS },
     { "-", 1, TOK_MINUS },
     { "*", 1, TOK_ASTERISK },
+    { "/", 1, TOK_SLASH_FORWARD },
     { "&&", 2, TOK_LOGICAL_AND },
     { "{", 1, TOK_BRACE_LEFT },
     { "}", 1, TOK_BRACE_RIGHT },

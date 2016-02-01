@@ -335,6 +335,13 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     pushOperator(OPCODE_MUL, opExpr->valueType);
                     break;
 
+                case OP_DIVIDE:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: DIVIDE\n");
+#endif
+                    pushOperator(OPCODE_DIV, opExpr->valueType);
+                    break;
+
                 case OP_LOGICAL_AND:
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LOGICAL_AND (type=%d)\n", opExpr->valueType);
