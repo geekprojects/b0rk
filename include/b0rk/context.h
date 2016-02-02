@@ -41,6 +41,7 @@ class Context
 {
  private:
     Runtime* m_runtime;
+    Assembler m_assembler;
 
     int m_stackPos;
     int m_stackSize;
@@ -51,6 +52,7 @@ class Context
     virtual ~Context();
 
     Runtime* getRuntime() { return m_runtime; }
+    Assembler& getAssembler() { return m_assembler; }
 
     int getStackSize() { return m_stackSize; }
     Value* getStack() { return m_stack; }

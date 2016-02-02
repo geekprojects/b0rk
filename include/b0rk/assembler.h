@@ -14,6 +14,7 @@ class Function;
 class ScriptFunction;
 class Class;
 class Context;
+class Disassembler;
 struct CodeBlock;
 struct Expression;
 
@@ -30,6 +31,7 @@ class Assembler
  private:
     Context* m_context;
     ScriptFunction* m_function;
+    Disassembler* m_disassembler;
 
     std::vector<uint64_t> m_code;
 

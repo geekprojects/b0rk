@@ -4,6 +4,7 @@
 #include <b0rk/assembler.h>
 #include <b0rk/runtime.h>
 #include <b0rk/function.h>
+#include <b0rk/disassembler.h>
 
 #include "packages/system/lang/StringClass.h"
 
@@ -13,6 +14,9 @@ using namespace b0rk;
 Assembler::Assembler(Context* context)
 {
     m_context = context;
+
+    // TODO: Config
+    m_disassembler = new Disassembler();
 }
 
 Assembler::~Assembler()
@@ -21,6 +25,7 @@ Assembler::~Assembler()
 
 bool Assembler::assemble(ScriptFunction* function, AssembledCode& asmCode)
 {
+
     m_function = function;
     asmCode.function = function;
     return assemble(function->getCode(), asmCode);
@@ -49,6 +54,10 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     {
         asmCode.code[i] = m_code[i];
     }
+
+    m_disassembler->disassemble(asmCode);
+
+    m_code.clear();
 
     return true;
 }
@@ -995,9 +1004,9 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         printf("Assembler::store: Var from reference: %s\n", varExpr->var.c_str());
 
         m_code.push_back(OPCODE_PUSHOBJ);
-        m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
         Object* strObj = String::createString(m_context, varExpr->var);
         m_code.push_back((uint64_t)strObj);
+        strObj->setExternalGC();
 
         m_code.push_back(OPCODE_STORE_FIELD_NAMED);
         return true;
