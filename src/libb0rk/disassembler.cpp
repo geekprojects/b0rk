@@ -26,6 +26,7 @@ Disassembler::Disassembler()
     addOpcode(OPCODE_ADD, "ADD", "", 0);
     addOpcode(OPCODE_SUB, "SUB", "", 0);
     addOpcode(OPCODE_MUL, "MUL", "", 0);
+    addOpcode(OPCODE_DIV, "DIV", "", 0);
     addOpcode(OPCODE_AND, "AND", "", 0);
     addOpcode(OPCODE_ADDI, "ADDI", "", 0);
     addOpcode(OPCODE_SUBI, "SUBI", "", 0);
