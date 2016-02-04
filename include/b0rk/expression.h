@@ -92,6 +92,7 @@ enum OpType
     OP_ADD,
     OP_SUB,
     OP_MULTIPLY,
+    OP_DIVIDE,
     OP_INCREMENT,
     OP_DECREMENT,
     OP_REFERENCE,

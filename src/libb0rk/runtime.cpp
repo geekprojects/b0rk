@@ -240,6 +240,31 @@ Class* Runtime::loadClass(Context* context, string name, bool addToExisting)
 
 Object* Runtime::allocateObject(Class* clazz)
 {
+    if (m_currentBytes >= (m_arenaTotal / 4) * 3)
+    {
+#ifdef DEBUG_GC
+        printf("Runtime::newObject: Space Check: %lld/%lld = %0.2f%% used\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
+#endif
+        if (m_gcEnabled)
+        {
+            // Check available space before we disable GC
+#ifdef DEBUG_GC
+            printf("Runtime::newObject: Less than 25%% of arena available, GCing\n");
+#endif
+            gc();
+        }
+#ifdef DEBUG_GC
+        else
+        {
+            printf("Runtime::newObject: Less than 25%% of arena available, but GC is DISABLED\n");
+        }
+#endif
+    }
+
+    // Disable GC otherwise it could collect the new object before we're finished!
+    bool enabled = m_gcEnabled;
+    m_gcEnabled = false;
+ 
     int objSize = sizeof(Object) + (clazz->getFieldCount() * sizeof(Value));
 
     Object* freeObj = NULL;
@@ -261,6 +286,7 @@ Object* Runtime::allocateObject(Class* clazz)
     if (freeObj == NULL)
     {
         printf("Runtime::allocateObject: ERROR: No suitable free space!\n");
+exit(-1);
         return NULL;
     }
 
@@ -305,37 +331,20 @@ Object* Runtime::allocateObject(Class* clazz)
     m_currentObjects++;
     m_currentBytes += objSize;
 
+    m_gcEnabled = enabled;
+
     return obj;
 }
 
 Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
 {
-    if (m_gcEnabled)
-    {
-        // Check available space before we disable GC
-#ifdef DEBUG_GC
-        printf("Runtime::newObject: Space Check: %lld/%lld = %0.2f%%\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
-#endif
-        if (m_currentBytes >= (m_arenaTotal / 4) * 3)
-        {
-#ifdef DEBUG_GC
-            printf("Runtime::newObject: Less than 25%% of arena available, GCing\n");
-#endif
-            gc();
-        }
-    }
-
-    // Disable GC otherwise it could collect the new object before we're finished!
-    bool enabled = m_gcEnabled;
-    m_gcEnabled = false;
-    Object* obj = allocateObject(clazz);
+   Object* obj = allocateObject(clazz);
 
     bool res = callConstructor(context, obj, clazz, argCount);
     if (!res)
     {
         return NULL;
     }
-    m_gcEnabled = enabled;
 
     return obj;
 }
@@ -464,10 +473,10 @@ void Runtime::gc()
 #ifdef DEBUG_GC
     if (freed > 0)
     {
-        printf("Runtime::gc: Freed %lld bytes\n", freed);
+        fprintf(stderr, "Runtime::gc: Freed %lld bytes\n", freed);
         gcStats();
     }
-    printf("Runtime::gc: Time: %lld msec\n", (endTime - now) / 1000);
+    fprintf(stderr, "Runtime::gc: Time: %lld msec\n", (endTime - now) / 1000);
 #endif
 }
 

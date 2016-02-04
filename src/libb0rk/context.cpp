@@ -5,6 +5,7 @@ using namespace std;
 using namespace b0rk;
 
 Context::Context(Runtime* runtime)
+    : m_assembler(this)
 {
     m_runtime = runtime;
 

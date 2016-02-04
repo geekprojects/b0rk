@@ -4,6 +4,9 @@
 #include <b0rk/assembler.h>
 #include <b0rk/runtime.h>
 #include <b0rk/function.h>
+#include <b0rk/disassembler.h>
+
+#include "packages/system/lang/StringClass.h"
 
 using namespace std;
 using namespace b0rk;
@@ -11,6 +14,9 @@ using namespace b0rk;
 Assembler::Assembler(Context* context)
 {
     m_context = context;
+
+    // TODO: Config
+    m_disassembler = new Disassembler();
 }
 
 Assembler::~Assembler()
@@ -19,6 +25,7 @@ Assembler::~Assembler()
 
 bool Assembler::assemble(ScriptFunction* function, AssembledCode& asmCode)
 {
+
     m_function = function;
     asmCode.function = function;
     return assemble(function->getCode(), asmCode);
@@ -45,11 +52,12 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
 
     for (i = 0; i < m_code.size(); i++)
     {
-#if 0
-        printf("%04x: 0x%llx\n", i, m_code[i]);
-#endif
         asmCode.code[i] = m_code[i];
     }
+
+    m_disassembler->disassemble(asmCode);
+
+    m_code.clear();
 
     return true;
 }
@@ -111,6 +119,23 @@ void Assembler::pushOperator(OpCode opcode, ValueType type)
             break;
     }
 }
+
+void Assembler::pushCMP(ValueType type)
+{
+    switch (type)
+    {
+        case VALUE_INTEGER:
+            m_code.push_back(OPCODE_CMPI);
+            break;
+        case VALUE_DOUBLE:
+            m_code.push_back(OPCODE_CMPD);
+            break;
+        default:
+            m_code.push_back(OPCODE_CMP);
+            break;
+    }
+}
+
 
 /*
  * An expression should always leave exactly one item on the stack
@@ -194,8 +219,10 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                 if (inReference)
                 {
-                    m_code.push_back(OPCODE_NEW_STRING);
-                    m_code.push_back((uint64_t)strdup(callExpr->function.c_str()));
+                    m_code.push_back(OPCODE_PUSHOBJ);
+                    Object* strObj = String::createString(m_context, callExpr->function);
+                    m_code.push_back((uint64_t)strObj);
+                    strObj->setExternalGC();
                     m_code.push_back(OPCODE_CALL_NAMED);
                     m_code.push_back(count);
                 }
@@ -321,6 +348,14 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     pushOperator(OPCODE_MUL, opExpr->valueType);
                     break;
 
+                case OP_DIVIDE:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: DIVIDE\n");
+#endif
+                    pushOperator(OPCODE_DIV, opExpr->valueType);
+                    break;
+
+
                 case OP_LOGICAL_AND:
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LOGICAL_AND (type=%d)\n", opExpr->valueType);
@@ -332,7 +367,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: EQUALS\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCE);
                     break;
 
@@ -340,7 +375,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LESS_THAN\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCL);
                     break;
 
@@ -348,7 +383,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: LESS_THAN_EQUAL\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCLE);
                     break;
 
@@ -357,7 +392,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCG);
                     break;
 
@@ -365,7 +400,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
 #endif
-                    pushOperator(OPCODE_CMP, opExpr->valueType);
+                    pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCGE);
                     break;
 
@@ -383,34 +418,55 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: POST xCREMENT %d", 0);
 #endif
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    res = load(block, varExpr, reference);
-                    if (!res)
-                    {
-                        return false;
-                    }
-                    if (needResult)
-                    {
-                        m_code.push_back(OPCODE_DUP);
-                    }
 
-                    expr->resultOnStack = needResult;
-
-                    m_code.push_back(OPCODE_PUSHI);
-                    m_code.push_back(1);
-
-                    if (opExpr->operType == OP_INCREMENT)
+                    int id = block->getVarId(varExpr->var);
+                    if (needResult && id != -1)
                     {
-                        m_code.push_back(OPCODE_ADDI);
+#ifdef DEBUG_ASSEMBLER
+                        printf("Assembler::assembleExpression: OPER: POST xCREMENT: Use INC_VAR!\n");
+#endif
+                        m_code.push_back(OPCODE_INC_VAR);
+                        m_code.push_back(id);
+                        if (opExpr->operType == OP_INCREMENT)
+                        {
+                            m_code.push_back(1);
+                        }
+                        else
+                        {
+                            m_code.push_back(-1);
+                        }
                     }
                     else
                     {
-                        m_code.push_back(OPCODE_SUBI);
-                    }
+                        res = load(block, varExpr, reference);
+                        if (!res)
+                        {
+                            return false;
+                        }
 
-                    res = store(block, varExpr, reference);
-                    if (!res)
-                    {
-                        return false;
+                        if (needResult)
+                        {
+                            m_code.push_back(OPCODE_DUP);
+                        }
+
+                        expr->resultOnStack = needResult;
+
+                        m_code.push_back(OPCODE_PUSHI);
+                        m_code.push_back(1);
+
+                        if (opExpr->operType == OP_INCREMENT)
+                        {
+                            m_code.push_back(OPCODE_ADDI);
+                        }
+                        else
+                        {
+                            m_code.push_back(OPCODE_SUBI);
+                        }
+                        res = store(block, varExpr, reference);
+                        if (!res)
+                        {
+                            return false;
+                        }
                     }
                 } break;
 
@@ -503,21 +559,8 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         {
             IfExpression* ifExpr = (IfExpression*)expr;
 
-            // Add the test
-            res = assembleExpression(block, ifExpr->testExpr, NULL, true);
-            if (!res)
-            {
-                return false;
-            }
-
-            // Check whether the test expression was true
-            m_code.push_back(OPCODE_PUSHI);
-            m_code.push_back(0);
-            m_code.push_back(OPCODE_CMP);
-
-            // If false
-            m_code.push_back(OPCODE_BEQ);
-            m_code.push_back(0); // Will be filled in with the end address
+            // Add the condition test
+            res = assembleTest(block, ifExpr->testExpr);
             int bneToFalsePos = m_code.size() - 1;
 
             // Add the body
@@ -573,20 +616,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #endif
             // Add the test
             int loopTop = m_code.size();
-            res = assembleExpression(block, forExpr->testExpr, NULL, true);
-            if (!res)
-            {
-                return false;
-            }
-
-            // Check whether the test expression was true
-            m_code.push_back(OPCODE_PUSHI);
-            m_code.push_back(0);
-            m_code.push_back(OPCODE_CMP);
-
-            // If true
-            m_code.push_back(OPCODE_BEQ);
-            m_code.push_back(0); // Will be filled in with the end address
+            res = assembleTest(block, forExpr->testExpr);
             int bneToEndPos = m_code.size() - 1;
 
 #ifdef DEBUG_ASSEMBLER
@@ -719,8 +749,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: STRING: NEW STRING: %s\n", strExpr->str.c_str());
 #endif
-            m_code.push_back(OPCODE_NEW_STRING);
-            m_code.push_back((uint64_t)strdup(strExpr->str.c_str()));
+
+            m_code.push_back(OPCODE_PUSHOBJ);
+            Object* strObj = String::createString(m_context, strExpr->str);
+            m_code.push_back((uint64_t)strObj);
+            strObj->setExternalGC();
         } break;
 
         case EXPR_INTEGER:
@@ -775,6 +808,62 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
     return true;
 }
 
+bool Assembler::assembleTest(CodeBlock* block, Expression* testExpr)
+{
+    bool res = assembleExpression(block, testExpr, NULL, true);
+    if (!res)
+    {
+        return false;
+    }
+
+    int branchOpcode = -1;
+    if (m_code.size() > 2)
+    {
+        // Optimisation: Can we collapse the compare in the test expression and our own CMP?
+        uint64_t last0 = m_code[m_code.size() - 2];
+
+        if (last0 == OPCODE_CMP || last0 == OPCODE_CMPI || OPCODE_CMPD)
+        {
+            uint64_t last1 = m_code[m_code.size() - 1];
+
+            // Note that we flip the condition as we want to branch if
+            // the condition is false, i.e. skip the true block
+            switch (last1)
+            {
+                case OPCODE_PUSHCE:
+                    fprintf(stderr, "Assembler::assembleTest: Test was CMP/PUSHCE!\n");
+                    m_code.pop_back();
+                    branchOpcode = OPCODE_BNE;
+                    break;
+                case OPCODE_PUSHCL:
+                    fprintf(stderr, "Assembler::assembleTest: Test was CMP/PUSHCL!\n");
+                    m_code.pop_back();
+                    branchOpcode = OPCODE_BGE;
+                    break;
+                case OPCODE_PUSHCLE:
+                    fprintf(stderr, "Assembler::assembleExpression: Test was CMP/PUSHCLE!\n");
+                    m_code.pop_back();
+                    branchOpcode = OPCODE_BG;
+                    break;
+            }
+        }
+    }
+
+    if (branchOpcode == -1)
+    {
+        // Check whether the test expression was *false*
+        m_code.push_back(OPCODE_PUSHI);
+        m_code.push_back(0);
+        m_code.push_back(OPCODE_CMPI);
+        branchOpcode = OPCODE_BEQ;
+    }
+
+    // If false, skip to the end
+    m_code.push_back(branchOpcode);
+    m_code.push_back(0); // Will be filled in with the end address
+
+    return true;
+}
 
 bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
 {
@@ -841,9 +930,12 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         {
             return false;
         }
-        //printf("Assembler::load: TODO: Var from reference\n");
-        m_code.push_back(OPCODE_NEW_STRING);
-        m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
+
+        m_code.push_back(OPCODE_PUSHOBJ);
+        Object* strObj = String::createString(m_context, varExpr->var);
+        m_code.push_back((uint64_t)strObj);
+        strObj->setExternalGC();
+
         m_code.push_back(OPCODE_LOAD_FIELD_NAMED);
         return true;
     }
@@ -931,8 +1023,12 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
             return false;
         }
         printf("Assembler::store: Var from reference: %s\n", varExpr->var.c_str());
-        m_code.push_back(OPCODE_NEW_STRING);
-        m_code.push_back((uint64_t)strdup(varExpr->var.c_str()));
+
+        m_code.push_back(OPCODE_PUSHOBJ);
+        Object* strObj = String::createString(m_context, varExpr->var);
+        m_code.push_back((uint64_t)strObj);
+        strObj->setExternalGC();
+
         m_code.push_back(OPCODE_STORE_FIELD_NAMED);
         return true;
     }

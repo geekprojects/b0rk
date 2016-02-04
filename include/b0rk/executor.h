@@ -7,16 +7,17 @@
 namespace b0rk
 {
 
+class Executor;
+
 class Executor
 {
- private:
-
  public:
     Executor();
     ~Executor();
 
-    bool run(Context* context, Object* thisObj, AssembledCode& code, int argCount);
+    bool run(Context* context, Object* thisObj, AssembledCode* code, int argCount);
 };
+
 
 };
 

@@ -4,6 +4,7 @@
 #include <b0rk/runtime.h>
 #include <b0rk/value.h>
 #include <b0rk/compiler.h>
+#include <b0rk/assembler.h>
 
 #include <vector>
 
@@ -12,16 +13,35 @@ namespace b0rk
 
 class Runtime;
 
+struct Flags
+{
+    unsigned int zero:1;
+    unsigned int sign:1;
+    unsigned int overflow:1;
+};
+
 struct Frame
 {
+    AssembledCode* code;
+    bool running;
+
+    int pc;
+    Flags flags;
+
     int localVarsCount;
     Value* localVars;
+
+    inline uint64_t fetch()
+    {
+        return code->code[pc++];
+    }
 };
 
 class Context
 {
  private:
     Runtime* m_runtime;
+    Assembler m_assembler;
 
     int m_stackPos;
     int m_stackSize;
@@ -32,6 +52,7 @@ class Context
     virtual ~Context();
 
     Runtime* getRuntime() { return m_runtime; }
+    Assembler& getAssembler() { return m_assembler; }
 
     int getStackSize() { return m_stackSize; }
     Value* getStack() { return m_stack; }
