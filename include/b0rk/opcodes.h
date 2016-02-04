@@ -18,6 +18,7 @@ enum OpCode
     OPCODE_STORE_STATIC_FIELD = 0x08,
     OPCODE_LOAD_ARRAY         = 0x09,
     OPCODE_STORE_ARRAY        = 0x0a,
+    OPCODE_INC_VAR            = 0x0b,
 
     // Arithmetic: Any value types (Objects etc)
     OPCODE_ADD         = 0x10,

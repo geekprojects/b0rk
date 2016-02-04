@@ -18,6 +18,7 @@ Disassembler::Disassembler()
     addOpcode(OPCODE_STORE_FIELD, "STORE_FIELD", "f%lld", 1);
     addOpcode(OPCODE_LOAD_ARRAY, "LOAD_ARRAY", "", 0);
     addOpcode(OPCODE_STORE_ARRAY, "STORE_ARRAY", "", 0);
+    addOpcode(OPCODE_INC_VAR, "INC_VAR", "v%lld, %lld", 2);
     addOpcode(OPCODE_PUSHI, "PUSHI", "%lld", 1);
     addOpcode(OPCODE_PUSHD, "PUSHD", "0x%llx", 1);
     addOpcode(OPCODE_PUSHOBJ, "PUSHOBJ", "object=0x%llx", 1);

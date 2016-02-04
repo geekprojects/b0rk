@@ -418,34 +418,55 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: POST xCREMENT %d", 0);
 #endif
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
-                    res = load(block, varExpr, reference);
-                    if (!res)
-                    {
-                        return false;
-                    }
-                    if (needResult)
-                    {
-                        m_code.push_back(OPCODE_DUP);
-                    }
 
-                    expr->resultOnStack = needResult;
-
-                    m_code.push_back(OPCODE_PUSHI);
-                    m_code.push_back(1);
-
-                    if (opExpr->operType == OP_INCREMENT)
+                    int id = block->getVarId(varExpr->var);
+                    if (needResult && id != -1)
                     {
-                        m_code.push_back(OPCODE_ADDI);
+#ifdef DEBUG_ASSEMBLER
+                        printf("Assembler::assembleExpression: OPER: POST xCREMENT: Use INC_VAR!\n");
+#endif
+                        m_code.push_back(OPCODE_INC_VAR);
+                        m_code.push_back(id);
+                        if (opExpr->operType == OP_INCREMENT)
+                        {
+                            m_code.push_back(1);
+                        }
+                        else
+                        {
+                            m_code.push_back(-1);
+                        }
                     }
                     else
                     {
-                        m_code.push_back(OPCODE_SUBI);
-                    }
+                        res = load(block, varExpr, reference);
+                        if (!res)
+                        {
+                            return false;
+                        }
 
-                    res = store(block, varExpr, reference);
-                    if (!res)
-                    {
-                        return false;
+                        if (needResult)
+                        {
+                            m_code.push_back(OPCODE_DUP);
+                        }
+
+                        expr->resultOnStack = needResult;
+
+                        m_code.push_back(OPCODE_PUSHI);
+                        m_code.push_back(1);
+
+                        if (opExpr->operType == OP_INCREMENT)
+                        {
+                            m_code.push_back(OPCODE_ADDI);
+                        }
+                        else
+                        {
+                            m_code.push_back(OPCODE_SUBI);
+                        }
+                        res = store(block, varExpr, reference);
+                        if (!res)
+                        {
+                            return false;
+                        }
                     }
                 } break;
 
