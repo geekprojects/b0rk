@@ -11,6 +11,8 @@ class tests.Functions
         func = function(param)
         {
             system.io.File.out.writeln("Hello from Function! param=" + param);
+            system.io.File.out.writeln("Hello from Function! param.id=" + param.id);
+            param.id = 123;
         };
     }
 
@@ -28,8 +30,8 @@ class tests.Functions
         }
 
         var funcObj = new tests.Functions("1");
-        funcObj.func(1);
-        new tests.Functions("2").func(2);
+        funcObj.func(funcObj);
+        new tests.Functions("2").func(funcObj);
     }
 }
 

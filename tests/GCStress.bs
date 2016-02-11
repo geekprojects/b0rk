@@ -18,7 +18,7 @@ class tests.GCStress
     {
         var i;
         File.out.writeln("Creating lots of objects...");
-        for (i = 0; i < 1000000; i++)
+        for (i = 0; i < 10000000; i++)
         {
             var obj;
             obj = new tests.GCStress();

@@ -6,9 +6,9 @@ class tests.FileTest
     function main() static
     {
         var o = File.out;
-        o.write("Hello");
+        o.write("Hello ");
 
-        File.out.write("world");
+        File.out.writeln("world");
     }
 }
 

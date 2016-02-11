@@ -8,9 +8,17 @@ class tests.If
     {
         var a = 2;
         var b = 3;
-        if (a < b)
+        if (a == b)
+        {
+            File.out.writeln("it doesn't work :(");
+        }
+        else if (a < b)
         {
             File.out.writeln("it works!");
+        }
+        else if (a == 12345)
+        {
+            File.out.writeln("it doesn't work :(");
         }
         else
         {
