@@ -1,5 +1,6 @@
 
 import system.io.File;
+import system.lang.Maths;
 
 class tests.Mandelbrot
 {
@@ -27,14 +28,26 @@ class tests.Mandelbrot
 
     function generate()
     {
+        var minX = -2.0;
+        var minY = -2.0;
+        var maxX = 2.0;
+        var maxY = 2.0;
+        var step = 0.005;
+        //var step = 0.01;
+
+        var width = (maxX - minX) / step;
+        var height = (maxY - minY) / step;
+
         File.out.writeln("P2");
-        File.out.writeln("400 400");
+        File.out.write(Maths.round(width));
+        File.out.write(" ");
+        File.out.writeln(Maths.round(height));
         File.out.writeln(maxIterations);
         var py;
-        for (py = -2.0; py < 2.0; py += 0.01)
+        for (py = minY; py < maxY; py += step)
         {
             var px;
-            for (px = -2.0; px < 2.0; px += 0.01)
+            for (px = minX; px < maxX; px += step)
             {
                 File.out.writeln(iterate(px, py));
             }
