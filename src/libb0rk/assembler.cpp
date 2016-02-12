@@ -440,7 +440,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     VarExpression* varExpr = (VarExpression*)(opExpr->left);
 
                     int id = block->getVarId(varExpr->var);
-                    if (needResult && id != -1)
+                    if (!needResult && id != -1)
                     {
 #ifdef DEBUG_ASSEMBLER
                         printf("Assembler::assembleExpression: OPER: POST xCREMENT: Use INC_VAR!\n");
@@ -455,6 +455,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                         {
                             m_code.push_back(-1);
                         }
+                        expr->resultOnStack = false;
                     }
                     else
                     {
@@ -851,17 +852,23 @@ bool Assembler::assembleTest(CodeBlock* block, Expression* testExpr)
             switch (last1)
             {
                 case OPCODE_PUSHCE:
+#ifdef DEBUG_ASSEMBLER
                     fprintf(stderr, "Assembler::assembleTest: Test was CMP/PUSHCE!\n");
+#endif
                     m_code.pop_back();
                     branchOpcode = OPCODE_BNE;
                     break;
                 case OPCODE_PUSHCL:
+#ifdef DEBUG_ASSEMBLER
                     fprintf(stderr, "Assembler::assembleTest: Test was CMP/PUSHCL!\n");
+#endif
                     m_code.pop_back();
                     branchOpcode = OPCODE_BGE;
                     break;
                 case OPCODE_PUSHCLE:
+#ifdef DEBUG_ASSEMBLER
                     fprintf(stderr, "Assembler::assembleExpression: Test was CMP/PUSHCLE!\n");
+#endif
                     m_code.pop_back();
                     branchOpcode = OPCODE_BG;
                     break;
