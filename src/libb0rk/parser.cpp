@@ -1121,7 +1121,7 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
 #endif
                 clazzname += ".";
                 clazzname += token->string;
-                clazz = m_context->getRuntime()->findClass(m_context, clazzname, false);
+                clazz = m_context->getRuntime()->findClass(m_context, clazzname, true);
 #ifdef DEBUG_PARSER
                 printf("Parser::parseExpression:  -> class? %s = %p\n", clazzname.c_str(), clazz);
 #endif
