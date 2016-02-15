@@ -791,7 +791,7 @@ static bool opcodeCmp(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     }
     else
     {
-        printf("CMP: UNHANDLED DATA TYPES\n");
+        ERROR("CMP: UNHANDLED DATA TYPES: left=%d, right=%d\n", left.type, right.type);
         return false;
     }
 
@@ -872,7 +872,7 @@ static bool opcodeBG(uint64_t thisPC, uint64_t opcode, Context* context, Frame* 
 {
     uint64_t dest = frame->fetch();
     LOG("BG: flags.sign=%d, flags.overflow=%d, dest=0x%llx", frame->flags.zero, frame->flags.overflow, dest);
-    if (frame->flags.zero || (frame->flags.sign != frame->flags.overflow))
+    if (!frame->flags.zero &&(frame->flags.sign == frame->flags.overflow))
     {
         frame->pc = dest;
     }
