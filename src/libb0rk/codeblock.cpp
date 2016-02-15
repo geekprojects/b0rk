@@ -81,7 +81,7 @@ int CodeBlock::setStartingVarId(int id)
 int CodeBlock::getVarId(string var)
 {
     vector<string>::iterator it;
-    int i;
+    unsigned int i;
     for (i = 0; i < m_vars.size(); i++)
     {
         if (m_vars[i] == var)

@@ -57,7 +57,7 @@ string Value::toString()
             return string(buffer);
 
         case VALUE_INTEGER:
-            snprintf(buffer, 128, "%lld", i);
+            snprintf(buffer, 128, "%ld", i);
             return string(buffer);
 
         case VALUE_DOUBLE:

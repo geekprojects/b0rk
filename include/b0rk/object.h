@@ -24,6 +24,8 @@
 #include <b0rk/class.h>
 #include <b0rk/value.h>
 
+#include <stdint.h>
+
 #include <map>
 
 #define B0RK_GC_EXTERNAL ((uint64_t)-1ll)
