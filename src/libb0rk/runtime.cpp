@@ -37,6 +37,8 @@
 #include "packages/system/lang/Maths.h"
 #include "packages/system/io/File.h"
 
+#include <cinttypes>
+
 using namespace std;
 using namespace b0rk;
 
@@ -259,7 +261,7 @@ Object* Runtime::allocateObject(Class* clazz)
     if (m_currentBytes >= (m_arenaTotal / 4) * 3)
     {
 #ifdef DEBUG_GC
-        printf("Runtime::newObject: Space Check: %ld/%ld = %0.2f%% used\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
+        printf("Runtime::newObject: Space Check: %" PRId64 "/%" PRId64 " = %0.2f%% used\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
 #endif
         if (m_gcEnabled)
         {
@@ -289,7 +291,7 @@ Object* Runtime::allocateObject(Class* clazz)
     {
         Object* o = *it;
 #ifdef DEBUG_GC
-        printf("Runtime::allocateObject: Free: %p (size=%ld, requested=%d)\n", o, o->m_size, objSize);
+        printf("Runtime::allocateObject: Free: %p (size=%" PRId64 ", requested=%" PRId64 ")\n", o, o->m_size, objSize);
 #endif
         if (o->m_size >= objSize)
         {
@@ -489,10 +491,10 @@ void Runtime::gc()
 #ifdef DEBUG_GC
     if (freed > 0)
     {
-        fprintf(stderr, "Runtime::gc: Freed %ld bytes\n", freed);
+        fprintf(stderr, "Runtime::gc: Freed %" PRId64 " bytes\n", freed);
         gcStats();
     }
-    fprintf(stderr, "Runtime::gc: Time: %ld msec\n", (endTime - now) / 1000);
+    fprintf(stderr, "Runtime::gc: Time: %" PRId64 " msec\n", (endTime - now) / 1000);
 #endif
 }
 
@@ -574,7 +576,7 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
                     survived = (float)(mark - obj->m_gcMark) / (float)USEC_PER_SEC;
                 }
 
-                printf("Runtime::gc:  -> OLD! GC!! %ld-%ld = survived=%f\n", mark, obj->m_gcMark, survived);
+                printf("Runtime::gc:  -> OLD! GC!! %" PRId64 "-%" PRId64 " = survived=%f\n", mark, obj->m_gcMark, survived);
 #endif
                 m_collectedObjects++;
                 obj->m_class = NULL;
@@ -607,7 +609,7 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
                 if ((uint64_t)freeObj == prevFreeObjEnd)
                 {
 #ifdef DEBUG_GC
-                    printf("Runtime::gc: Coalesce: prev=%p-0x%lx, this=%p-0x%lx\n",
+                    printf("Runtime::gc: Coalesce: prev=%p-0x%" PRIx64 ", this=%p-0x%" PRIx64 "\n",
                         prevFreeObj,
                         (uint64_t)prevFreeObj + prevFreeObj->m_size,
                         freeObj,
@@ -653,12 +655,12 @@ void Runtime::gcMarkObject(Object* obj, uint64_t mark)
 void Runtime::gcStats()
 {
     fprintf(stderr, "Runtime: Stats:\n");
-    fprintf(stderr, "Runtime:  New Objects: %ld\n", m_newObjects);
-    fprintf(stderr, "Runtime:  Current Objects: %ld\n", m_currentObjects);
-    fprintf(stderr, "Runtime:  Collected Objects: %ld\n", m_collectedObjects);
-    fprintf(stderr, "Runtime:  New Bytes: %ld\n", m_newBytes);
-    fprintf(stderr, "Runtime:  Current Bytes: %ld\n", m_currentBytes);
-    fprintf(stderr, "Runtime:  GC Time: %ld ms\n", m_gcTime / 1000);
+    fprintf(stderr, "Runtime:  New Objects: %" PRId64 "\n", m_newObjects);
+    fprintf(stderr, "Runtime:  Current Objects: %" PRId64 "\n", m_currentObjects);
+    fprintf(stderr, "Runtime:  Collected Objects: %" PRId64 "\n", m_collectedObjects);
+    fprintf(stderr, "Runtime:  New Bytes: %" PRId64 "\n", m_newBytes);
+    fprintf(stderr, "Runtime:  Current Bytes: %" PRId64 "\n", m_currentBytes);
+    fprintf(stderr, "Runtime:  GC Time: %" PRId64 " ms\n", m_gcTime / 1000);
 }
 
 

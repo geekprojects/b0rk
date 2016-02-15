@@ -18,9 +18,10 @@
  *  along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <b0rk/value.h>
 #include <b0rk/object.h>
+
+#include <cinttypes>
 
 using namespace std;
 using namespace b0rk;
@@ -57,7 +58,7 @@ string Value::toString()
             return string(buffer);
 
         case VALUE_INTEGER:
-            snprintf(buffer, 128, "%ld", i);
+            snprintf(buffer, 128, "%" PRIu64, i);
             return string(buffer);
 
         case VALUE_DOUBLE:
