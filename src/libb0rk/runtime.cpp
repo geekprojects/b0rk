@@ -213,10 +213,6 @@ Class* Runtime::loadClass(Context* context, string name, bool addToExisting)
 
     if (fp == NULL)
     {
-        if (!addToExisting)
-        {
-            fprintf(stderr, "Runtime::loadClass: Unable to load class %s\n", name.c_str());
-        }
         return NULL;
     }
 
