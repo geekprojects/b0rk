@@ -23,6 +23,7 @@
 
 #include "packages/system/lang/StringClass.h"
 #include <b0rk/context.h>
+#include <b0rk/utils.h>
 
 using namespace std;
 using namespace b0rk;
@@ -53,7 +54,7 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
     }
     else if (argCount == 1)
     {
-        string str;
+        wstring str;
         if (args[0].type == VALUE_OBJECT &&
             args[0].object != NULL &&
             args[0].object->getClass() == this)
@@ -80,7 +81,7 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
     return true;
 }
 
-StringNative::StringNative(Object* instance, string str)
+StringNative::StringNative(Object* instance, wstring str)
     : NativeObject(instance)
 {
     m_string = str;
@@ -90,8 +91,8 @@ bool StringNative::addOperator(Context* context, int argCount, Value* args, Valu
 {
     Value rhs = args[0];
 
-    string rhsStr = "";
-    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass()->getName() == "system.lang.String")
+    wstring rhsStr;
+    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass()->getName() == L"system.lang.String")
     {
         rhsStr =  String::getString(context, rhs.object);
 #ifdef DEBUG_STRING
@@ -100,13 +101,13 @@ bool StringNative::addOperator(Context* context, int argCount, Value* args, Valu
     }
     else
     {
-        rhsStr += rhs.toString();
+        rhsStr = rhs.toString();
 #ifdef DEBUG_STRING
         printf("String::addOperator: rhs (other): %s\n", rhsStr.c_str());
 #endif
     }
 
-    string resultstr = m_string + rhsStr;
+    wstring resultstr = m_string + rhsStr;
 
     result.type = VALUE_OBJECT;
     result.object = String::createString(context, resultstr);
@@ -156,7 +157,26 @@ Object* String::createString(Context* context, std::string str)
     return object;
 }
 
-std::string String::getString(Context* context, Value& value)
+Object* String::createString(Context* context, wstring str)
+{
+    Class* stringClass = context->getRuntime()->findClass(context, "system.lang.String");
+
+    Object* object = context->getRuntime()->allocateObject(stringClass);
+    if (object == NULL)
+    {
+        return NULL;
+    }
+
+    object->m_nativeObject = new StringNative(object, str);
+#ifdef DEBUG_STRING
+    printf("String::createString: str=%s\n", str.c_str());
+#endif
+
+    return object;
+}
+
+
+std::wstring String::getString(Context* context, Value& value)
 {
     if (value.type == VALUE_OBJECT)
     {
@@ -168,15 +188,15 @@ std::string String::getString(Context* context, Value& value)
     }
 }
 
-std::string String::getString(Context* context, Object* obj)
+std::wstring String::getString(Context* context, Object* obj)
 {
     if (obj == NULL)
     {
-        return "INVALID";
+        return L"INVALID";
     }
-    if (obj->getClass()->getName() != "system.lang.String")
+    if (obj->getClass()->getName() != L"system.lang.String")
     {
-        return "NOTASTRING";
+        return L"NOTASTRING";
     }
     return ((StringNative*)obj->m_nativeObject)->getString();
 }

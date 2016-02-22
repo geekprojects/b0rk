@@ -20,6 +20,7 @@
 
 #include <b0rk/executor.h>
 #include <b0rk/compiler.h>
+#include <b0rk/utils.h>
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/lang/Array.h"
 
@@ -89,7 +90,7 @@ static bool opcodeLoadFieldNamed(uint64_t thisPC, uint64_t opcode, Context* cont
 {
     Object* nameObj = context->pop().object;
     Value objValue = context->pop();
-    string varName = String::getString(context, nameObj);
+    wstring varName = String::getString(context, nameObj);
     LOG("LOAD_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, varName.c_str());
 
     if (objValue.type == VALUE_OBJECT && objValue.object != NULL)
@@ -122,8 +123,8 @@ static bool opcodeStoreFieldNamed(uint64_t thisPC, uint64_t opcode, Context* con
     Value nameValue = context->pop();
     Value objValue = context->pop();
     Value value = context->pop();
-    string varName = String::getString(context, nameValue);
-    LOG("STORE_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, varName.c_str());
+    wstring varName = String::getString(context, nameValue);
+    LOG("STORE_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, Utils::wstring2string(varName).c_str());
 
     if (objValue.type == VALUE_OBJECT && objValue.object != NULL)
     {
@@ -133,7 +134,7 @@ static bool opcodeStoreFieldNamed(uint64_t thisPC, uint64_t opcode, Context* con
         int id = clazz->getFieldId(varName);
         if (id != -1)
         {
-            LOG("STORE_FIELD_NAMED: class=%s, obj=%p, name=%s, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
+            LOG("STORE_FIELD_NAMED: class=%s, obj=%p, name=%s, id=%d\n", clazz->getName().c_str(), objValue.object, Utils::wstring2string(varName).c_str(), id);
             obj->setValue(id, value);
         }
         else
@@ -197,7 +198,7 @@ static bool opcodeLoadArray(uint64_t thisPC, uint64_t opcode, Context* context, 
     }
     else
     {
-        ERROR("STORE_ARRAY: Array is invalid: %s", arrayValue.toString().c_str());
+        ERROR("STORE_ARRAY: Array is invalid: %ls", arrayValue.toString().c_str());
     }
 
     return res;
@@ -221,7 +222,7 @@ static bool opcodeStoreArray(uint64_t thisPC, uint64_t opcode, Context* context,
     }
     else
     {
-        ERROR("STORE_ARRAY: Array is invalid: %s", arrayValue.toString().c_str());
+        ERROR("STORE_ARRAY: Array is invalid: %ls", arrayValue.toString().c_str());
     }
 
     return res;
@@ -627,8 +628,8 @@ static bool opcodeCallNamed(uint64_t thisPC, uint64_t opcode, Context* context, 
     int count = frame->fetch();
     Object* nameObj = context->pop().object;
     Value objValue = context->pop();
-    string funcName = String::getString(context, nameObj);
-    LOG("CALL_NAMED: obj=%s, name=%s", objValue.toString().c_str(), funcName.c_str());
+    wstring funcName = String::getString(context, nameObj);
+    LOG("CALL_NAMED: obj=%s, name=%s", objValue.toString().c_str(), Utils::wstring2string(funcName).c_str());
     Object* obj = objValue.object;
     LOG("CALL_NAMED:  -> obj class=%s, ", obj->getClass()->getName().c_str());
 
@@ -659,7 +660,7 @@ static bool opcodeCallNamed(uint64_t thisPC, uint64_t opcode, Context* context, 
     LOG("CALL_NAMED:  -> function=%p", function);
     if (B0RK_UNLIKELY(function == NULL))
     {
-        ERROR("CALL_NAMED: function not found! class=%s, function=%s", obj->getClass()->getName().c_str(), funcName.c_str());
+        ERROR("CALL_NAMED: function not found! class=%s, function=%s", Utils::wstring2string(obj->getClass()->getName()).c_str(), Utils::wstring2string(funcName).c_str());
         return false;
     }
 
@@ -699,7 +700,7 @@ static bool opcodeNew(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     }
     else
     {
-        ERROR("NEW: Failed to create new object! class=%s\n", clazz->getName().c_str());
+        ERROR("NEW: Failed to create new object! class=%s\n", Utils::wstring2string(clazz->getName()).c_str());
         return false;
     }
     return true;
@@ -737,7 +738,7 @@ static bool opcodeReturn(uint64_t thisPC, uint64_t opcode, Context* context, Fra
     Value frameCheck = context->pop();
     if (frameCheck.type != VALUE_FRAME || frameCheck.pointer != frame)
     {
-        ERROR("EXPECTING CURRENT FRAME ON STACK! GOT: %s\n", frameCheck.toString().c_str());
+        ERROR("EXPECTING CURRENT FRAME ON STACK! GOT: %ls\n", frameCheck.toString().c_str());
         return false;
     }
     else

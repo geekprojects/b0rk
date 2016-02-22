@@ -60,7 +60,7 @@ struct Value
     }
 */
 
-    std::string toString();
+    std::wstring toString();
 };
 
 };

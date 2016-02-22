@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <b0rk/utils.h>
+
 #include "packages/system/io/File.h"
 #include "packages/system/lang/StringClass.h"
 
@@ -90,13 +92,13 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
 
         if (v.type == VALUE_OBJECT &&
             v.object != NULL &&
-            v.object->getClass()->getName() == "system.lang.String")
+            v.object->getClass()->getName() == getName())
         {
-            str = String::getString(context, v.object);
+            str = Utils::wstring2string(String::getString(context, v.object));
         }
         else
         {
-            str = v.toString().c_str();
+            str = Utils::wstring2string(v.toString());
         }
         fwrite(str.c_str(), str.length(), 1, stdout);
     }

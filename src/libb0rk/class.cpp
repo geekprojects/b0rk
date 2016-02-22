@@ -18,13 +18,27 @@
  *  along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <b0rk/class.h>
+#include <b0rk/utils.h>
 
 using namespace std;
 using namespace b0rk;
 
 Class::Class(Class* superClass, string name)
+{
+    m_superClass = superClass;
+    m_name = Utils::string2wstring(name);
+
+    m_fieldStartId = 0;
+    if (m_superClass != NULL)
+    {
+        m_fieldStartId = m_superClass->getFieldCount();
+    }
+
+    m_staticValues = NULL;
+}
+
+Class::Class(Class* superClass, wstring name)
 {
     m_superClass = superClass;
     m_name = name;
@@ -38,9 +52,10 @@ Class::Class(Class* superClass, string name)
     m_staticValues = NULL;
 }
 
+
 Class::~Class()
 {
-    map<std::string, Function*>::iterator methIt;
+    map<std::wstring, Function*>::iterator methIt;
     for (methIt = m_methods.begin(); methIt != m_methods.end(); methIt++)
     {
         delete methIt->second;
@@ -59,10 +74,20 @@ size_t Class::getFieldCount()
 
 void Class::addField(string name)
 {
+    addField(Utils::string2wstring(name));
+}
+
+void Class::addField(wstring name)
+{
     m_fields.push_back(name);
 }
 
 int Class::getFieldId(string name)
+{
+    return getFieldId(Utils::string2wstring(name));
+}
+
+int Class::getFieldId(wstring name)
 {
     unsigned int i;
     for (i = 0; i < m_fields.size(); i++)
@@ -83,6 +108,11 @@ int Class::getFieldId(string name)
 
 void Class::addStaticField(string name)
 {
+    addStaticField(Utils::string2wstring(name));
+}
+
+void Class::addStaticField(wstring name)
+{
     m_staticFields.push_back(name);
 }
 
@@ -92,6 +122,11 @@ size_t Class::getStaticFieldCount()
 }
 
 int Class::getStaticFieldId(string name)
+{
+    return getStaticFieldId(Utils::string2wstring(name));
+}
+
+int Class::getStaticFieldId(wstring name)
 {
     unsigned int i;
     for (i = 0; i < m_staticFields.size(); i++)
@@ -122,8 +157,12 @@ void Class::initStaticFields()
     }
 }
 
-
 void Class::addMethod(string name, Function* function)
+{
+    addMethod(Utils::string2wstring(name), function);
+}
+
+void Class::addMethod(wstring name, Function* function)
 {
     function->setName(name);
     m_methods.insert(make_pair(name, function));
@@ -131,7 +170,12 @@ void Class::addMethod(string name, Function* function)
 
 Function* Class::findMethod(string name)
 {
-    map<string, Function*>::iterator it;
+    return findMethod(Utils::string2wstring(name));
+}
+
+Function* Class::findMethod(wstring name)
+{
+    map<wstring, Function*>::iterator it;
     it = m_methods.find(name);
     if (it != m_methods.end())
     {

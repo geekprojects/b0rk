@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <b0rk/utils.h>
+
 #include "packages/system/lang/Function.h"
 
 using namespace std;
@@ -52,7 +54,7 @@ bool FunctionClass::constructor(Context* context, Object* instance, int argCount
 Function* FunctionClass::getFunction(Object* funcObj)
 {
     if (funcObj != NULL &&
-        funcObj->getClass()->getName() == "system.lang.Function")
+        funcObj->getClass()->getName() == L"system.lang.Function")
     {
         return (Function*)(funcObj->getValue(0)).object;
     }

@@ -31,16 +31,17 @@ class Context;
 class StringNative : public NativeObject
 {
  private:
-    std::string m_string;
+    std::wstring m_string;
 
  public:
     StringNative(Object* object, std::string str);
+    StringNative(Object* object, std::wstring str);
 
     bool addOperator(Context* context, int argCount, Value* args, Value& result);
     bool length(Context* context, int argCount, Value* args, Value& result);
     bool at(Context* context, int argCount, Value* args, Value& result);
 
-    std::string getString() { return m_string; }
+    std::wstring getString() { return m_string; }
 };
 
 class String : public Class
@@ -54,8 +55,9 @@ class String : public Class
     bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
 
     static Object* createString(Context* context, std::string str);
-    static std::string getString(Context* context, Value& value);
-    static std::string getString(Context* context, Object* obj);
+    static Object* createString(Context* context, std::wstring str);
+    static std::wstring getString(Context* context, Value& value);
+    static std::wstring getString(Context* context, Object* obj);
 };
 
 };

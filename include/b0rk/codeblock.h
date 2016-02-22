@@ -41,7 +41,7 @@ struct CodeBlock
 
     ValueType* m_varTypes;
 
-    std::vector<std::string> m_vars;
+    std::vector<std::wstring> m_vars;
     std::vector<Expression*> m_code;
     std::vector<CodeBlock*> m_childBlocks;
 
@@ -49,11 +49,11 @@ struct CodeBlock
     ~CodeBlock();
 
     int setStartingVarId(int id);
-    int getVarId(std::string var);
+    int getVarId(std::wstring var);
     bool setVarType(int id, ValueType type);
     ValueType getVarType(int id);
 
-    std::string toString();
+    std::wstring toString();
 };
 
 };

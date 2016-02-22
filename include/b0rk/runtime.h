@@ -49,8 +49,8 @@ struct Arena
 class Runtime
 {
  private:
-    std::vector<std::string> m_classpath;
-    std::map<std::string, Class*> m_classes;
+    std::vector<std::wstring> m_classpath;
+    std::map<std::wstring, Class*> m_classes;
 
     Class* m_objectClass;
 
@@ -78,7 +78,7 @@ class Runtime
 
     bool callConstructor(Context* context, Object* obj, Class* clazz, int argCount);
 
-    Class* loadClass(Context* context, std::string name, bool addToExisting = false);
+    Class* loadClass(Context* context, std::wstring name, bool addToExisting = false);
 
  public:
     Runtime();
@@ -86,6 +86,7 @@ class Runtime
 
     bool addClass(Context* context, Class* clazz, bool findScript = false);
     Class* findClass(Context* context, std::string name, bool load = true);
+    Class* findClass(Context* context, std::wstring name, bool load = true);
     Class* getObjectClass() { return m_objectClass; }
 
     Context* createContext();

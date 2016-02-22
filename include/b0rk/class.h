@@ -38,21 +38,22 @@ class Context;
 class Class
 {
  private:
-    std::string m_name;
+    std::wstring m_name;
     Class* m_superClass;
 
-    std::map<std::string, Function*> m_methods;
+    std::map<std::wstring, Function*> m_methods;
     int m_fieldStartId;
-    std::vector<std::string> m_fields;
-    std::vector<std::string> m_staticFields;
+    std::vector<std::wstring> m_fields;
+    std::vector<std::wstring> m_staticFields;
 
     Value* m_staticValues;
 
  public:
     Class(Class* superClass, std::string name);
+    Class(Class* superClass, std::wstring name);
     virtual ~Class();
 
-    std::string getName() { return m_name; }
+    std::wstring getName() { return m_name; }
     void setSuperClass(Class* sc) { m_superClass = sc; }
     Class* getSuperClass() { return m_superClass; }
 
@@ -60,17 +61,23 @@ class Class
     virtual size_t getStaticFieldCount();
 
     void addField(std::string name);
+    void addField(std::wstring name);
     int getFieldId(std::string name);
+    int getFieldId(std::wstring name);
 
     void addStaticField(std::string name);
+    void addStaticField(std::wstring name);
     int getStaticFieldId(std::string name);
+    int getStaticFieldId(std::wstring name);
     Value getStaticField(int slot) { return m_staticValues[slot]; }
     void setStaticField(int slot, Value v) { m_staticValues[slot] = v; }
     void initStaticFields();
     std::vector<std::string>& getStaticFields();
 
     void addMethod(std::string name, Function* function);
+    void addMethod(std::wstring name, Function* function);
     virtual Function* findMethod(std::string name);
+    virtual Function* findMethod(std::wstring name);
 
     virtual bool deleteOnExit() { return true; }
 };

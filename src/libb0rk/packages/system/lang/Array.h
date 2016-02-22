@@ -31,7 +31,7 @@ namespace b0rk
 // TODO: HACK HACK HACK THIS WORKS BUT ISN'T RIGHT!
 struct ArrayContainer
 {
-    std::map<std::string, Value> array;
+    std::map<std::wstring, Value> array;
 };
 
 class Array : public Class

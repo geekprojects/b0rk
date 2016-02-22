@@ -78,7 +78,7 @@ int CodeBlock::setStartingVarId(int id)
     return m_maxVarId;
 }
 
-int CodeBlock::getVarId(string var)
+int CodeBlock::getVarId(wstring var)
 {
     vector<string>::iterator it;
     int i;
@@ -135,13 +135,15 @@ ValueType CodeBlock::getVarType(int id)
     return m_varTypes[thisId];
 }
 
-string CodeBlock::toString()
+wstring CodeBlock::toString()
 {
-    std::string str = "";
-    std::vector<Expression*>::iterator it;
+    wstring str;
+    vector<Expression*>::iterator it;
     for (it = m_code.begin(); it != m_code.end(); it++)
     {
-        str += (*it)->toString() + "; ";
+        str += (*it)->toString();
+        str += ';';
+        str += ' ';
     }
     return str;
 }

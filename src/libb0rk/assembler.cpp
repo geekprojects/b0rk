@@ -25,6 +25,7 @@
 #include <b0rk/runtime.h>
 #include <b0rk/function.h>
 #include <b0rk/disassembler.h>
+#include <b0rk/utils.h>
 
 #include "packages/system/lang/StringClass.h"
 
@@ -198,14 +199,14 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 }
             }
 
-            string id = callExpr->function;
+            wstring id = callExpr->function;
 
             if (callExpr->clazz != NULL)
             {
                 // Static class method!
                 Function* func = callExpr->clazz->findMethod(id);
 #ifdef DEBUG_ASSEMBLER
-                printf("Assembler::assembleExpression: CALL: Static call: %s.%s\n", callExpr->clazz->getName().c_str(), id.c_str());
+                printf("Assembler::assembleExpression: CALL: Static call: %ls.%ls\n", callExpr->clazz->getName().c_str(), id.c_str());
 #endif
                 m_code.push_back(OPCODE_CALL_STATIC);
                 m_code.push_back((uint64_t)func);
@@ -743,7 +744,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
             if (clazz == NULL)
             {
-                printf("Assembler::assembleExpression: Unknown class: %s\n", newExpr->clazz.toString().c_str());
+                printf("Assembler::assembleExpression: Unknown class: %ls\n", newExpr->clazz.toString().c_str());
                 return false;
             }
 
@@ -809,7 +810,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         } break;
 
         default:
-            printf("Assembler::assembleExpression: Unhandled expression: %d: %s\n", expr->type, expr->toString().c_str());
+            printf("Assembler::assembleExpression: Unhandled expression: %d: %ls\n", expr->type, expr->toString().c_str());
             return false;
     }
 
@@ -817,12 +818,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
     if (needResult && !expr->resultOnStack)
     {
         printf("Assembler::assembleExpression: ERROR: Result required, but none returned by expression!\n");
-        printf("Assembler::assembleExpression: ERROR:  -> %s\n", expr->toString().c_str());
+        printf("Assembler::assembleExpression: ERROR:  -> %ls\n", expr->toString().c_str());
     }
     else if (!needResult && expr->resultOnStack)
     {
         printf("Assembler::assembleExpression: ERROR: Result not required, but returned by expression!\n");
-        printf("Assembler::assembleExpression: ERROR:  -> %s\n", expr->toString().c_str());
+        printf("Assembler::assembleExpression: ERROR:  -> %ls\n", expr->toString().c_str());
     }
 #endif
 
@@ -913,11 +914,11 @@ bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
     return true;
 }
 
-bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
+bool Assembler::isVariable(CodeBlock* block, Object* context, wstring name)
 {
     int id = block->getVarId(name);
 #ifdef DEBUG_ASSEMBLER
-    printf("Assembler::isVariable: Local variable %s (%d)\n", name.c_str(), id);
+    printf("Assembler::isVariable: Local variable %ls (%d)\n", name.c_str(), id);
 #endif
     if (id != -1)
     {
@@ -929,7 +930,7 @@ bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
         id = m_function->getClass()->getFieldId(name);
 
 #ifdef DEBUG_ASSEMBLER
-        printf("Assembler::isVariable: Object field %s (%d)\n", name.c_str(), id);
+        printf("Assembler::isVariable: Object field %ls (%d)\n", name.c_str(), id);
 #endif
         if (id != -1)
         {
@@ -939,7 +940,7 @@ bool Assembler::isVariable(CodeBlock* block, Object* context, string name)
         else
         {
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::isVariable: Unknown variable: %s\n", name.c_str());
+            printf("Assembler::isVariable: Unknown variable: %ls\n", name.c_str());
 #endif
             return false;
         }
@@ -986,7 +987,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
     }
 
     int id;
-    if (varExpr->var == "this")
+    if (varExpr->var == L"this")
     {
         id = 0;
     }
@@ -996,7 +997,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
     }
 
 #ifdef DEBUG_ASSEMBLER
-    printf("Assembler::load: Local variable %s (%d)\n", varExpr->var.c_str(), id);
+    printf("Assembler::load: Local variable %ls (%d)\n", varExpr->var.c_str(), id);
 #endif
     if (id != -1)
     {
@@ -1013,7 +1014,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         }
 
 #ifdef DEBUG_ASSEMBLER
-        printf("Assembler::load: Object field %s (%d)\n", varExpr->var.c_str(), id);
+        printf("Assembler::load: Object field %ls (%d)\n", varExpr->var.c_str(), id);
 #endif
         if (id != -1)
         {
@@ -1026,10 +1027,10 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         }
         else
         {
-            printf("Assembler::load: Error: Unknown variable: %s\n", varExpr->var.c_str());
+            printf("Assembler::load: Error: Unknown variable: %ls\n", varExpr->var.c_str());
             if (m_function->getClass() != NULL)
             {
-                printf("Assembler::load:  -> class=%s\n", m_function->getClass()->getName().c_str());
+                printf("Assembler::load:  -> class=%ls\n", m_function->getClass()->getName().c_str());
             }
             else
             {
@@ -1049,7 +1050,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         {
             return false;
         }
-        printf("Assembler::store: Var from reference: %s\n", varExpr->var.c_str());
+        printf("Assembler::store: Var from reference: %ls\n", varExpr->var.c_str());
 
         m_code.push_back(OPCODE_PUSHOBJ);
         Object* strObj = String::createString(m_context, varExpr->var);
@@ -1060,10 +1061,10 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         return true;
     }
 
-    string name = varExpr->var;
+    wstring name = varExpr->var;
 
     int id;
-    if (name == "this")
+    if (name == L"this")
     {
         id = 0;
     }
@@ -1073,7 +1074,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
     }
 
 #ifdef DEBUG_ASSEMBLER
-    printf("Assembler::store: Local variable %s (%d)\n", name.c_str(), id);
+    printf("Assembler::store: Local variable %ls (%d)\n", name.c_str(), id);
 #endif
     if (id != -1)
     {
@@ -1087,7 +1088,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         id = m_function->getClass()->getFieldId(name);
 
 #ifdef DEBUG_ASSEMBLER
-        printf("Assembler::store: Object field %s (%d)\n", name.c_str(), id);
+        printf("Assembler::store: Object field %ls (%d)\n", name.c_str(), id);
 #endif
         if (id != -1)
         {
@@ -1100,7 +1101,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         }
         else
         {
-            printf("Assembler::store: Error: Unknown variable: %s\n", name.c_str());
+            printf("Assembler::store: Error: Unknown variable: %ls\n", name.c_str());
             return false;
         }
     }

@@ -40,24 +40,25 @@ struct Object;
 class Function
 {
  protected:
-    std::string m_name;
+    std::wstring m_name;
     bool m_static;
     Class* m_class;
-    std::vector<std::string> m_args;
+    std::vector<std::wstring> m_args;
 
  public:
     Function(Class* clazz);
-    Function(Class* clazz, std::vector<std::string> args);
+    Function(Class* clazz, std::vector<std::wstring> args);
     virtual ~Function();
 
     Class* getClass() { return m_class; }
-    void setName(std::string name) { m_name = name; }
+    void setName(std::wstring name) { m_name = name; }
     std::string getFullName();
 
     void setStatic(bool isStatic) { m_static = isStatic; }
     bool getStatic() { return m_static; }
 
     int getArgId(std::string arg);
+    int getArgId(std::wstring arg);
 
     bool execute(Context* context, Object* clazz, int argCount, Value* argv, Value& result);
     virtual bool execute(Context* context, Object* clazz, int argCount);
@@ -99,8 +100,8 @@ class ScriptFunction : public Function
     AssembledCode m_asmCode;
 
  public:
-    ScriptFunction(Class* clazz, std::vector<std::string> args);
-    ScriptFunction(Class* clazz, CodeBlock* code, std::vector<std::string> args);
+    ScriptFunction(Class* clazz, std::vector<std::wstring> args);
+    ScriptFunction(Class* clazz, CodeBlock* code, std::vector<std::wstring> args);
     ~ScriptFunction();
 
     void setCode(CodeBlock* code);

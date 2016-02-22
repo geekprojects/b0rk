@@ -25,6 +25,7 @@
 #include <ctype.h>
 
 #include <b0rk/lexer.h>
+#include <b0rk/utils.h>
 
 #undef DEBUG_LEXER
 
@@ -135,7 +136,7 @@ bool Lexer::lexer(char* buffer, int length)
     char* pos = buffer;
     while (*pos != '\0')
     {
-        char c = *pos;
+        wchar_t c = *pos;
 
         if (c == '/')
         {
@@ -164,19 +165,19 @@ bool Lexer::lexer(char* buffer, int length)
             }
         }
 
-        if (isspace(c))
+        if (iswspace(c))
         {
             // Skip whitespace
             // TODO: Check whether we're in a string
             pos++;
         }
-        else if (isdigit(c) || (c == '-' && isdigit(*(pos + 1))))
+        else if (iswdigit(c) || (c == '-' && iswdigit(*(pos + 1))))
         {
-            string str = "";
+            wstring str;
             bool dot = false;
             while (true)
             {
-                char c = *pos;
+                wchar_t c = *pos;
                 if (c == '-')
                 {
                     if (str.length() > 0)
@@ -191,7 +192,7 @@ bool Lexer::lexer(char* buffer, int length)
                     str += '.';
                     dot = true;
                 }
-                else if (isdigit(c))
+                else if (iswdigit(c))
                 {
                     str += c;
                 }
@@ -202,13 +203,13 @@ bool Lexer::lexer(char* buffer, int length)
                 pos++;
             }
 #ifdef DEBUG_LEXER
-            printf("Lexer: found number: %s\n", str.c_str());
+            printf("Lexer: found number: %ls\n", str.c_str());
 #endif
 
             Token token;
             if (dot)
             {
-                token.d = atof(str.c_str());
+                token.d = atof(Utils::wstring2string(str).c_str());
                 token.type = TOK_DOUBLE;
 #ifdef DEBUG_LEXER
                 printf("Lexer: found number:  -> double: %0.2f\n", token.d);
@@ -216,7 +217,7 @@ bool Lexer::lexer(char* buffer, int length)
             }
             else
             {
-                token.i = atoi(str.c_str());
+                token.i = atoi(Utils::wstring2string(str).c_str());
                 token.type = TOK_INTEGER;
 #ifdef DEBUG_LEXER
                 printf("Lexer: found number:  -> int: %d\n", token.i);
@@ -226,7 +227,7 @@ bool Lexer::lexer(char* buffer, int length)
         }
         else if (c == '"')
         {
-            string str = "";
+            wstring str;
             pos++;
             while (*pos != '\0')
             {
@@ -236,7 +237,7 @@ bool Lexer::lexer(char* buffer, int length)
                     strc = *(pos++);
                     if (strc == 'n')
                     {
-                        str += "\n";
+                        str += '\n';
                     }
                     else
                     {
@@ -254,7 +255,7 @@ bool Lexer::lexer(char* buffer, int length)
                 }
             }
 #ifdef DEBUG_LEXER
-            printf("Lexer: Found String: %s\n", str.c_str());
+            printf("Lexer: Found String: %ls\n", str.c_str());
 #endif
 
             Token token;
@@ -276,7 +277,7 @@ bool Lexer::lexer(char* buffer, int length)
 #endif
                     Token token;
                     token.type = tokenTable[i].token;
-                    token.string = tokenTable[i].str;
+                    token.string = Utils::string2wstring(tokenTable[i].str);
                     m_tokens.push_back(token);
                     found = true;
                     break;
@@ -287,13 +288,13 @@ bool Lexer::lexer(char* buffer, int length)
             {
                 if (isalpha(c))
                 {
-                    string str = "";
+                    wstring str;
                     while (isIdentifierChar(*pos))
                     {
                         str += *(pos++);
                     }
 #ifdef DEBUG_LEXER
-                    printf("Lexer: found Identifier: %s\n", str.c_str());
+                    printf("Lexer: found Identifier: %ls\n", str.c_str());
 #endif
                     Token token;
                     token.type = TOK_IDENTIFIER;
