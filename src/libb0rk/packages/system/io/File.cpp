@@ -100,7 +100,7 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
         {
             str = Utils::wstring2string(v.toString());
         }
-        fwrite(str.c_str(), str.length(), 1, stdout);
+        ::write(fd, str.c_str(), str.length());
     }
 
     result.type = VALUE_VOID;

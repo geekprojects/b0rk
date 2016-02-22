@@ -26,6 +26,8 @@
 #include <b0rk/compiler.h>
 #include <b0rk/assembler.h>
 
+#include <stdio.h>
+
 #include <vector>
 
 namespace b0rk

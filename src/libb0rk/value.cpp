@@ -18,12 +18,13 @@
  *  along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <b0rk/value.h>
 #include <b0rk/object.h>
 #include <b0rk/utils.h>
 
 #include <wchar.h>
+
+#include <cinttypes>
 
 using namespace std;
 using namespace b0rk;
@@ -60,7 +61,7 @@ wstring Value::toString()
             return wstring(buffer);
 
         case VALUE_INTEGER:
-            swprintf(buffer, 128, L"%lld", i);
+            swprintf(buffer, 128, L"%" PRIu64, i);
             return wstring(buffer);
 
         case VALUE_DOUBLE:

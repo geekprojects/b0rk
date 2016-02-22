@@ -21,6 +21,7 @@
 #ifndef __BSCRIPT_VALUE_H_
 #define __BSCRIPT_VALUE_H_
 
+#include <stdint.h>
 #include <string.h>
 #include <string>
 

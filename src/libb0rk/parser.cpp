@@ -798,7 +798,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
         }
 
         OpDesc* entry = NULL;
-        int i;
+        unsigned int i;
         for (i = 0; i < sizeof(opTable) / sizeof(OpDesc); i++)
         {
             if (token->type == opTable[i].token)

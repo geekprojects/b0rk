@@ -28,6 +28,8 @@
 #include <math.h>
 #include <float.h>
 
+#include <cinttypes>
+
 #undef DEBUG_EXECUTOR
 #undef DEBUG_EXECUTOR_STATS
 
@@ -36,13 +38,13 @@
 
 #ifdef DEBUG_EXECUTOR
 #define LOG(_fmt, _args...) \
-    printf("Executor::run: %s:%04llx: 0x%llx " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
+    printf("Executor::run: %s:%04" PRIx64 ": 0x%" PRIx64 " " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
 #else
 #define LOG(_fmt, _args...)
 #endif
 
 #define ERROR(_fmt, _args...) \
-    printf("Executor::run: %s:%04llx: 0x%llx ERROR: " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
+    printf("Executor::run: %s:%04" PRIx64 ": 0x%" PRIx64 " ERROR: " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
 
 using namespace std;
 using namespace b0rk;
@@ -80,7 +82,7 @@ static bool opcodeLoadField(uint64_t thisPC, uint64_t opcode, Context* context, 
 {
     Value objValue = context->pop();
     int fieldId = frame->fetch();
-    LOG("LOAD_FIELD: f%d, this=%p (value count=%ld)", fieldId, objValue.object, objValue.object->getClass()->getFieldCount());
+    LOG("LOAD_FIELD: f%d, this=%p (value count=%" PRIu64 ")", fieldId, objValue.object, objValue.object->getClass()->getFieldCount());
     Value result = objValue.object->getValue(fieldId);
     context->push(result);
     return true;
@@ -234,7 +236,7 @@ static bool opcodeIncVar(uint64_t thisPC, uint64_t opcode, Context* context, Fra
     int64_t amount = frame->fetch();
     frame->localVars[varId].i += amount;
 
-    LOG("INC_VAR: v%d, %lld: %lld", varId, amount, frame->localVars[varId].i);
+    LOG("INC_VAR: v%d, %" PRId64 ": %" PRId64, varId, amount, frame->localVars[varId].i);
 
     return true;
 }
@@ -1021,7 +1023,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_BG: success = opcodeBG(thisPC, opcode, context, &frame); break;
             case OPCODE_BGE: success = opcodeBGE(thisPC, opcode, context, &frame); break;
             default:
-                fprintf(stderr, "Executor::run: %s:%04llx: 0x%llx ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
+                fprintf(stderr, "Executor::run: %s:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
                 success = false;
         }
 

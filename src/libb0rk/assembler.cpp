@@ -102,7 +102,6 @@ bool Assembler::assembleBlock(CodeBlock* code)
             return false;
         }
 
-        bool isRefCall = false;
         if (IS_REFERENCE(expr))
         {
             Expression* pos = expr;
@@ -118,7 +117,6 @@ bool Assembler::assembleBlock(CodeBlock* code)
 #ifdef DEBUG_ASSEMBLER
                 printf("Assembler::assembleBlock:  -> reference to a call!!\n");
 #endif
-                isRefCall = true;
             }
         }
     }
