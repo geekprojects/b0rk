@@ -92,7 +92,7 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
 
         if (v.type == VALUE_OBJECT &&
             v.object != NULL &&
-            v.object->getClass()->getName() == getName())
+            v.object->getClass()->getName() == L"system.lang.String")
         {
             str = Utils::wstring2string(String::getString(context, v.object));
         }
