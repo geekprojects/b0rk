@@ -175,7 +175,7 @@ Class* Parser::parseClass(bool addToExisting)
 
         superClass = m_context->getRuntime()->findClass(m_context, superClassId.toString(), true);
 #ifdef DEBUG_PARSER
-        printf("Parser::parseClass: Class extends: %s: %p\n", token->string.c_str(), superClass);
+        printf("Parser::parseClass: Class extends: %ls: %p\n", token->string.c_str(), superClass);
 #endif
         if (superClass == NULL)
         {
@@ -200,7 +200,7 @@ Class* Parser::parseClass(bool addToExisting)
     }
 
 #ifdef DEBUG_PARSER
-    printf("Parser::parseClass: Class name: %s\n", name.c_str());
+    printf("Parser::parseClass: Class name: %ls\n", name.c_str());
 #endif
 
     bool existing = false;
@@ -249,7 +249,7 @@ Class* Parser::parseClass(bool addToExisting)
             token = nextToken();
             wstring funcName = token->string;
 #ifdef DEBUG_PARSER
-            printf("Parser::parseClass: Function: %s\n", funcName.c_str());
+            printf("Parser::parseClass: Function: %ls\n", funcName.c_str());
 #endif
 
             Function* function = parseFunction(clazz);
@@ -330,7 +330,7 @@ Function* Parser::parseFunction(Class* clazz)
     function->setCode(code);
 
 #ifdef DEBUG_PARSER
-    printf("Parser::parseClass: body:\n%s\n", code->toString().c_str());
+    printf("Parser::parseClass: body:\n%ls\n", code->toString().c_str());
 #endif
 
     return function;
@@ -360,12 +360,12 @@ bool Parser::resolveTypes()
                 {
                     VarExpression* varExpr = (VarExpression*)opExpr->left;
 #ifdef DEBUG_PARSER_TYPES
-                    printf("Parser::resolveTypes: resolve: OPER SET: var=%s\n", varExpr->var.c_str());
+                    printf("Parser::resolveTypes: resolve: OPER SET: var=%ls\n", varExpr->var.c_str());
 #endif
                         int varId = varExpr->block->getVarId(varExpr->var);
 #ifdef DEBUG_PARSER_TYPES
                         printf(
-                            "Parser::resolveTypes: var %p: %s, id=%d, type=%d\n",
+                            "Parser::resolveTypes: var %p: %ls, id=%d, type=%d\n",
 varExpr,
                             varExpr->var.c_str(),
                             varId,
@@ -401,7 +401,7 @@ varExpr,
             {
 #ifdef DEBUG_PARSER_TYPES
                 printf(
-                    "Parser::resolveTypes: VAR %p: %s, id=%d\n",
+                    "Parser::resolveTypes: VAR %p: %ls, id=%d\n",
                     varExpr,
                     varExpr->var.c_str(),
                     varId);
@@ -411,7 +411,7 @@ varExpr,
             ValueType varType = varExpr->block->getVarType(varId);
 #ifdef DEBUG_PARSER_TYPES
             printf(
-                "Parser::resolveTypes: VAR %p: %s, id=%d, type=%d\n",
+                "Parser::resolveTypes: VAR %p: %ls, id=%d, type=%d\n",
                 varExpr,
                 varExpr->var.c_str(),
                 varId,
@@ -452,7 +452,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type != TOK_IDENTIFIER)
             {
-                printf("Parser::parseCodeBlock: VAR: Expected variable name, got %s\n", Utils::wstring2string(token->string).c_str());
+                printf("Parser::parseCodeBlock: VAR: Expected variable name, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -1185,7 +1185,7 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             arrExpr->var = id;
             arrExpr->indexExpr = parseExpression(code);
 #ifdef DEBUG_PARSER
-            printf("Parser::parseExpression: -> Array: %s[%s]\n", id.c_str(), arrExpr->indexExpr->toString().c_str());
+            printf("Parser::parseExpression: -> Array: %ls[%ls]\n", id.c_str(), arrExpr->indexExpr->toString().c_str());
 #endif
             expression = arrExpr;
             token = nextToken();
@@ -1366,7 +1366,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
         if (token->type == type)
         {
 #ifdef DEBUG_PARSER
-            printf("Parser::parseList: item: %s\n", token->string.c_str());
+            printf("Parser::parseList: item: %ls\n", token->string.c_str());
 #endif
             list.push_back(token);
         }
