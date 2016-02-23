@@ -52,7 +52,7 @@ class Function
 
     Class* getClass() { return m_class; }
     void setName(std::wstring name) { m_name = name; }
-    std::string getFullName();
+    std::wstring getFullName();
 
     void setStatic(bool isStatic) { m_static = isStatic; }
     bool getStatic() { return m_static; }

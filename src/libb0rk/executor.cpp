@@ -38,13 +38,13 @@
 
 #ifdef DEBUG_EXECUTOR
 #define LOG(_fmt, _args...) \
-    printf("Executor::run: %s:%04" PRIx64 ": 0x%" PRIx64 " " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
+    printf("Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
 #else
 #define LOG(_fmt, _args...)
 #endif
 
 #define ERROR(_fmt, _args...) \
-    printf("Executor::run: %s:%04" PRIx64 ": 0x%" PRIx64 " ERROR: " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
+    printf("Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: " _fmt "\n", frame->code->function->getFullName().c_str(), thisPC, opcode, _args);
 
 using namespace std;
 using namespace b0rk;
@@ -60,7 +60,7 @@ static bool opcodeLoadVar(uint64_t thisPC, uint64_t opcode, Context* context, Fr
 {
     int varId = frame->fetch();
     context->push(frame->localVars[varId]);
-    LOG("LOAD_VAR: v%d: %s", varId, frame->localVars[varId].toString().c_str());
+    LOG("LOAD_VAR: v%d: %ls", varId, frame->localVars[varId].toString().c_str());
     g_loadVarCount++;
     if (varId == 0)
     {
@@ -73,7 +73,7 @@ static bool opcodeStoreVar(uint64_t thisPC, uint64_t opcode, Context* context, F
 {
     int varId = frame->fetch();
     frame->localVars[varId] = context->pop();
-    LOG("STORE_VAR: v%d = %s", varId, frame->localVars[varId].toString().c_str());
+    LOG("STORE_VAR: v%d = %ls", varId, frame->localVars[varId].toString().c_str());
 
     return true;
 }
@@ -82,7 +82,7 @@ static bool opcodeLoadField(uint64_t thisPC, uint64_t opcode, Context* context, 
 {
     Value objValue = context->pop();
     int fieldId = frame->fetch();
-    LOG("LOAD_FIELD: f%d, this=%p (value count=%" PRIu64 ")", fieldId, objValue.object, objValue.object->getClass()->getFieldCount());
+    LOG("LOAD_FIELD: f%d, this=%p (value count=%lu)", fieldId, objValue.object, objValue.object->getClass()->getFieldCount());
     Value result = objValue.object->getValue(fieldId);
     context->push(result);
     return true;
@@ -93,7 +93,7 @@ static bool opcodeLoadFieldNamed(uint64_t thisPC, uint64_t opcode, Context* cont
     Object* nameObj = context->pop().object;
     Value objValue = context->pop();
     wstring varName = String::getString(context, nameObj);
-    LOG("LOAD_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, varName.c_str());
+    LOG("LOAD_FIELD_NAMED: obj=%p, name=%ls\n", objValue.object, varName.c_str());
 
     if (objValue.type == VALUE_OBJECT && objValue.object != NULL)
     {
@@ -104,7 +104,7 @@ static bool opcodeLoadFieldNamed(uint64_t thisPC, uint64_t opcode, Context* cont
         if (id != -1)
         {
 
-            LOG("LOAD_FIELD_NAMED: class=%s, obj=%p, name=%s, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
+            LOG("LOAD_FIELD_NAMED: class=%ls, obj=%p, name=%ls, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
 
             context->push(obj->getValue(id));
         }
@@ -126,7 +126,7 @@ static bool opcodeStoreFieldNamed(uint64_t thisPC, uint64_t opcode, Context* con
     Value objValue = context->pop();
     Value value = context->pop();
     wstring varName = String::getString(context, nameValue);
-    LOG("STORE_FIELD_NAMED: obj=%p, name=%s\n", objValue.object, Utils::wstring2string(varName).c_str());
+    LOG("STORE_FIELD_NAMED: obj=%p, name=%ls\n", objValue.object, varName.c_str());
 
     if (objValue.type == VALUE_OBJECT && objValue.object != NULL)
     {
@@ -136,7 +136,7 @@ static bool opcodeStoreFieldNamed(uint64_t thisPC, uint64_t opcode, Context* con
         int id = clazz->getFieldId(varName);
         if (id != -1)
         {
-            LOG("STORE_FIELD_NAMED: class=%s, obj=%p, name=%s, id=%d\n", clazz->getName().c_str(), objValue.object, Utils::wstring2string(varName).c_str(), id);
+            LOG("STORE_FIELD_NAMED: class=%ls, obj=%p, name=%ls, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
             obj->setValue(id, value);
         }
         else
@@ -159,7 +159,7 @@ static bool opcodeLoadStaticField(uint64_t thisPC, uint64_t opcode, Context* con
 
     Value v = clazz->getStaticField(fieldId);
 
-    LOG("LOAD_STATIC_FIELD: f%d, class=%s, v=%s", fieldId, clazz->getName().c_str(), v.toString().c_str());
+    LOG("LOAD_STATIC_FIELD: f%d, class=%ls, v=%ls", fieldId, clazz->getName().c_str(), v.toString().c_str());
 
     context->push(v);
 
@@ -187,8 +187,8 @@ static bool opcodeLoadArray(uint64_t thisPC, uint64_t opcode, Context* context, 
     Value indexValue = context->pop();
     Value arrayValue = context->pop();
 
-    LOG("STORE_ARRAY: indexValue=%s", indexValue.toString().c_str());
-    LOG("STORE_ARRAY: arrayValue=%s", arrayValue.toString().c_str());
+    LOG("STORE_ARRAY: indexValue=%ls", indexValue.toString().c_str());
+    LOG("STORE_ARRAY: arrayValue=%ls", arrayValue.toString().c_str());
 
     bool res = false;
     if (arrayValue.type == VALUE_OBJECT && arrayValue.object != NULL)
@@ -212,9 +212,9 @@ static bool opcodeStoreArray(uint64_t thisPC, uint64_t opcode, Context* context,
     Value arrayValue = context->pop();
     Value valueValue = context->pop();
 
-    LOG("STORE_ARRAY: indexValue=%s", indexValue.toString().c_str());
-    LOG("STORE_ARRAY: arrayValue=%s", arrayValue.toString().c_str());
-    LOG("STORE_ARRAY: valueValue=%s", valueValue.toString().c_str());
+    LOG("STORE_ARRAY: indexValue=%ls", indexValue.toString().c_str());
+    LOG("STORE_ARRAY: arrayValue=%ls", arrayValue.toString().c_str());
+    LOG("STORE_ARRAY: valueValue=%ls", valueValue.toString().c_str());
 
     bool res = false;
     if (arrayValue.type == VALUE_OBJECT && arrayValue.object != NULL)
@@ -280,7 +280,7 @@ static bool opcodeDup(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
 {
     Value v;
     v = context->pop();
-    LOG("DUP: %s", v.toString().c_str());
+    LOG("DUP: %ls", v.toString().c_str());
     context->push(v);
     context->push(v);
     return true;
@@ -293,7 +293,7 @@ static bool opcodeAdd(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     {
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
-        LOG("ADD OBJECT: class=%s", clazz->getName().c_str());
+        LOG("ADD OBJECT: class=%ls", clazz->getName().c_str());
         Function* addFunc = clazz->findMethod("operator+");
         LOG("ADD OBJECT: add operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
@@ -336,7 +336,7 @@ static bool opcodeSub(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     {
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
-        LOG("SUB OBJECT: class=%s", clazz->getName().c_str());
+        LOG("SUB OBJECT: class=%ls", clazz->getName().c_str());
         Function* addFunc = clazz->findMethod("operator-");
         LOG("SUB OBJECT: sub operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
@@ -374,7 +374,7 @@ static bool opcodeMul(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     {
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
-        LOG("MUL OBJECT: class=%s", clazz->getName().c_str());
+        LOG("MUL OBJECT: class=%ls", clazz->getName().c_str());
         Function* addFunc = clazz->findMethod("operator*");
         LOG("MUL OBJECT: * operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
@@ -417,7 +417,7 @@ static bool opcodeDiv(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     {
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
-        LOG("MUL OBJECT: class=%s", clazz->getName().c_str());
+        LOG("MUL OBJECT: class=%ls", clazz->getName().c_str());
         Function* addFunc = clazz->findMethod("operator/");
         LOG("MUL OBJECT: / operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
@@ -601,7 +601,7 @@ static bool opcodePop(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
 {
 #ifdef DEBUG_EXECUTOR
     Value v = context->pop();
-    LOG("POP: %s", v.toString().c_str());
+    LOG("POP: %ls", v.toString().c_str());
 #else
     context->pop();
 #endif
@@ -631,9 +631,9 @@ static bool opcodeCallNamed(uint64_t thisPC, uint64_t opcode, Context* context, 
     Object* nameObj = context->pop().object;
     Value objValue = context->pop();
     wstring funcName = String::getString(context, nameObj);
-    LOG("CALL_NAMED: obj=%s, name=%s", objValue.toString().c_str(), Utils::wstring2string(funcName).c_str());
+    LOG("CALL_NAMED: obj=%ls, name=%ls", objValue.toString().c_str(), funcName.c_str());
     Object* obj = objValue.object;
-    LOG("CALL_NAMED:  -> obj class=%s, ", obj->getClass()->getName().c_str());
+    LOG("CALL_NAMED:  -> obj class=%ls, ", obj->getClass()->getName().c_str());
 
     if (B0RK_UNLIKELY(obj == NULL))
     {
@@ -662,7 +662,7 @@ static bool opcodeCallNamed(uint64_t thisPC, uint64_t opcode, Context* context, 
     LOG("CALL_NAMED:  -> function=%p", function);
     if (B0RK_UNLIKELY(function == NULL))
     {
-        ERROR("CALL_NAMED: function not found! class=%s, function=%s", Utils::wstring2string(obj->getClass()->getName()).c_str(), Utils::wstring2string(funcName).c_str());
+        ERROR("CALL_NAMED: function not found! class=%ls, function=%ls", obj->getClass()->getName().c_str(), funcName.c_str());
         return false;
     }
 
@@ -691,7 +691,7 @@ static bool opcodeNew(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
 {
     Class* clazz = (Class*)frame->fetch();
     int count = frame->fetch();
-    LOG("NEW: class=%s", clazz->getName().c_str());
+    LOG("NEW: class=%ls", clazz->getName().c_str());
     Object* obj = context->getRuntime()->newObject(context, clazz, count);
     if (B0RK_LIKELY(obj != NULL))
     {
@@ -702,7 +702,7 @@ static bool opcodeNew(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     }
     else
     {
-        ERROR("NEW: Failed to create new object! class=%s\n", Utils::wstring2string(clazz->getName()).c_str());
+        ERROR("NEW: Failed to create new object! class=%ls\n", clazz->getName().c_str());
         return false;
     }
     return true;
@@ -735,7 +735,7 @@ static bool opcodeNewFunction(uint64_t thisPC, uint64_t opcode, Context* context
 static bool opcodeReturn(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value result = context->pop();
-    LOG("RETURN %s", result.toString().c_str());
+    LOG("RETURN %ls", result.toString().c_str());
 
     Value frameCheck = context->pop();
     if (frameCheck.type != VALUE_FRAME || frameCheck.pointer != frame)
@@ -923,9 +923,9 @@ Executor::~Executor()
 
 bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int argCount)
 {
-    string functionName = code->function->getFullName();
+    wstring functionName = code->function->getFullName();
 #ifdef DEBUG_EXECUTOR
-    printf("Executor::run: Entering %s\n", code->function->getFullName().c_str());
+    printf("Executor::run: Entering %ls\n", functionName.c_str());
 #endif
     Frame frame;
     frame.pc = 0;
@@ -1023,7 +1023,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_BG: success = opcodeBG(thisPC, opcode, context, &frame); break;
             case OPCODE_BGE: success = opcodeBGE(thisPC, opcode, context, &frame); break;
             default:
-                fprintf(stderr, "Executor::run: %s:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
+                fprintf(stderr, "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
                 success = false;
         }
 
@@ -1036,7 +1036,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
     //context->getRuntime()->gc();
 
 #ifdef DEBUG_EXECUTOR
-    printf("Executor::run: Leaving %s\n", code->function->getFullName().c_str());
+    printf("Executor::run: Leaving %ls\n", code->function->getFullName().c_str());
 #endif
 
     return success;

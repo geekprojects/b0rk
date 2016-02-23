@@ -21,6 +21,7 @@
 
 #include <b0rk/disassembler.h>
 #include <b0rk/function.h>
+#include <b0rk/utils.h>
 
 #include <sys/stat.h>
 
@@ -87,14 +88,14 @@ bool Disassembler::disassemble(AssembledCode& code)
 {
     int pos = 0;
     mkdir("asm", 0755);
-    string filename = "asm/" + code.function->getFullName() + ".asm";
+    string filename = "asm/" + Utils::wstring2string(code.function->getFullName()) + ".asm";
     FILE* fp = fopen(filename.c_str(), "w");
     if (fp == NULL)
     {
         return false;
     }
 
-    fprintf(fp, "%s:\n", code.function->getFullName().c_str());
+    fprintf(fp, "%ls:\n", code.function->getFullName().c_str());
     while (pos < code.size)
     {
         int opcodePos = pos++;

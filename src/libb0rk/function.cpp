@@ -49,14 +49,14 @@ Function::~Function()
 {
 }
 
-string Function::getFullName()
+wstring Function::getFullName()
 {
-    string name = "";
+    wstring name;
     if (m_class != NULL)
     {
-        name = Utils::wstring2string(m_class->getName()) + "::";
+        name = m_class->getName() + L"::";
     }
-    name += Utils::wstring2string(m_name);
+    name += m_name;
     return name;
 }
 
