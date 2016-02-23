@@ -68,7 +68,7 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
         }
  
 #ifdef DEBUG_STRING
-        printf("String::constructor: str=%s\n", str.c_str());
+        printf("String::constructor: str=%ls\n", str.c_str());
 #endif
         instance->m_nativeObject = new StringNative(instance, str);
     }
@@ -96,14 +96,14 @@ bool StringNative::addOperator(Context* context, int argCount, Value* args, Valu
     {
         rhsStr =  String::getString(context, rhs.object);
 #ifdef DEBUG_STRING
-        printf("String::addOperator: rhs (String): %s\n", rhsStr.c_str());
+        printf("String::addOperator: rhs (String): %ls\n", rhsStr.c_str());
 #endif
     }
     else
     {
         rhsStr = rhs.toString();
 #ifdef DEBUG_STRING
-        printf("String::addOperator: rhs (other): %s\n", rhsStr.c_str());
+        printf("String::addOperator: rhs (other): %ls\n", rhsStr.c_str());
 #endif
     }
 
@@ -169,7 +169,7 @@ Object* String::createString(Context* context, wstring str)
 
     object->m_nativeObject = new StringNative(object, str);
 #ifdef DEBUG_STRING
-    printf("String::createString: str=%s\n", str.c_str());
+    printf("String::createString: str=%ls\n", str.c_str());
 #endif
 
     return object;
