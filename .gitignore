@@ -13,6 +13,11 @@
 # Output Makefiles
 Makefile
 Makefile.in
+b0rk.pc
+
+# Test output
+asm
+test.pnm
 
 # Configure/auto* output
 config.h
