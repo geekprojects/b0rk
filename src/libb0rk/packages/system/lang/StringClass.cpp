@@ -131,7 +131,7 @@ bool StringNative::at(Context* context, int argCount, Value* args, Value& result
     }
 
     Value idx = args[0];
-    char c = m_string.at(idx.i);
+    wchar_t c = m_string.at(idx.i);
 
     result.type = VALUE_INTEGER;
     result.i = c;
