@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include <b0rk/utils.h>
+#include <b0rk/utf8.h>
 
 #include "packages/system/io/File.h"
 #include "packages/system/lang/StringClass.h"
@@ -88,19 +89,27 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
     for (i = 0; i < argCount; i++)
     {
         Value v = args[i];
-        string str;
+        wstring str;
 
         if (v.type == VALUE_OBJECT &&
             v.object != NULL &&
             v.object->getClass()->getName() == L"system.lang.String")
         {
-            str = Utils::wstring2string(String::getString(context, v.object));
+            str = String::getString(context, v.object);
         }
         else
         {
-            str = Utils::wstring2string(v.toString());
+            str = v.toString();
         }
-        ::write(fd, str.c_str(), str.length());
+
+        int j;
+        for (j = 0; j < str.length(); j++)
+        {
+            char out[4];
+            char* end = utf8::append(str[j], out);
+            ::write(fd, out, end - out);
+        }
+//        ::write(fd, str.c_str(), str.length());
     }
 
     result.type = VALUE_VOID;
