@@ -283,10 +283,6 @@ Function* Parser::parseFunction(Class* clazz)
     bool res = parseList(paramTokens, TOK_IDENTIFIER);
     if (!res)
     {
-        if (clazz != NULL)
-        {
-            delete clazz;
-        }
         return NULL;
     }
 
