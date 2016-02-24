@@ -64,10 +64,10 @@ class tests.Mandelbrot
         File.out.writeln(Maths.round(height));
         File.out.writeln(maxIterations);
         var py;
-        for (py = minY; py < maxY; py += step)
+        for (py = minY; py <= maxY - step; py += step)
         {
             var px;
-            for (px = minX; px < maxX; px += step)
+            for (px = minX; px <= maxX - step; px += step)
             {
                 File.out.writeln(iterate(px, py));
             }
