@@ -28,6 +28,7 @@
 #include <b0rk/parser.h>
 #include <b0rk/assembler.h>
 #include <b0rk/executor.h>
+#include <b0rk/utils.h>
 
 using namespace std;
 using namespace b0rk;
@@ -42,15 +43,15 @@ int main(int argc, char** argv)
     Runtime* runtime = new Runtime();
     Context* context = runtime->createContext();
 
-    const char* className = argv[1];
-    Class* clazz = runtime->findClass(context, className);
+    string className = string(argv[1]);
+    Class* clazz = runtime->findClass(context, Utils::string2wstring(className));
     if (clazz == NULL)
     {
-        printf("%s: Unable to find class %s\n", argv[0], className);
+        printf("%s: Unable to find class %s\n", argv[0], className.c_str());
         return 0;
     }
 
-    Function* mainFunc = clazz->findMethod("main");
+    Function* mainFunc = clazz->findMethod(L"main");
     if (mainFunc == NULL)
     {
         printf("%s: No main method found in class\n", argv[0]);

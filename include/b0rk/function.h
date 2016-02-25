@@ -57,7 +57,6 @@ class Function
     void setStatic(bool isStatic) { m_static = isStatic; }
     bool getStatic() { return m_static; }
 
-    int getArgId(std::string arg);
     int getArgId(std::wstring arg);
 
     bool execute(Context* context, Object* clazz, int argCount, Value* argv, Value& result);

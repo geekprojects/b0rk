@@ -60,11 +60,6 @@ wstring Function::getFullName()
     return name;
 }
 
-int Function::getArgId(string arg)
-{
-    return getArgId(Utils::string2wstring(arg));
-}
-
 int Function::getArgId(wstring arg)
 {
     unsigned int i;

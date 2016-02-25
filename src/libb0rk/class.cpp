@@ -82,11 +82,6 @@ void Class::addField(wstring name)
     m_fields.push_back(name);
 }
 
-int Class::getFieldId(string name)
-{
-    return getFieldId(Utils::string2wstring(name));
-}
-
 int Class::getFieldId(wstring name)
 {
     unsigned int i;
@@ -119,11 +114,6 @@ void Class::addStaticField(wstring name)
 size_t Class::getStaticFieldCount()
 {
     return m_staticFields.size();
-}
-
-int Class::getStaticFieldId(string name)
-{
-    return getStaticFieldId(Utils::string2wstring(name));
 }
 
 int Class::getStaticFieldId(wstring name)
@@ -166,11 +156,6 @@ void Class::addMethod(wstring name, Function* function)
 {
     function->setName(name);
     m_methods.insert(make_pair(name, function));
-}
-
-Function* Class::findMethod(string name)
-{
-    return findMethod(Utils::string2wstring(name));
 }
 
 Function* Class::findMethod(wstring name)

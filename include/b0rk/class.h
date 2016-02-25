@@ -62,21 +62,18 @@ class Class
 
     void addField(std::string name);
     void addField(std::wstring name);
-    int getFieldId(std::string name);
     int getFieldId(std::wstring name);
 
     void addStaticField(std::string name);
     void addStaticField(std::wstring name);
-    int getStaticFieldId(std::string name);
     int getStaticFieldId(std::wstring name);
     Value getStaticField(int slot) { return m_staticValues[slot]; }
     void setStaticField(int slot, Value v) { m_staticValues[slot] = v; }
     void initStaticFields();
-    std::vector<std::string>& getStaticFields();
+    std::vector<std::wstring>& getStaticFields();
 
     void addMethod(std::string name, Function* function);
     void addMethod(std::wstring name, Function* function);
-    virtual Function* findMethod(std::string name);
     virtual Function* findMethod(std::wstring name);
 
     virtual bool deleteOnExit() { return true; }

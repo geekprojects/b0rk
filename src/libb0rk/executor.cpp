@@ -294,7 +294,7 @@ static bool opcodeAdd(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
         LOG("ADD OBJECT: class=%ls", clazz->getName().c_str());
-        Function* addFunc = clazz->findMethod("operator+");
+        Function* addFunc = clazz->findMethod(L"operator+");
         LOG("ADD OBJECT: add operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
         if (!res)
@@ -337,7 +337,7 @@ static bool opcodeSub(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
         LOG("SUB OBJECT: class=%ls", clazz->getName().c_str());
-        Function* addFunc = clazz->findMethod("operator-");
+        Function* addFunc = clazz->findMethod(L"operator-");
         LOG("SUB OBJECT: sub operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
         if (!res)
@@ -375,7 +375,7 @@ static bool opcodeMul(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
         LOG("MUL OBJECT: class=%ls", clazz->getName().c_str());
-        Function* addFunc = clazz->findMethod("operator*");
+        Function* addFunc = clazz->findMethod(L"operator*");
         LOG("MUL OBJECT: * operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
         if (!res)
@@ -418,7 +418,7 @@ static bool opcodeDiv(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         // TODO: This should have been figured out by the assembler?
         Class* clazz = v1.object->getClass();
         LOG("MUL OBJECT: class=%ls", clazz->getName().c_str());
-        Function* addFunc = clazz->findMethod("operator/");
+        Function* addFunc = clazz->findMethod(L"operator/");
         LOG("MUL OBJECT: / operator=%p", addFunc);
         bool res = addFunc->execute(context, v1.object, 1);
         if (!res)
@@ -714,7 +714,7 @@ static bool opcodeNewFunction(uint64_t thisPC, uint64_t opcode, Context* context
 
     LOG("NEW_FUNCTION: %p", func);
 
-    Class* clazz = context->getRuntime()->findClass(context, "system.lang.Function", false);
+    Class* clazz = context->getRuntime()->findClass(context, L"system.lang.Function", false);
     LOG("NEW_FUNCTION: Function class=%p", clazz);
 
     Value funcValue;
