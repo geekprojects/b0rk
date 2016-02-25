@@ -48,22 +48,22 @@ File::~File()
 
 bool File::init(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
-    Class* fileClass = context->getRuntime()->findClass(context, "system.io.File");
+    Class* fileClass = context->getRuntime()->findClass(context, L"system.io.File");
     Object* outFile = context->getRuntime()->allocateObject(fileClass);
 
-    int fdId = getFieldId("fileDescriptor");
+    int fdId = getFieldId(L"fileDescriptor");
 
     // stdout
     Value outValue;
-    outValue.type = VALUE_INTEGER;
-    outValue.i = 1;
+    outValue.type = VALUE_POINTER;
+    outValue.pointer = stdout;
     outFile->setValue(fdId, outValue);
 
     Value outObjValue;
     outObjValue.type = VALUE_OBJECT;
     outObjValue.object = outFile;
 
-    int outId = getStaticFieldId("out");
+    int outId = getStaticFieldId(L"out");
     fileClass->setStaticField(outId, outObjValue);
 
     result.type = VALUE_VOID;
@@ -73,16 +73,16 @@ bool File::init(Context* context, Object* instance, int argCount, Value* args, V
 
 bool File::write(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
-    int fd;
+    FILE* fd;
     if (instance != NULL)
     {
-        int fdId = getFieldId("fileDescriptor");
-        fd = instance->getValue(fdId).i;
+        int fdId = getFieldId(L"fileDescriptor");
+        fd = (FILE*)instance->getValue(fdId).pointer;
     }
     else
     {
         // Called statically. Just use stdout
-        fd = 1;
+        fd = stdout;
     }
 
     int i;
@@ -93,7 +93,7 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
 
         if (v.type == VALUE_OBJECT &&
             v.object != NULL &&
-            v.object->getClass()->getName() == L"system.lang.String")
+            v.object->getClass() == context->getRuntime()->getStringClass())
         {
             str = String::getString(context, v.object);
         }
@@ -103,13 +103,13 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
         }
 
         int j;
+        char outbuffer[4];
         for (j = 0; j < str.length(); j++)
         {
-            char out[4];
-            char* end = utf8::append(str[j], out);
-            ::write(fd, out, end - out);
+            char* outpos = outbuffer;
+            utf8::append(str[j], outpos);
+            fwrite(outbuffer, 1, 1, fd);
         }
-//        ::write(fd, str.c_str(), str.length());
     }
 
     result.type = VALUE_VOID;
