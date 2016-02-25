@@ -141,9 +141,7 @@ bool StringNative::at(Context* context, int argCount, Value* args, Value& result
 
 Object* String::createString(Context* context, std::string str)
 {
-    Class* stringClass = context->getRuntime()->findClass(context, "system.lang.String");
-
-    Object* object = context->getRuntime()->allocateObject(stringClass);
+    Object* object = context->getRuntime()->allocateObject(context->getRuntime()->getStringClass());
     if (object == NULL)
     {
         return NULL;
@@ -159,9 +157,7 @@ Object* String::createString(Context* context, std::string str)
 
 Object* String::createString(Context* context, wstring str)
 {
-    Class* stringClass = context->getRuntime()->findClass(context, "system.lang.String");
-
-    Object* object = context->getRuntime()->allocateObject(stringClass);
+    Object* object = context->getRuntime()->allocateObject(context->getRuntime()->getStringClass());
     if (object == NULL)
     {
         return NULL;
@@ -194,7 +190,7 @@ std::wstring String::getString(Context* context, Object* obj)
     {
         return L"INVALID";
     }
-    if (obj->getClass()->getName() != L"system.lang.String")
+    if (obj->getClass() != context->getRuntime()->getStringClass())
     {
         return L"NOTASTRING";
     }

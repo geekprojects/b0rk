@@ -90,7 +90,8 @@ Runtime::Runtime()
     m_objectClass = new ObjectClass();
     addClass(initContext, m_objectClass, true);
     addClass(initContext, new Array(), true);
-    addClass(initContext, new String(), true);
+    m_stringClass = new String();
+    addClass(initContext, m_stringClass, true);
     addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new Maths(), true);
     addClass(initContext, new File(), true);
@@ -144,7 +145,7 @@ bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
 
     clazz->initStaticFields();
 
-    Function* initFunction = clazz->findMethod("<staticinit>");
+    Function* initFunction = clazz->findMethod(L"<staticinit>");
 
     if (initFunction != NULL)
     {
@@ -161,11 +162,6 @@ bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
     }
 
     return true;
-}
-
-Class* Runtime::findClass(Context* context, string name, bool load)
-{
-    return findClass(context, Utils::string2wstring(name), load);
 }
 
 Class* Runtime::findClass(Context* context, wstring name, bool load)
@@ -373,7 +369,7 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
     return obj;
 }
 
-Object* Runtime::newObject(Context* context, string clazzName, int argCount)
+Object* Runtime::newObject(Context* context, wstring clazzName, int argCount)
 {
     Class* clazz = findClass(context, clazzName);
     if (clazz == NULL)
@@ -393,7 +389,7 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount, Value* 
     return newObject(context, clazz, argCount);
 }
 
-Object* Runtime::newObject(Context* context, string clazzName, int argCount, Value* args)
+Object* Runtime::newObject(Context* context, wstring clazzName, int argCount, Value* args)
 {
     Class* clazz = findClass(context, clazzName);
     if (clazz == NULL)

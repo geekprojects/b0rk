@@ -53,6 +53,7 @@ class Runtime
     std::map<std::wstring, Class*> m_classes;
 
     Class* m_objectClass;
+    Class* m_stringClass;
 
     std::vector<Context*> m_contexts;
 
@@ -85,17 +86,19 @@ class Runtime
     ~Runtime();
 
     bool addClass(Context* context, Class* clazz, bool findScript = false);
-    Class* findClass(Context* context, std::string name, bool load = true);
+    //Class* findClass(Context* context, std::string name, bool load = true);
     Class* findClass(Context* context, std::wstring name, bool load = true);
+
     Class* getObjectClass() { return m_objectClass; }
+    Class* getStringClass() { return m_stringClass; }
 
     Context* createContext();
 
     Object* allocateObject(Class* clazz);
     Object* newObject(Context* context, Class* clazz, int argCount);
-    Object* newObject(Context* context, std::string clazz, int argCount);
+    Object* newObject(Context* context, std::wstring clazz, int argCount);
     Object* newObject(Context* context, Class* clazz, int argCount, Value* args);
-    Object* newObject(Context* context, std::string clazz, int argCount, Value* args);
+    Object* newObject(Context* context, std::wstring clazz, int argCount, Value* args);
     bool isObjectValid(Object* obj);
 
     void setAppData(void* data) { m_appData = data; }
