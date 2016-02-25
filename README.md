@@ -20,6 +20,9 @@ Features
 * Simple API of standard classes
 * Reasonable performance
   * Uses intermediate bytecode and it's own VM
+* Unicode internally and reads/writes UTF-8
+  * Use emoji for function names!
+    * (Not that I endorse such things)
 
 
 Requirements
