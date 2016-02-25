@@ -62,6 +62,7 @@ OpDesc opTable[] = {
 #define EXPECT_BRACKET_RIGHT(_name) EXPECT(_name, TOK_BRACKET_RIGHT, ")")
 #define EXPECT_BRACE_LEFT(_name) EXPECT(_name, TOK_BRACE_LEFT, "{")
 #define EXPECT_BRACE_RIGHT(_name) EXPECT(_name, TOK_BRACE_RIGHT, "}")
+#define EXPECT_SEMICOLON(_name) EXPECT(_name, TOK_SEMICOLON, ";")
 
 Parser::Parser(Context* context)
 {
@@ -86,7 +87,6 @@ Token* Parser::peekToken()
 {
     return &(m_tokens[m_pos]);
 }
-
 
 bool Parser::parse(vector<Token> tokens, bool addToExisting)
 {
@@ -445,13 +445,8 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
         }
         else if (token->type == TOK_VAR)
         {
-            token = nextToken();
-            if (token->type != TOK_IDENTIFIER)
-            {
-                printf("Parser::parseCodeBlock: VAR: Expected variable name, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            EXPECT("var", TOK_IDENTIFIER, "identifier");
+
 #ifdef DEBUG_PARSER
             printf("Parser::parseCodeBlock: VAR: name=%ls\n", token->string.c_str());
 #endif
@@ -544,13 +539,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
         }
         else if (token->type == TOK_FOR)
         {
-            token = nextToken();
-            if (token->type != TOK_BRACKET_LEFT)
-            {
-                printf("Parser::parseCodeBlock: FOR: Expected (, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            EXPECT_BRACKET_LEFT("for");
 
             ForExpression* forExpr = new ForExpression(code);
             m_expressions.push_back(forExpr);
@@ -566,13 +555,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             printf("Parser::parseCodeBlock: FOR: Init Expression: %ls\n", forExpr->initExpr->toString().c_str());
 #endif
 
-            token = nextToken();
-            if (token->type != TOK_SEMICOLON)
-            {
-                printf("Parser::parseCodeBlock: FOR: Expected ;, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            EXPECT_SEMICOLON("for");
 
             forExpr->testExpr = parseExpression(code);
             if (forExpr->testExpr == NULL)
@@ -585,13 +568,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             printf("Parser::parseCodeBlock: FOR: Test Expression: %ls\n", forExpr->testExpr->toString().c_str());
 #endif
 
-            token = nextToken();
-            if (token->type != TOK_SEMICOLON)
-            {
-                printf("Parser::parseCodeBlock: FOR: Expected ;, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            EXPECT_SEMICOLON("for");
 
             forExpr->incExpr = parseExpression(code);
             if (forExpr->incExpr == NULL)
@@ -605,22 +582,8 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             printf("Parser::parseCodeBlock: FOR: Inc Expression: %ls\n", forExpr->incExpr->toString().c_str());
 #endif
 
-            token = nextToken();
-            if (token->type != TOK_BRACKET_RIGHT)
-            {
-                printf("Parser::parseCodeBlock: FOR: Expected ), got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
-
-            token = nextToken();
-            if (token->type != TOK_BRACE_LEFT)
-            {
-                printf("Parser::parseCodeBlock: FOR: Expected {, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
-
+            EXPECT_BRACKET_RIGHT("for");
+            EXPECT_BRACE_LEFT("for");
 
 #ifdef DEBUG_PARSER
             printf("Parser::parseCodeBlock: FOR: Parsing Body...\n");
@@ -641,15 +604,10 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
         }
         else if (token->type == TOK_WHILE)
         {
-            token = nextToken();
-            if (token->type != TOK_BRACKET_LEFT)
-            {
-                printf("Parser::parseCodeBlock: WHILE: Expected (, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            // A While expression is just a simple For loop
 
-// A While expression is just a simple For loop
+            EXPECT_BRACKET_LEFT("for");
+
             ForExpression* forExpr = new ForExpression(code);
             m_expressions.push_back(forExpr);
 
@@ -667,21 +625,8 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             printf("Parser::parseCodeBlock: WHILE: Test Expression: %ls\n", forExpr->testExpr->toString().c_str());
 #endif
 
-            token = nextToken();
-            if (token->type != TOK_BRACKET_RIGHT)
-            {
-                printf("Parser::parseCodeBlock: WHILE: Expected ), got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
-
-            token = nextToken();
-            if (token->type != TOK_BRACE_LEFT)
-            {
-                printf("Parser::parseCodeBlock: WHILE: Expected {, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            EXPECT_BRACKET_RIGHT("for");
+            EXPECT_BRACE_LEFT("for");
 
 #ifdef DEBUG_PARSER
             printf("Parser::parseCodeBlock: WHILE: Parsing Body...\n");
@@ -719,12 +664,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 m_pos--;
                 retExpr->returnValue = parseExpression(code);
 
-                token = nextToken();
-                if (token->type != TOK_SEMICOLON)
-                {
-                    printf("Parser::parseCodeBlock: RETURN: Expected ;, got %ls\n", token->string.c_str());
-                    return NULL;
-                }
+                EXPECT_SEMICOLON("return");
             }
         }
         else
@@ -743,13 +683,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             printf("Parser::parseCodeBlock: Expression: %ls\n", expression->toString().c_str());
 #endif
 
-            token = nextToken();
-            if (token->type != TOK_SEMICOLON)
-            {
-                printf("Parser::parseCodeBlock: EXPRESSION: Expected ;, got %ls\n", token->string.c_str());
-                delete code;
-                return NULL;
-            }
+            EXPECT_SEMICOLON("EXPRESSION");
             code->m_code.push_back(expression);
         }
     }
@@ -936,7 +870,9 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
         {
             if (opExpr->left->type == EXPR_DOUBLE && opExpr->right->type == EXPR_DOUBLE)
             {
+#ifdef DEBUG_PARSER
                 fprintf(stderr, "Parser::buildTree: Optmise two Doubles: %ls", opExpr->toString().c_str());
+#endif
                 DoubleExpression* dblExpr = new DoubleExpression(code);
                 double leftd = ((DoubleExpression*)opExpr->left)->d;
                 double rightd = ((DoubleExpression*)opExpr->right)->d;
@@ -957,7 +893,9 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
             }
             else if (opExpr->left->type == EXPR_INTEGER && opExpr->right->type == EXPR_INTEGER)
             {
+#ifdef DEBUG_PARSER
                 fprintf(stderr, "Parser::buildTree: Optmise two Integers: %ls", opExpr->toString().c_str());
+#endif
                 IntegerExpression* intExpr = new IntegerExpression(code);
                 int64_t lefti = ((IntegerExpression*)opExpr->left)->i;
                 int64_t righti = ((IntegerExpression*)opExpr->right)->i;
@@ -1263,49 +1201,6 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
     }
     return expression;
 }
-
-#if 0
-        if (opExpr->left != NULL && opExpr->right != NULL)
-        {
-            if (opExpr->left->type == EXPR_INTEGER && opExpr->right->type == EXPR_INTEGER)
-            {
-#ifdef DEBUG_PARSER
-                printf("Parser::parseExpression: TODO: Integers on both sides, optimise away!\n");
-#endif
-            }
-            else if (opExpr->left->type == EXPR_DOUBLE && opExpr->right->type == EXPR_DOUBLE)
-            {
-                switch (opExpr->operType)
-                {
-                    case OP_MULTIPLY:
-                    {
-                        DoubleExpression* dblExpr = new DoubleExpression(code);
-                        dblExpr->d = ((DoubleExpression*)opExpr->left)->d;
-                        dblExpr->d *= ((DoubleExpression*)opExpr->left)->d;
-                        expression = dblExpr;
-#ifdef DEBUG_PARSER
-                        printf("Parser::parseExpression: Doubles on both sides, optimised! (%0.2f)\n", dblExpr->d);
-#endif
-                    } break;
-                    default:
-#ifdef DEBUG_PARSER
-                        printf("Parser::parseExpression: TODO: Doubles on both sides, optimise away!\n");
-#endif
-                        break;
-                }
-            }
-        }
-
-        expression = opExpr;
-    }
-    else
-    {
-        // Not for us to deal with, then!
-        m_pos--;
-    }
-
-    return expression;
-#endif
 
 bool Parser::parseIdentifier(Identifier& id)
 {
