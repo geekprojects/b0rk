@@ -38,7 +38,7 @@ class Parser
 
     std::vector<Token> m_tokens;
     std::vector<Expression*> m_expressions;
-    std::map<std::string, Class*> m_imports;
+    std::map<std::wstring, Class*> m_imports;
     size_t m_pos;
 
     Token* nextToken();

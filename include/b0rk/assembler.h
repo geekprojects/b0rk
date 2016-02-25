@@ -64,7 +64,7 @@ class Assembler
     bool assembleReference(CodeBlock* block, OperationExpression* expr);
     bool assembleBlock(CodeBlock* block);
 
-    bool isVariable(CodeBlock* block, Object* context, std::string name);
+    bool isVariable(CodeBlock* block, Object* context, std::wstring name);
     bool load(CodeBlock* block, VarExpression* var, OperationExpression* reference);
     bool store(CodeBlock* block, VarExpression* var, OperationExpression* reference);
 

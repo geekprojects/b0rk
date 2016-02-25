@@ -29,14 +29,14 @@
 using namespace std;
 using namespace b0rk;
 
-ScriptFunction::ScriptFunction(Class* clazz, vector<string> args)
+ScriptFunction::ScriptFunction(Class* clazz, vector<wstring> args)
     : Function(clazz, args)
 {
     m_code = NULL;
     m_assembled = false;
 }
 
-ScriptFunction::ScriptFunction(Class* clazz, CodeBlock* code, vector<string> args)
+ScriptFunction::ScriptFunction(Class* clazz, CodeBlock* code, vector<wstring> args)
     : Function(clazz, args)
 {
     m_code = code;

@@ -37,11 +37,11 @@ class Class;
 
 struct Identifier
 {
-    std::vector<std::string> identifier;
-    std::string end();
-    std::string toString();
+    std::vector<std::wstring> identifier;
+    std::wstring end();
+    std::wstring toString();
 
-    static Identifier makeIdentifier(std::string name);
+    static Identifier makeIdentifier(std::wstring name);
 };
 
 enum ExpressionType
@@ -72,21 +72,21 @@ struct Expression
     Expression(CodeBlock* block);
     virtual ~Expression();
 
-    virtual std::string toString() = 0;
+    virtual std::wstring toString() = 0;
 };
 
 struct CallExpression : public Expression
 {
     Class* clazz;
-    std::string function;
+    std::wstring function;
     std::vector<Expression*> parameters;
 
     CallExpression(CodeBlock* block);
     virtual ~CallExpression();
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 
-    std::string argsToString();
+    std::wstring argsToString();
 };
 
 struct NewExpression : public CallExpression
@@ -96,7 +96,7 @@ struct NewExpression : public CallExpression
     NewExpression(CodeBlock* block);
     virtual ~NewExpression() {}
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 enum OpType
@@ -140,7 +140,7 @@ struct OperationExpression : public Expression
 
     void resolveType();
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct IfExpression : public Expression
@@ -152,7 +152,7 @@ struct IfExpression : public Expression
     IfExpression(CodeBlock* block);
     virtual ~IfExpression();
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct ForExpression : public Expression
@@ -165,7 +165,7 @@ struct ForExpression : public Expression
     ForExpression(CodeBlock* block);
     virtual ~ForExpression();
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct ReturnExpression : public Expression
@@ -174,18 +174,18 @@ struct ReturnExpression : public Expression
 
     ReturnExpression(CodeBlock* block);
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct VarExpression : public Expression
 {
     Class* clazz;
-    std::string var;
+    std::wstring var;
 
     VarExpression(CodeBlock* block);
     virtual ~VarExpression() {}
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct ArrayExpression : public VarExpression
@@ -195,17 +195,17 @@ struct ArrayExpression : public VarExpression
     ArrayExpression(CodeBlock* block);
     virtual ~ArrayExpression() {}
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 
 struct StringExpression : public Expression
 {
-    std::string str;
+    std::wstring str;
 
     StringExpression(CodeBlock* block);
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct IntegerExpression : public Expression
@@ -214,7 +214,7 @@ struct IntegerExpression : public Expression
 
     IntegerExpression(CodeBlock* block);
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct DoubleExpression : public Expression
@@ -223,7 +223,7 @@ struct DoubleExpression : public Expression
 
     DoubleExpression(CodeBlock* block);
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 struct FunctionExpression : public Expression
@@ -232,7 +232,7 @@ struct FunctionExpression : public Expression
 
     FunctionExpression(CodeBlock* block);
 
-    virtual std::string toString();
+    virtual std::wstring toString();
 };
 
 };

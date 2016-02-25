@@ -18,52 +18,19 @@
  * along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __BSCRIPT_VALUE_H_
-#define __BSCRIPT_VALUE_H_
+#ifndef __B0RK_UTILS_H_
+#define __B0RK_UTILS_H_
 
-#include <stdint.h>
-#include <string.h>
 #include <string>
 
-namespace b0rk
+namespace b0rk {
+class Utils
 {
-
-struct Object;
-
-enum ValueType
-{
-   VALUE_UNKNOWN,
-   VALUE_VOID,     // 1
-   VALUE_VARIABLE, // 2
-   VALUE_OBJECT,   // 3
-   VALUE_POINTER,  // 4
-   VALUE_INTEGER,  // 5
-   VALUE_DOUBLE,   // 6
-   VALUE_FRAME = 0x1000,
+ public:
+    static std::string wstring2string(std::wstring str);
+    static std::wstring string2wstring(std::string str);
+    static std::wstring string2wstring(const char* str);
 };
-
-struct Value
-{
-    ValueType type;
-    union
-    {
-        Value* variable;
-        Object* object;
-        void* pointer;
-        int64_t i;
-        double d;
-    };
-
-/*
-    Value()
-    {
-        type = VALUE_UNKNOWN;
-    }
-*/
-
-    std::wstring toString();
-};
-
 };
 
 #endif

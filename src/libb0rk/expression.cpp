@@ -21,6 +21,10 @@
 
 #include <b0rk/expression.h>
 #include <b0rk/function.h>
+#include <b0rk/utils.h>
+
+#include <stdio.h>
+#include <wchar.h>
 
 using namespace std;
 using namespace b0rk;
@@ -53,21 +57,21 @@ CallExpression::~CallExpression()
     }
 }
 
-string CallExpression::toString()
+wstring CallExpression::toString()
 {
-    return "CALL " + function + "(" + argsToString() + ")";
+    return L"CALL " + function + L"(" + argsToString() + L")";
 }
 
-string CallExpression::argsToString()
+wstring CallExpression::argsToString()
 {
-    std::string str = "";
+    wstring str;
     bool comma = false;
     std::vector<Expression*>::iterator it;
     for (it = parameters.begin(); it != parameters.end(); it++)
     {
         if (comma)
         {
-            str += ", ";
+            str += L", ";
         }
         comma = true;
         str += (*it)->toString();
@@ -81,9 +85,9 @@ NewExpression::NewExpression(CodeBlock* block)
     type = EXPR_NEW;
 }
 
-std::string NewExpression::toString()
+std::wstring NewExpression::toString()
 {
-    return "NEW " + clazz.toString() + "(" + argsToString() + ")";
+    return L"NEW " + clazz.toString() + L"(" + argsToString() + L")";
 }
 
 OperationExpression::OperationExpression(CodeBlock* block, OpDesc desc)
@@ -169,78 +173,78 @@ void OperationExpression::resolveType()
     }
 }
 
-string OperationExpression::toString()
+wstring OperationExpression::toString()
 {
-    string str = "{";
+    wstring str = L"{";
     switch (operType)
     {
         case OP_SET:
-            str +="SET";
+            str +=L"SET";
             break;
         case OP_ADD:
-            str +="ADD";
+            str +=L"ADD";
             break;
         case OP_SUB:
-            str +="SUB";
+            str +=L"SUB";
             break;
         case OP_MULTIPLY:
-            str +="MULTIPLY";
+            str +=L"MULTIPLY";
             break;
         case OP_LOGICAL_AND:
-            str +="LOGICAL_AND";
+            str +=L"LOGICAL_AND";
             break;
         case OP_INCREMENT:
-            str +="INCREMENT";
+            str +=L"INCREMENT";
             break;
         case OP_LESS_THAN:
-            str +="LESS_THAN";
+            str +=L"LESS_THAN";
             break;
         case OP_REFERENCE:
-            str +="REFERENCE";
+            str +=L"REFERENCE";
             break;
         default:
-            str += "?OP?";
+            str += L"?OP?";
             break;
     }
-    str += "-";
+    str += L"-";
 
     switch (valueType)
     {
         case VALUE_UNKNOWN:
-            str += "UNKNOWN";
+            str += L"UNKNOWN";
             break;
         case VALUE_VOID:
-            str += "VOID";
+            str += L"VOID";
             break;
         case VALUE_VARIABLE:
-            str += "VARIABLE";
+            str += L"VARIABLE";
             break;
         case VALUE_OBJECT:
-            str += "OBJECT";
+            str += L"OBJECT";
             break;
         case VALUE_POINTER:
-            str += "POINTER";
+            str += L"POINTER";
             break;
         case VALUE_INTEGER:
-            str += "INTEGER";
+            str += L"INTEGER";
             break;
         case VALUE_DOUBLE:
-            str += "DOUBLE";
+            str += L"DOUBLE";
             break;
         case VALUE_FRAME:
-            str += "FRAME";
+            str += L"FRAME";
             break;
     }
-    str += ":";
+    str += L":";
     if (left != NULL)
     {
         str += left->toString();
     }
     if (right != NULL)
     {
-        str += "," + right->toString();
+        str += L"," + right->toString();
     }
-    str += "}";
+    str += L"}";
     return str;
 }
 
@@ -261,25 +265,25 @@ IfExpression::~IfExpression()
     }
 }
 
-string IfExpression::toString()
+wstring IfExpression::toString()
 {
-    std::string str = "IF (";
+    wstring str = L"IF (";
     if (testExpr != NULL)
     {
         str += testExpr->toString();
     }
-    str += ") {";
+    str += L") {";
     if (trueBlock != NULL)
     {
         str += trueBlock->toString();
     }
-    str += "}";
+    str += L"}";
 
     if (falseBlock != NULL)
     {
-        str += " ELSE {";
+        str += L" ELSE {";
         str += falseBlock->toString();
-        str += "}";
+        str += L"}";
     }
     return str;
 }
@@ -310,26 +314,26 @@ ForExpression::~ForExpression()
     }
 }
 
-string ForExpression::toString()
+wstring ForExpression::toString()
 {
-    std::string str = "FOR (";
+    wstring str = L"FOR (";
     if (initExpr != NULL)
     {
         str += initExpr->toString();
     }
-    str += " ; ";
+    str += L" ; ";
     if (testExpr != NULL)
     {
         str += testExpr->toString();
     }
-    str += " ; ";
+    str += L" ; ";
     if (incExpr != NULL)
     {
         str += incExpr->toString();
     }
-    str += " )  {";
+    str += L" )  {";
     str += body->toString();
-    str += " }";
+    str += L" }";
     return str;
 }
 
@@ -343,15 +347,15 @@ ReturnExpression::ReturnExpression(CodeBlock* block)
     resultOnStack = false;
 }
 
-string ReturnExpression::toString()
+wstring ReturnExpression::toString()
 {
-    string str = "{RETURN";
+    wstring str = L"{RETURN";
     if (returnValue != NULL)
     {
-        str += ":";
+        str += L":";
         str += returnValue->toString();
     }
-    str += "}";
+    str += L"}";
     return str;
 }
 
@@ -362,9 +366,9 @@ VarExpression::VarExpression(CodeBlock* block)
     clazz = NULL;
 }
 
-string VarExpression::toString()
+wstring VarExpression::toString()
 {
-    return "{VAR:" + var + "}";
+    return L"{VAR:" + var + L"}";
 }
 
 ArrayExpression::ArrayExpression(CodeBlock* block)
@@ -373,9 +377,9 @@ ArrayExpression::ArrayExpression(CodeBlock* block)
     type = EXPR_ARRAY;
 }
 
-string ArrayExpression::toString()
+wstring ArrayExpression::toString()
 {
-    return "{ARRAY:" + var + "[" + indexExpr->toString().c_str() + "]}";
+    return L"{ARRAY:" + var + L"[" + indexExpr->toString().c_str() + L"]}";
 }
 
 StringExpression::StringExpression(CodeBlock* block)
@@ -385,9 +389,9 @@ StringExpression::StringExpression(CodeBlock* block)
     resultOnStack = true;
 }
 
-string StringExpression::toString()
+wstring StringExpression::toString()
 {
-    return "\"" + str + "\"";
+    return L"\"" + str + L"\"";
 }
 
 IntegerExpression::IntegerExpression(CodeBlock* block)
@@ -397,11 +401,11 @@ IntegerExpression::IntegerExpression(CodeBlock* block)
     resultOnStack = true;
 }
 
-string IntegerExpression::toString()
+wstring IntegerExpression::toString()
 {
-    char buffer[256];
-    snprintf(buffer, 256, "{INTEGER:%d}", i);
-    return string(buffer);
+    wchar_t buffer[256];
+    swprintf(buffer, 256, L"{INTEGER:%lld}", i);
+    return wstring(buffer);
 }
 
 DoubleExpression::DoubleExpression(CodeBlock* block)
@@ -411,9 +415,9 @@ DoubleExpression::DoubleExpression(CodeBlock* block)
     resultOnStack = true;
 }
 
-string DoubleExpression::toString()
+wstring DoubleExpression::toString()
 {
-    return "DOUBLE";
+    return L"DOUBLE";
 }
 
 FunctionExpression::FunctionExpression(CodeBlock* block)
@@ -422,10 +426,10 @@ FunctionExpression::FunctionExpression(CodeBlock* block)
     type = EXPR_FUNCTION;
 }
 
-string FunctionExpression::toString()
+wstring FunctionExpression::toString()
 {
-    char buffer[256];
-    snprintf(buffer, 256, "{FUNCTION:%p}", function);
-    return string(buffer);
+    wchar_t buffer[256];
+    swprintf(buffer, 256, L"{FUNCTION:%p}", function);
+    return wstring(buffer);
 }
 

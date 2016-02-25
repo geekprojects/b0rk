@@ -87,7 +87,7 @@ enum TokenType
 struct Token
 {
     TokenType type;
-    std::string string;
+    std::wstring string;
     int i;
     double d;
 };

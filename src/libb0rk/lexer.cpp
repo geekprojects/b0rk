@@ -25,6 +25,8 @@
 #include <ctype.h>
 
 #include <b0rk/lexer.h>
+#include <b0rk/utils.h>
+#include <b0rk/utf8.h>
 
 #undef DEBUG_LEXER
 
@@ -106,9 +108,9 @@ CharType Lexer::chartype(int c)
     }
 }
 
-static bool isIdentifierChar(char c)
+static bool isIdentifierChar(wchar_t c)
 {
-    return isalnum(c) || c == '_';
+    return iswalnum(c) || c == '_' || (c & 0x2600) == 0x2600;
 }
 
 bool Lexer::checkWord(char** pos, SimpleToken* token)
@@ -133,51 +135,84 @@ bool Lexer::checkWord(char** pos, SimpleToken* token)
 bool Lexer::lexer(char* buffer, int length)
 {
     char* pos = buffer;
-    while (*pos != '\0')
-    {
-        char c = *pos;
+    char* end = buffer + length;
 
-        if (c == '/')
+    while (pos < end)
+    {
+        wchar_t cur = utf8::next(pos, end);
+        if (cur == 0)
         {
-            char n = *(pos + 1);
-            if (n == '/')
+            break;
+        }
+
+        wchar_t next = 0;
+        if (pos < end - 1)
+        {
+            next = utf8::peek_next(pos, end);
+        }
+
+#ifdef DEBUG_LEXER
+        printf("Lexer::lexer: cur=%d, next=%d\n", cur, next);
+#endif
+
+        if (cur == '/')
+        {
+#ifdef DEBUG_LEXER
+            printf("Lexer::lexer: Comment? n=%d (%c)\n", next, next);
+#endif
+            if (next == '/')
             {
-                pos += 2;
-                while (*pos != '\n' && *pos != '\r' && *pos != '\0')
+                // // style comment
+                utf8::next(pos, end);
+                while (true)
                 {
-                    pos++;
+                    next = utf8::peek_next(pos, end);
+                    if (next == '\n' || next == '\r' || next == '\0')
+                    {
+                        break;
+                    }
+                    utf8::next(pos, end);
                 }
                 continue;
             }
-            else if (n == '*')
+            else if (next == '*')
             {
-                while (*pos != '\0' && !(*pos == '*' && *(pos + 1) == '/'))
+                // /* style comment */
+                utf8::next(pos, end);
+                while (true)
                 {
-                    pos++;
-                }
-
-                if (*pos == '*' && *(pos + 1) == '/')
-                {
-                    pos += 2;
+                    next = utf8::peek_next(pos, end);
+                    if (next == '*')
+                    {
+                        utf8::next(pos, end);
+                        next = utf8::peek_next(pos, end);
+                        if (next == '/')
+                        {
+                            utf8::next(pos, end);
+                            break;
+                        }
+                    }
+                    else if (next == '\0')
+                    {
+                        break;
+                    }
+                    utf8::next(pos, end);
                 }
                 continue;
             }
         }
 
-        if (isspace(c))
+        if (iswspace(cur))
         {
             // Skip whitespace
-            // TODO: Check whether we're in a string
-            pos++;
         }
-        else if (isdigit(c) || (c == '-' && isdigit(*(pos + 1))))
+        else if (iswdigit(cur) || (cur == '-' && iswdigit(next)))
         {
-            string str = "";
+            wstring str;
             bool dot = false;
             while (true)
             {
-                char c = *pos;
-                if (c == '-')
+                if (cur == '-')
                 {
                     if (str.length() > 0)
                     {
@@ -186,29 +221,30 @@ bool Lexer::lexer(char* buffer, int length)
                     }
                     str += '-';
                 }
-                else if (c == '.' && dot == false)
+                else if (cur == '.' && dot == false)
                 {
                     str += '.';
                     dot = true;
                 }
-                else if (isdigit(c))
+                else if (iswdigit(cur))
                 {
-                    str += c;
+                    str += cur;
                 }
                 else
                 {
+                    utf8::prior(pos, end);
                     break;
                 }
-                pos++;
+                cur = utf8::next(pos, end);
             }
 #ifdef DEBUG_LEXER
-            printf("Lexer: found number: %s\n", str.c_str());
+            printf("Lexer: found number: %ls\n", str.c_str());
 #endif
 
             Token token;
             if (dot)
             {
-                token.d = atof(str.c_str());
+                token.d = atof(Utils::wstring2string(str).c_str());
                 token.type = TOK_DOUBLE;
 #ifdef DEBUG_LEXER
                 printf("Lexer: found number:  -> double: %0.2f\n", token.d);
@@ -216,7 +252,7 @@ bool Lexer::lexer(char* buffer, int length)
             }
             else
             {
-                token.i = atoi(str.c_str());
+                token.i = atoi(Utils::wstring2string(str).c_str());
                 token.type = TOK_INTEGER;
 #ifdef DEBUG_LEXER
                 printf("Lexer: found number:  -> int: %d\n", token.i);
@@ -224,37 +260,42 @@ bool Lexer::lexer(char* buffer, int length)
             }
             m_tokens.push_back(token);
         }
-        else if (c == '"')
+        else if (cur == '"')
         {
-            string str = "";
-            pos++;
-            while (*pos != '\0')
+#ifdef DEBUG_LEXER
+            printf("Lexer: Reading string...\n");
+#endif
+            wstring str;
+            while (pos < end)
             {
-                char strc = *(pos++);
-                if (strc == '\\')
+                cur = utf8::next(pos, end);
+#ifdef DEBUG_LEXER
+            wprintf(L"Lexer: String: cur=0x%x %lc\n", cur, cur);
+#endif
+                if (cur == '\\')
                 {
-                    strc = *(pos++);
-                    if (strc == 'n')
+                    cur = utf8::next(pos, end);
+                    if (cur == 'n')
                     {
-                        str += "\n";
+                        str += '\n';
                     }
                     else
                     {
-                        printf("Lexer: Unhandled backslash character: \\%c\n", strc);
+                        printf("Lexer: Unhandled backslash character: \\%lc\n", cur);
                         return false;
                     }
                 }
-                else if (strc == '\"')
+                else if (cur == '\"')
                 {
                     break;
                 }
                 else
                 {
-                    str += strc;
+                    str += cur;
                 }
             }
 #ifdef DEBUG_LEXER
-            printf("Lexer: Found String: %s\n", str.c_str());
+            printf("Lexer: Found String: %ls\n", str.c_str());
 #endif
 
             Token token;
@@ -267,6 +308,7 @@ bool Lexer::lexer(char* buffer, int length)
         {
             bool found = false;
             unsigned int i;
+            utf8::prior(pos, buffer);
             for (i = 0; i < sizeof(tokenTable) / sizeof(SimpleToken); i++)
             {
                 if (checkWord(&pos, &(tokenTable[i])))
@@ -276,7 +318,7 @@ bool Lexer::lexer(char* buffer, int length)
 #endif
                     Token token;
                     token.type = tokenTable[i].token;
-                    token.string = tokenTable[i].str;
+                    token.string = Utils::string2wstring(tokenTable[i].str);
                     m_tokens.push_back(token);
                     found = true;
                     break;
@@ -285,15 +327,24 @@ bool Lexer::lexer(char* buffer, int length)
 
             if (!found)
             {
-                if (isalpha(c))
+                utf8::next(pos, end);
+                if (isIdentifierChar(cur) && !iswdigit(cur))
                 {
-                    string str = "";
-                    while (isIdentifierChar(*pos))
+                    wstring str;
+                    str += cur;
+
+                    while (pos < end)
                     {
-                        str += *(pos++);
+                        cur = utf8::peek_next(pos, end);
+                        if (!isIdentifierChar(cur))
+                        {
+                            break;
+                        }
+                        utf8::next(pos, end);
+                        str += cur;
                     }
 #ifdef DEBUG_LEXER
-                    printf("Lexer: found Identifier: %s\n", str.c_str());
+                    printf("Lexer: found Identifier: %ls\n", str.c_str());
 #endif
                     Token token;
                     token.type = TOK_IDENTIFIER;

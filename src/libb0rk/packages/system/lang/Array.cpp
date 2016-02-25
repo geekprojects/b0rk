@@ -67,11 +67,11 @@ ArrayContainer* Array::getContainer(Object* array)
 bool Array::load(Object* array, Value index, Value& value)
 {
     ArrayContainer* ac = getContainer(array);
-    string indexStr = index.toString();
-    map<string, Value>::iterator it = ac->array.find(index.toString());
+    wstring indexStr = index.toString();
+    map<wstring, Value>::iterator it = ac->array.find(index.toString());
     if (it == ac->array.end())
     {
-        printf("Array::load: %p[%s]: Not found!\n", array, index.toString().c_str());
+        printf("Array::load: %p[%ls]: Not found!\n", array, index.toString().c_str());
         value.type = VALUE_VOID;
         value.i = 0;
         return true;
@@ -83,7 +83,7 @@ bool Array::load(Object* array, Value index, Value& value)
 bool Array::store(Object* array, Value index, Value value)
 {
     ArrayContainer* ac = getContainer(array);
-    ac->array.insert(make_pair( index.toString(), value));
+    ac->array.insert(make_pair(index.toString(), value));
     return true;
 }
 

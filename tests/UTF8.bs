@@ -18,32 +18,35 @@
  *  along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-#include "packages/system/lang/Object.h"
-
-using namespace std;
-using namespace b0rk;
-
-ObjectClass::ObjectClass() : Class(NULL, "system.lang.Object")
+/*
+ * Simple String allocation and addition test
+ */
+class tests.UTF8
 {
-    addField("ObjectClass");
+    function ☺() static
+    {
+        var i;
+        for (i = 0; i < 10; i++)
+        {
+            system.io.File.out.write("☺");
+        }
+        system.io.File.out.writeln("");
+    }
 
-    addMethod("toString", new NativeFunction(this, (nativeFunction_t)&ObjectClass::toString));
-}
+    function main() static
+    {
+        ☺();
 
-ObjectClass::~ObjectClass()
-{
-}
+        // Russian - 56 characters
+        var utf8_1="В чащах юга жил бы цитрус? Да, но фальшивый экземпляр!";
+        system.io.File.out.writeln("UTF8 1: length: " + utf8_1.length());
+        system.io.File.out.writeln("UTF8 1: " + utf8_1);
 
-bool ObjectClass::toString(Context* context, Object* instance, int argCount, Value* args, Value& result)
-{
-    // No result
-    result.type = VALUE_VOID;
-
-    return true;
+        var i;
+        for (i = 0; i < utf8_1.length(); i++)
+        {
+            system.io.File.out.writeln(("char " + i) + " = " + utf8_1.at(i));
+        }
+    }
 }
 

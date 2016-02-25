@@ -18,46 +18,43 @@
  *  along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
 #include <b0rk/utils.h>
 
-#include "packages/system/lang/Function.h"
+#include <wchar.h>
 
 using namespace std;
 using namespace b0rk;
 
-FunctionClass::FunctionClass() : Class(NULL, "system.lang.Function")
+string Utils::wstring2string(wstring str)
 {
-    addField("function");
-    addMethod("Function", new NativeFunction(this, (nativeFunction_t)&FunctionClass::constructor));
-}
-
-FunctionClass::~FunctionClass()
-{
-}
-
-bool FunctionClass::constructor(Context* context, Object* instance, int argCount, Value* args, Value& result)
-{
-    Value funcValue = args[0];
-
-    instance->setValue(0, funcValue);
-
-    result.type = VALUE_VOID;
-
-    return true;
-}
-
-Function* FunctionClass::getFunction(Object* funcObj)
-{
-    if (funcObj != NULL &&
-        funcObj->getClass()->getName() == L"system.lang.Function")
+    string out;
+    unsigned int i;
+    for (i = 0; i < str.length(); i++)
     {
-        return (Function*)(funcObj->getValue(0)).object;
+        out += str[i];
     }
-    return NULL;
+    return out;
+}
+
+wstring Utils::string2wstring(string str)
+{
+    wstring out;
+    unsigned int i;
+    for (i = 0; i < str.length(); i++)
+    {
+        out += (char)str[i];
+    }
+    return out;
+}
+
+wstring Utils::string2wstring(const char* str)
+{
+    wstring out;
+    unsigned int i;
+    for (i = 0; str[i] != 0; i++)
+    {
+        out += str[i];
+    }
+    return out;
 }
 

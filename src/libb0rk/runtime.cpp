@@ -29,6 +29,7 @@
 #include <b0rk/lexer.h>
 #include <b0rk/parser.h>
 #include <b0rk/compiler.h>
+#include <b0rk/utils.h>
 
 #include "packages/system/lang/Object.h"
 #include "packages/system/lang/Array.h"
@@ -61,8 +62,8 @@ uint64_t getTimestamp()
 Runtime::Runtime()
 {
     m_objectClass = NULL;
-    m_classpath.push_back(".");
-    m_classpath.push_back(DATA_PATH "/packages");
+    m_classpath.push_back(L".");
+    m_classpath.push_back(DATA_PATH L"/packages");
 
     m_newObjects = 0;
     m_newBytes = 0;
@@ -89,7 +90,8 @@ Runtime::Runtime()
     m_objectClass = new ObjectClass();
     addClass(initContext, m_objectClass, true);
     addClass(initContext, new Array(), true);
-    addClass(initContext, new String(), true);
+    m_stringClass = new String();
+    addClass(initContext, m_stringClass, true);
     addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new Maths(), true);
     addClass(initContext, new File(), true);
@@ -104,7 +106,7 @@ Runtime::~Runtime()
     gcStats();
 
     // Get rid of classes
-    map<std::string, Class*>::iterator it;
+    map<wstring, Class*>::iterator it;
     for (it = m_classes.begin(); it != m_classes.end(); it++)
     {
         Class* clazz = it->second;
@@ -130,7 +132,7 @@ bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
     Class* existing = findClass(context, clazz->getName(), false);
     if (existing != NULL)
     {
-        printf("Runtime::addClass: Class already loaded: %s\n", clazz->getName().c_str());
+        printf("Runtime::addClass: Class already loaded: %ls\n", clazz->getName().c_str());
         return false;
     }
 
@@ -143,7 +145,7 @@ bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
 
     clazz->initStaticFields();
 
-    Function* initFunction = clazz->findMethod("<staticinit>");
+    Function* initFunction = clazz->findMethod(L"<staticinit>");
 
     if (initFunction != NULL)
     {
@@ -162,9 +164,9 @@ bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
     return true;
 }
 
-Class* Runtime::findClass(Context* context, string name, bool load)
+Class* Runtime::findClass(Context* context, wstring name, bool load)
 {
-    map<string, Class*>::iterator it;
+    map<wstring, Class*>::iterator it;
     it = m_classes.find(name);
     if (it != m_classes.end())
     {
@@ -178,9 +180,9 @@ Class* Runtime::findClass(Context* context, string name, bool load)
     return NULL;
 }
 
-Class* Runtime::loadClass(Context* context, string name, bool addToExisting)
+Class* Runtime::loadClass(Context* context, wstring name, bool addToExisting)
 {
-    string path = "";
+    wstring path;
     size_t i;
     for (i = 0; i < name.length(); i++)
     {
@@ -191,19 +193,19 @@ Class* Runtime::loadClass(Context* context, string name, bool addToExisting)
         }
         path += c;
     }
-    path += ".bs";
+    path += L".bs";
 
 #if 0
     fprintf(stderr, "Runtime::loadClass: Attempting to load class %s from file: %s\n", name.c_str(), path.c_str());
 #endif
 
     FILE* fp = NULL;
-    vector<string>::iterator cpit;
+    vector<wstring>::iterator cpit;
 
     for (cpit = m_classpath.begin(); cpit != m_classpath.end(); cpit++)
     {
-        string cppath = *cpit + "/" + path;
-        fp = fopen(cppath.c_str(), "r");
+        wstring cppath = *cpit + L"/" + path;
+        fp = fopen(Utils::wstring2string(cppath).c_str(), "r");
 #if 0
         fprintf(stderr, "Runtime::loadClass: %s: %p\n", cppath.c_str(), fp);
 #endif
@@ -244,14 +246,14 @@ Class* Runtime::loadClass(Context* context, string name, bool addToExisting)
         return 0;
     }
 
-    map<string, Class*>::iterator it;
+    map<wstring, Class*>::iterator it;
     it = m_classes.find(name);
     if (it != m_classes.end())
     {
         return it->second;
     }
 
-    printf("Runtime::loadClass: ERROR: class %s not found in file: %s\n", name.c_str(), path.c_str());
+    printf("Runtime::loadClass: ERROR: class %ls not found in file: %ls\n", name.c_str(), path.c_str());
 
     return NULL;
 }
@@ -367,7 +369,7 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
     return obj;
 }
 
-Object* Runtime::newObject(Context* context, string clazzName, int argCount)
+Object* Runtime::newObject(Context* context, wstring clazzName, int argCount)
 {
     Class* clazz = findClass(context, clazzName);
     if (clazz == NULL)
@@ -387,7 +389,7 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount, Value* 
     return newObject(context, clazz, argCount);
 }
 
-Object* Runtime::newObject(Context* context, string clazzName, int argCount, Value* args)
+Object* Runtime::newObject(Context* context, wstring clazzName, int argCount, Value* args)
 {
     Class* clazz = findClass(context, clazzName);
     if (clazz == NULL)
@@ -415,7 +417,7 @@ bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int a
 
     // The constructor should be named after the
     // last part of the class name
-    string ctorName = clazz->getName();
+    wstring ctorName = clazz->getName();
     size_t pos = ctorName.rfind('.');
     if (pos != string::npos)
     {
@@ -467,7 +469,7 @@ void Runtime::gc()
     {
 
         // Mark objects from static fields
-        map<string, Class*>::iterator it;
+        map<wstring, Class*>::iterator it;
         for (it = m_classes.begin(); it != m_classes.end(); it++)
         {
             unsigned int i;

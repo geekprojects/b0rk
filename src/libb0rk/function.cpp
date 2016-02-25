@@ -24,6 +24,7 @@
 #include <math.h>
 
 #include <b0rk/function.h>
+#include <b0rk/utils.h>
 #include "packages/system/lang/StringClass.h"
 
 using namespace std;
@@ -31,14 +32,14 @@ using namespace b0rk;
 
 Function::Function(Class* clazz)
 {
-    m_name = "<anonymous>";
+    m_name = L"<anonymous>";
     m_class = clazz;
     m_static = false;
 }
 
-Function::Function(Class* clazz, vector<string> args)
+Function::Function(Class* clazz, vector<wstring> args)
 {
-    m_name = "<anonymous>";
+    m_name = L"<anonymous>";
     m_class = clazz;
     m_args = args;
     m_static = false;
@@ -48,18 +49,18 @@ Function::~Function()
 {
 }
 
-string Function::getFullName()
+wstring Function::getFullName()
 {
-    string name = "";
+    wstring name;
     if (m_class != NULL)
     {
-        name = m_class->getName() + "::";
+        name = m_class->getName() + L"::";
     }
     name += m_name;
     return name;
 }
 
-int Function::getArgId(string arg)
+int Function::getArgId(wstring arg)
 {
     unsigned int i;
     for (i = 0; i < m_args.size(); i++)

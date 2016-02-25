@@ -26,6 +26,7 @@
 #include <stdlib.h>
 
 #include <b0rk/parser.h>
+#include <b0rk/utils.h>
 
 using namespace std;
 using namespace b0rk;
@@ -52,7 +53,7 @@ OpDesc opTable[] = {
     token = nextToken(); \
     if (token->type != _expectType) \
     { \
-        printf("%s: " _name ": Expected " _expectStr ", got %s\n", __PRETTY_FUNCTION__, token->string.c_str()); \
+        printf("%s: " _name ": Expected " _expectStr ", got %ls\n", __PRETTY_FUNCTION__, token->string.c_str()); \
         delete code; \
         return NULL; \
     }
@@ -115,15 +116,15 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
                 return false;
             }
 
-            string end = id.end();
+            wstring end = id.end();
             Class* clazz = m_context->getRuntime()->findClass(m_context, id.toString(), true);
 
 #ifdef DEBUG_PARSER
-            printf("Parser::parser: import: %s: %s -> %p\n", id.toString().c_str(), end.c_str(), clazz);
+            printf("Parser::parser: import: %ls: %ls -> %p\n", id.toString().c_str(), end.c_str(), clazz);
 #endif
             if (clazz == NULL)
             {
-                printf("Parser::parser: import: Imported class not found! %s\n", id.toString().c_str());
+                printf("Parser::parser: import: Imported class not found! %ls\n", id.toString().c_str());
                 return false;
             }
             m_imports.insert(make_pair(end, clazz));
@@ -131,13 +132,13 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
             {
-                printf("Parser::parser: ERROR: Expected ;, got %s\n", token->string.c_str());
+                printf("Parser::parser: ERROR: Expected ;, got %ls\n", token->string.c_str());
                 return false;
             }
         }
         else
         {
-            printf("Parser::parser: ERROR: Unexpected symbol: %s (%d)\n", token->string.c_str(), token->type);
+            printf("Parser::parser: ERROR: Unexpected symbol: %ls (%d)\n", token->string.c_str(), token->type);
             return false;
         }
     }
@@ -158,7 +159,7 @@ Class* Parser::parseClass(bool addToExisting)
         return NULL;
     }
 
-    string name = classId.toString();
+    wstring name = classId.toString();
     Class* superClass = NULL;
 
     token = nextToken();
@@ -174,11 +175,11 @@ Class* Parser::parseClass(bool addToExisting)
 
         superClass = m_context->getRuntime()->findClass(m_context, superClassId.toString(), true);
 #ifdef DEBUG_PARSER
-        printf("Parser::parseClass: Class extends: %s: %p\n", token->string.c_str(), superClass);
+        printf("Parser::parseClass: Class extends: %ls: %p\n", token->string.c_str(), superClass);
 #endif
         if (superClass == NULL)
         {
-            printf("Parser::parseClass: Unable to find super class: %s\n", token->string.c_str());
+            printf("Parser::parseClass: Unable to find super class: %ls\n", token->string.c_str());
             return NULL;
         }
 
@@ -199,7 +200,7 @@ Class* Parser::parseClass(bool addToExisting)
     }
 
 #ifdef DEBUG_PARSER
-    printf("Parser::parseClass: Class name: %s\n", name.c_str());
+    printf("Parser::parseClass: Class name: %ls\n", name.c_str());
 #endif
 
     bool existing = false;
@@ -229,9 +230,9 @@ Class* Parser::parseClass(bool addToExisting)
         else if (token->type == TOK_VAR)
         {
             token = nextToken();
-            string varName = token->string;
+            wstring varName = token->string;
 #ifdef DEBUG_PARSER
-            printf("Parser::parseClass: Variable: %s\n", varName.c_str());
+            printf("Parser::parseClass: Variable: %ls\n", varName.c_str());
 #endif
             clazz->addField(varName);
 
@@ -246,9 +247,9 @@ Class* Parser::parseClass(bool addToExisting)
         else if (token->type == TOK_FUNCTION)
         {
             token = nextToken();
-            string funcName = token->string;
+            wstring funcName = token->string;
 #ifdef DEBUG_PARSER
-            printf("Parser::parseClass: Function: %s\n", funcName.c_str());
+            printf("Parser::parseClass: Function: %ls\n", funcName.c_str());
 #endif
 
             Function* function = parseFunction(clazz);
@@ -262,7 +263,7 @@ Class* Parser::parseClass(bool addToExisting)
         }
         else
         {
-            printf("Parser::parseClass: ERROR: Unexpected token: %s\n", token->string.c_str());
+            printf("Parser::parseClass: ERROR: Unexpected token: %s\n", Utils::wstring2string(token->string).c_str());
             delete clazz;
             return NULL;
         }
@@ -282,20 +283,16 @@ Function* Parser::parseFunction(Class* clazz)
     bool res = parseList(paramTokens, TOK_IDENTIFIER);
     if (!res)
     {
-        if (clazz != NULL)
-        {
-            delete clazz;
-        }
         return NULL;
     }
 
-    vector<string> args;
+    vector<wstring> args;
     vector<Token*>::iterator it;
     for (it = paramTokens.begin(); it != paramTokens.end(); it++)
     {
         args.push_back((*it)->string);
 #ifdef DEBUG_PARSER
-        printf("Parser::parseClass: Function: arg: %s\n", (*it)->string.c_str());
+        printf("Parser::parseClass: Function: arg: %ls\n", (*it)->string.c_str());
 #endif
     }
 
@@ -329,7 +326,7 @@ Function* Parser::parseFunction(Class* clazz)
     function->setCode(code);
 
 #ifdef DEBUG_PARSER
-    printf("Parser::parseClass: body:\n%s\n", code->toString().c_str());
+    printf("Parser::parseClass: body:\n%ls\n", code->toString().c_str());
 #endif
 
     return function;
@@ -359,12 +356,12 @@ bool Parser::resolveTypes()
                 {
                     VarExpression* varExpr = (VarExpression*)opExpr->left;
 #ifdef DEBUG_PARSER_TYPES
-                    printf("Parser::resolveTypes: resolve: OPER SET: var=%s\n", varExpr->var.c_str());
+                    printf("Parser::resolveTypes: resolve: OPER SET: var=%ls\n", varExpr->var.c_str());
 #endif
                         int varId = varExpr->block->getVarId(varExpr->var);
 #ifdef DEBUG_PARSER_TYPES
                         printf(
-                            "Parser::resolveTypes: var %p: %s, id=%d, type=%d\n",
+                            "Parser::resolveTypes: var %p: %ls, id=%d, type=%d\n",
 varExpr,
                             varExpr->var.c_str(),
                             varId,
@@ -400,7 +397,7 @@ varExpr,
             {
 #ifdef DEBUG_PARSER_TYPES
                 printf(
-                    "Parser::resolveTypes: VAR %p: %s, id=%d\n",
+                    "Parser::resolveTypes: VAR %p: %ls, id=%d\n",
                     varExpr,
                     varExpr->var.c_str(),
                     varId);
@@ -410,7 +407,7 @@ varExpr,
             ValueType varType = varExpr->block->getVarType(varId);
 #ifdef DEBUG_PARSER_TYPES
             printf(
-                "Parser::resolveTypes: VAR %p: %s, id=%d, type=%d\n",
+                "Parser::resolveTypes: VAR %p: %ls, id=%d, type=%d\n",
                 varExpr,
                 varExpr->var.c_str(),
                 varId,
@@ -451,12 +448,12 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type != TOK_IDENTIFIER)
             {
-                printf("Parser::parseCodeBlock: VAR: Expected variable name, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: VAR: Expected variable name, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
 #ifdef DEBUG_PARSER
-            printf("Parser::parseCodeBlock: VAR: name=%s\n", token->string.c_str());
+            printf("Parser::parseCodeBlock: VAR: name=%ls\n", token->string.c_str());
 #endif
             code->m_vars.push_back(token->string);
 
@@ -483,7 +480,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             }
             if (token->type != TOK_SEMICOLON)
             {
-                printf("Parser::parseCodeBlock: VAR: Expected ;, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: VAR: Expected ;, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -520,7 +517,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 token = nextToken();
                 if (token->type != TOK_IF && token->type != TOK_BRACE_LEFT)
                 {
-                    printf("%s: IF ELSE: Expected if or {, got %s\n", __PRETTY_FUNCTION__, token->string.c_str());
+                    printf("%s: IF ELSE: Expected if or {, got %ls\n", __PRETTY_FUNCTION__, token->string.c_str());
                     delete code;
                     return NULL;
                 }
@@ -550,7 +547,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type != TOK_BRACKET_LEFT)
             {
-                printf("Parser::parseCodeBlock: FOR: Expected (, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: FOR: Expected (, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -566,13 +563,13 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             }
             forExpr->initExpr->parent = forExpr;
 #ifdef DEBUG_PARSER
-            printf("Parser::parseCodeBlock: FOR: Init Expression: %s\n", forExpr->initExpr->toString().c_str());
+            printf("Parser::parseCodeBlock: FOR: Init Expression: %ls\n", forExpr->initExpr->toString().c_str());
 #endif
 
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
             {
-                printf("Parser::parseCodeBlock: FOR: Expected ;, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: FOR: Expected ;, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -585,13 +582,13 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             }
             forExpr->testExpr->parent = forExpr;
 #ifdef DEBUG_PARSER
-            printf("Parser::parseCodeBlock: FOR: Test Expression: %s\n", forExpr->testExpr->toString().c_str());
+            printf("Parser::parseCodeBlock: FOR: Test Expression: %ls\n", forExpr->testExpr->toString().c_str());
 #endif
 
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
             {
-                printf("Parser::parseCodeBlock: FOR: Expected ;, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: FOR: Expected ;, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -605,13 +602,13 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             forExpr->incExpr->parent = forExpr;
 
 #ifdef DEBUG_PARSER
-            printf("Parser::parseCodeBlock: FOR: Inc Expression: %s\n", forExpr->incExpr->toString().c_str());
+            printf("Parser::parseCodeBlock: FOR: Inc Expression: %ls\n", forExpr->incExpr->toString().c_str());
 #endif
 
             token = nextToken();
             if (token->type != TOK_BRACKET_RIGHT)
             {
-                printf("Parser::parseCodeBlock: FOR: Expected ), got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: FOR: Expected ), got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -619,7 +616,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type != TOK_BRACE_LEFT)
             {
-                printf("Parser::parseCodeBlock: FOR: Expected {, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: FOR: Expected {, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -647,7 +644,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type != TOK_BRACKET_LEFT)
             {
-                printf("Parser::parseCodeBlock: WHILE: Expected (, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: WHILE: Expected (, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -667,13 +664,13 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             }
             forExpr->testExpr->parent = forExpr;
 #ifdef DEBUG_PARSER
-            printf("Parser::parseCodeBlock: WHILE: Test Expression: %s\n", forExpr->testExpr->toString().c_str());
+            printf("Parser::parseCodeBlock: WHILE: Test Expression: %ls\n", forExpr->testExpr->toString().c_str());
 #endif
 
             token = nextToken();
             if (token->type != TOK_BRACKET_RIGHT)
             {
-                printf("Parser::parseCodeBlock: WHILE: Expected ), got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: WHILE: Expected ), got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -681,7 +678,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             token = nextToken();
             if (token->type != TOK_BRACE_LEFT)
             {
-                printf("Parser::parseCodeBlock: WHILE: Expected {, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: WHILE: Expected {, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -725,7 +722,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 token = nextToken();
                 if (token->type != TOK_SEMICOLON)
                 {
-                    printf("Parser::parseCodeBlock: RETURN: Expected ;, got %s\n", token->string.c_str());
+                    printf("Parser::parseCodeBlock: RETURN: Expected ;, got %ls\n", token->string.c_str());
                     return NULL;
                 }
             }
@@ -743,13 +740,13 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 return NULL;
             }
 #ifdef DEBUG_PARSER
-            printf("Parser::parseCodeBlock: Expression: %s\n", expression->toString().c_str());
+            printf("Parser::parseCodeBlock: Expression: %ls\n", expression->toString().c_str());
 #endif
 
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
             {
-                printf("Parser::parseCodeBlock: EXPRESSION: Expected ;, got %s\n", token->string.c_str());
+                printf("Parser::parseCodeBlock: EXPRESSION: Expected ;, got %ls\n", token->string.c_str());
                 delete code;
                 return NULL;
             }
@@ -774,7 +771,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
     {
         Token* token = nextToken();
 #ifdef DEBUG_PARSER
-        printf("Parser::parseExpression: token: %s\n", token->string.c_str());
+        printf("Parser::parseExpression: token: %ls\n", token->string.c_str());
 #endif
 
         if (token->type == TOK_BRACKET_LEFT)
@@ -888,7 +885,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
             }
             outputQueue.push_back(valueExpr);
 #ifdef DEBUG_PARSER
-            printf("Parser::parseExpression:  -> value=%s\n", valueExpr->toString().c_str());
+            printf("Parser::parseExpression:  -> value=%ls\n", valueExpr->toString().c_str());
 #endif
         }
     }
@@ -904,7 +901,7 @@ Expression* Parser::parseExpression(CodeBlock* code)
 
     Expression* expr = buildTree(code, outputQueue);
 #ifdef DEBUG_PARSER
-    printf("Parser::parseExpression: Tree: %s\n", expr->toString().c_str());
+    printf("Parser::parseExpression: Tree: %ls\n", expr->toString().c_str());
 #endif
 
     return expr;
@@ -939,7 +936,7 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
         {
             if (opExpr->left->type == EXPR_DOUBLE && opExpr->right->type == EXPR_DOUBLE)
             {
-                fprintf(stderr, "Parser::buildTree: Optmise two Doubles: %s", opExpr->toString().c_str());
+                fprintf(stderr, "Parser::buildTree: Optmise two Doubles: %ls", opExpr->toString().c_str());
                 DoubleExpression* dblExpr = new DoubleExpression(code);
                 double leftd = ((DoubleExpression*)opExpr->left)->d;
                 double rightd = ((DoubleExpression*)opExpr->right)->d;
@@ -960,7 +957,7 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
             }
             else if (opExpr->left->type == EXPR_INTEGER && opExpr->right->type == EXPR_INTEGER)
             {
-                fprintf(stderr, "Parser::buildTree: Optmise two Integers: %s", opExpr->toString().c_str());
+                fprintf(stderr, "Parser::buildTree: Optmise two Integers: %ls", opExpr->toString().c_str());
                 IntegerExpression* intExpr = new IntegerExpression(code);
                 int64_t lefti = ((IntegerExpression*)opExpr->left)->i;
                 int64_t righti = ((IntegerExpression*)opExpr->right)->i;
@@ -996,7 +993,7 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
             }
             else
             {
-                printf("Parser::parseExpression: TOK_ADD_ASSIGN: Unhandled left type: %d: %s\n", opExpr->left->type, opExpr->left->toString().c_str());
+                printf("Parser::parseExpression: TOK_ADD_ASSIGN: Unhandled left type: %d: %ls\n", opExpr->left->type, opExpr->left->toString().c_str());
                 return NULL;
             }
 
@@ -1039,7 +1036,7 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             return NULL;
         }
 #ifdef DEBUG_PARSER
-        printf("Parser::parseExpression: NEW: class: %s\n", id.toString().c_str());
+        printf("Parser::parseExpression: NEW: class: %ls\n", id.toString().c_str());
 #endif
 
         if (id.identifier.size() == 1)
@@ -1047,13 +1044,13 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             // Check for imported classes
             // TODO: These will override any local vars
             //       Is that right?
-            map<string, Class*>::iterator it = m_imports.find(id.identifier.at(0));
+            map<wstring, Class*>::iterator it = m_imports.find(id.identifier.at(0));
             if (it != m_imports.end())
             {
-                string clazz = (it->second)->getName();
+                wstring clazz = (it->second)->getName();
 #ifdef DEBUG_PARSER
                 printf(
-                    "Parser::parseExpression: NEW: Found imported class: %s -> %s\n",
+                    "Parser::parseExpression: NEW: Found imported class: %ls -> %ls\n",
                     id.identifier.at(0).c_str(),
                     clazz.c_str());
 #endif
@@ -1079,11 +1076,11 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
     }
     else if (token->type == TOK_IDENTIFIER)
     {
-        string id = token->string;
+        wstring id = token->string;
         Class* clazz = NULL;
 
 #ifdef DEBUG_PARSER
-        printf("Parser::parseExpression: Got identifer: %s\n", id.c_str());
+        printf("Parser::parseExpression: Got identifer: %ls\n", id.c_str());
 #endif
 
         token = nextToken();
@@ -1095,19 +1092,19 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
 #ifdef DEBUG_PARSER
             printf("Parser::parseExpression:  -> got a dot!\n");
 #endif
-            string clazzname = id;
+            wstring clazzname = id;
             token = nextToken();
 
             // Check for imported classes
             // TODO: These will override any local vars
             //       Is that right?
-            map<string, Class*>::iterator it = m_imports.find(clazzname);
+            map<wstring, Class*>::iterator it = m_imports.find(clazzname);
             if (it != m_imports.end())
             {
                 clazz = it->second;
 #ifdef DEBUG_PARSER
                 printf(
-                    "Parser::parseExpression: Found imported class: %s -> %s\n",
+                    "Parser::parseExpression: Found imported class: %ls -> %ls\n",
                     clazzname.c_str(),
                     clazz->getName().c_str());
 #endif
@@ -1117,13 +1114,13 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             while (clazz == NULL && token->type == TOK_IDENTIFIER)
             {
 #ifdef DEBUG_PARSER
-                printf("Parser::parseExpression:  -> got an identifier: %s\n", token->string.c_str());
+                printf("Parser::parseExpression:  -> got an identifier: %ls\n", token->string.c_str());
 #endif
-                clazzname += ".";
+                clazzname += '.';
                 clazzname += token->string;
                 clazz = m_context->getRuntime()->findClass(m_context, clazzname, true);
 #ifdef DEBUG_PARSER
-                printf("Parser::parseExpression:  -> class? %s = %p\n", clazzname.c_str(), clazz);
+                printf("Parser::parseExpression:  -> class? %ls = %p\n", clazzname.c_str(), clazz);
 #endif
                 if (clazz != NULL)
                 {
@@ -1166,7 +1163,7 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
                 return NULL;
             }
 #ifdef DEBUG_PARSER
-            printf("Parser::parseExpression: -> function call to %s class=%p\n", id.c_str(), clazz);
+            printf("Parser::parseExpression: -> function call to %ls class=%p\n", id.c_str(), clazz);
 #endif
             CallExpression* callExpr = new CallExpression(code);
             m_expressions.push_back(callExpr);
@@ -1184,13 +1181,13 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             arrExpr->var = id;
             arrExpr->indexExpr = parseExpression(code);
 #ifdef DEBUG_PARSER
-            printf("Parser::parseExpression: -> Array: %s[%s]\n", id.c_str(), arrExpr->indexExpr->toString().c_str());
+            printf("Parser::parseExpression: -> Array: %ls[%ls]\n", id.c_str(), arrExpr->indexExpr->toString().c_str());
 #endif
             expression = arrExpr;
             token = nextToken();
             if (token->type != TOK_SQUARE_BRACKET_RIGHT)
             {
-                printf("Parser::parseExpression: ERROR: Array: Expected ], got %s\n", token->string.c_str());
+                printf("Parser::parseExpression: ERROR: Array: Expected ], got %ls\n", token->string.c_str());
                 return NULL;
             }
         }
@@ -1221,17 +1218,17 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
     }
     else if (token->type == TOK_LITERAL)
     {
-        if (token->string == "true" || token->string == "false")
+        if (token->string == L"true" || token->string == L"false")
         {
             IntegerExpression* intExpr = new IntegerExpression(code);
             m_expressions.push_back(intExpr);
-            intExpr->i = (token->string == "true");
+            intExpr->i = (token->string == L"true");
             intExpr->valueType = VALUE_INTEGER;
             expression = intExpr;
         }
         else
         {
-            printf("Parser::parseExpression: Unhandled Literal type: %d: %s\n", token->type, token->string.c_str());
+            printf("Parser::parseExpression: Unhandled Literal type: %d: %ls\n", token->type, token->string.c_str());
             return NULL;
         }
     }
@@ -1261,7 +1258,7 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
     }
     else
     {
-        printf("Parser::parseExpression: Unhandled token type: %d: %s\n", token->type, token->string.c_str());
+        printf("Parser::parseExpression: Unhandled token type: %d: %ls\n", token->type, token->string.c_str());
         return NULL;
     }
     return expression;
@@ -1365,7 +1362,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
         if (token->type == type)
         {
 #ifdef DEBUG_PARSER
-            printf("Parser::parseList: item: %s\n", token->string.c_str());
+            printf("Parser::parseList: item: %ls\n", token->string.c_str());
 #endif
             list.push_back(token);
         }
@@ -1430,21 +1427,21 @@ bool Parser::parseExpressionList(CodeBlock* code, vector<Expression*>& list)
     return true;
 }
 
-string Identifier::end()
+wstring Identifier::end()
 {
     return identifier.at(identifier.size() - 1);
 }
 
-string Identifier::toString()
+wstring Identifier::toString()
 {
-    string str = "";
+    wstring str;
     bool comma = false;
-    vector<string>::iterator it;
+    vector<wstring>::iterator it;
     for (it = identifier.begin(); it != identifier.end(); it++)
     {
         if (comma)
         {
-            str += ".";
+            str += '.';
         }
         comma = true;
         str += *it;
@@ -1452,20 +1449,20 @@ string Identifier::toString()
     return str;
 }
 
-Identifier Identifier::makeIdentifier(string name)
+Identifier Identifier::makeIdentifier(wstring name)
 {
     Identifier res;
     unsigned int pos;
-    string buf = "";
+    wstring buf;
     for (pos = 0; pos < name.length(); pos++)
     {
-        char c = name.at(pos);
+        wchar_t c = name.at(pos);
         if (c == '.')
         {
             if (buf.length() > 0)
             {
                 res.identifier.push_back(buf);
-                buf = "";
+                buf = wstring();
             }
         }
         else
