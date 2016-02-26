@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([b0rk], [0.1], [ian@geekprojects.com])
-AM_INIT_AUTOMAKE([-Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_CONFIG_HEADERS([include/config.h])
 
 # Checks for programs.
