@@ -773,28 +773,54 @@ static bool opcodeReturn(uint64_t thisPC, uint64_t opcode, Context* context, Fra
 static bool opcodeCmp(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value left = context->pop();
-    Value right = context->pop();
-    if (left.type == VALUE_INTEGER && right.type == VALUE_INTEGER)
+    if (left.type == VALUE_INTEGER || left.type == VALUE_DOUBLE)
     {
-        CMP_INTEGER(left, right);
+        Value right = context->pop();
+        if (left.type == VALUE_INTEGER && right.type == VALUE_INTEGER)
+        {
+            CMP_INTEGER(left, right);
+        }
+        else if (left.type == VALUE_DOUBLE && right.type == VALUE_DOUBLE)
+        {
+            CMP_DOUBLE(left, right);
+        }
+        else if (left.type == VALUE_DOUBLE || right.type == VALUE_DOUBLE)
+        {
+            double leftDouble = DOUBLE_VALUE(left);
+            double rightDouble = DOUBLE_VALUE(right);
+            double result = rightDouble - leftDouble;
+            LOG("CMP: left=%0.2f, right=%0.2f, result=%0.2f", leftDouble, rightDouble, result);
+            frame->flags.zero = (result > -DBL_EPSILON && result < DBL_EPSILON);
+            frame->flags.sign = (result < 0.0 && !frame->flags.zero);
+            frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
+        }
+        else
+        {
+            ERROR("CMP: UNHANDLED DATA TYPES: left=%d, right=%d\n", left.type, right.type);
+            return false;
+        }
     }
-    else if (left.type == VALUE_DOUBLE && right.type == VALUE_DOUBLE)
+    else if (left.type == VALUE_OBJECT)
     {
-        CMP_DOUBLE(left, right);
-    }
-    else if (left.type == VALUE_DOUBLE || right.type == VALUE_DOUBLE)
-    {
-        double leftDouble = DOUBLE_VALUE(left);
-        double rightDouble = DOUBLE_VALUE(right);
-        double result = rightDouble - leftDouble;
-        LOG("CMP: left=%0.2f, right=%0.2f, result=%0.2f", leftDouble, rightDouble, result);
-        frame->flags.zero = (result > -DBL_EPSILON && result < DBL_EPSILON);
-        frame->flags.sign = (result < 0.0 && !frame->flags.zero);
-        frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
+        // TODO: This should have been figured out by the assembler?
+        Class* clazz = left.object->getClass();
+        LOG("CMP OBJECT: class=%ls", clazz->getName().c_str());
+        Function* eqFunc = clazz->findMethod(L"operator==")
+        LOG("CMP OBJECT: cmp operator=%p", addFunc);
+        bool res = eqFunc->execute(context, left.object, 1);
+        if (!res)
+        {
+            return false;
+        }
+
+Value result = context->pop();
+frame->flags.zero = (result.i == 0);
+frame->flags.sign = result.i < 0 && result.i != 0;
+frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
     }
     else
     {
-        ERROR("CMP: UNHANDLED DATA TYPES: left=%d, right=%d\n", left.type, right.type);
+        ERROR("CMP: UNHANDLED DATA TYPES: left=%d\n", left.type);
         return false;
     }
 

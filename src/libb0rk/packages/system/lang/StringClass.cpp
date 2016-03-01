@@ -25,6 +25,8 @@
 #include <b0rk/context.h>
 #include <b0rk/utils.h>
 
+#include <wchar.h>
+
 using namespace std;
 using namespace b0rk;
 
@@ -34,6 +36,7 @@ String::String()
     addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
 
     addMethod("operator+", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::addOperator));
+    addMethod("operator==", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::eqOperator));
     addMethod("length", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::length));
     addMethod("at", new NativeObjectFunction(this, (nativeObjectFunction_t)&StringNative::at));
 }
@@ -92,7 +95,7 @@ bool StringNative::addOperator(Context* context, int argCount, Value* args, Valu
     Value rhs = args[0];
 
     wstring rhsStr;
-    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass()->getName() == L"system.lang.String")
+    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass() == context->getRuntime()->getStringClass())
     {
         rhsStr =  String::getString(context, rhs.object);
 #ifdef DEBUG_STRING
@@ -114,6 +117,35 @@ bool StringNative::addOperator(Context* context, int argCount, Value* args, Valu
 
     return true;
 }
+
+bool StringNative::eqOperator(Context* context, int argCount, Value* args, Value& result)
+{
+    Value rhs = args[0];
+
+    wstring rhsStr;
+    if (rhs.type == VALUE_OBJECT && rhs.object != NULL && rhs.object->getClass() == context->getRuntime()->getStringClass())
+    {
+        rhsStr =  String::getString(context, rhs.object);
+#ifdef DEBUG_STRING
+        printf("String::eqOperator: rhs (String): %ls\n", rhsStr.c_str());
+#endif
+    }
+    else
+    {
+        rhsStr = rhs.toString();
+#ifdef DEBUG_STRING
+        printf("String::eqdOperator: rhs (other): %ls\n", rhsStr.c_str());
+#endif
+    }
+
+    int res = wcscmp(m_string.c_str(), rhsStr.c_str());
+
+    result.type = VALUE_INTEGER;
+    result.i = res;
+
+    return true;
+}
+
 
 bool StringNative::length(Context* context, int argCount, Value* args, Value& result)
 {

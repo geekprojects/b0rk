@@ -38,6 +38,7 @@ class StringNative : public NativeObject
     StringNative(Object* object, std::wstring str);
 
     bool addOperator(Context* context, int argCount, Value* args, Value& result);
+    bool eqOperator(Context* context, int argCount, Value* args, Value& result);
     bool length(Context* context, int argCount, Value* args, Value& result);
     bool at(Context* context, int argCount, Value* args, Value& result);
 
