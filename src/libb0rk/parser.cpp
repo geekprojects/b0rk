@@ -500,14 +500,16 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             }
             if (token->type != TOK_SEMICOLON)
             {
-                log(DEBUG, "parseCodeBlock: VAR: Expected ;, got %ls", token->string.c_str());
+                log(ERROR, "parseCodeBlock: VAR: Expected ;, got %ls", token->string.c_str());
                 success = false;
                 break;
             }
         }
         else if (token->type == TOK_IF)
         {
+#ifdef DEBUG_PARSER
             log(DEBUG, "parseCodeBlock: *** IF ***");
+#endif
             EXPECT_BRACKET_LEFT("IF");
 
             IfExpression* ifExpr = new IfExpression(code);
@@ -523,7 +525,9 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             EXPECT_BRACKET_RIGHT("IF");
             EXPECT_BRACE_LEFT("IF");
 
+#ifdef DEBUG_PARSER
             log(DEBUG, "Parser::parseCodeBlock: IF: TRUE BLOCK...");
+#endif
             ifExpr->trueBlock = parseCodeBlock(function);
             if (ifExpr->trueBlock == NULL)
             {
@@ -534,10 +538,11 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
             code->m_childBlocks.push_back(ifExpr->trueBlock);
 
             token = nextToken();
-            log(DEBUG, "parseCodeBlock: IF: AFTER TRUE BLOCK: %ls", token->string.c_str());
             if (token->type == TOK_ELSE)
             {
+#ifdef DEBUG_PARSER
                 log(DEBUG, "parseCodeBlock: IF: ELSE...");
+#endif
                 token = nextToken();
                 if (token->type != TOK_IF && token->type != TOK_BRACE_LEFT)
                 {
@@ -548,7 +553,9 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 
                 if (token->type == TOK_IF)
                 {
+#ifdef DEBUG_PARSER
                     log(DEBUG, "parseCodeBlock: IF: ELSE IF!");
+#endif
                     m_pos--;
                 }
 
@@ -560,7 +567,9 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 }
                 ifExpr->falseBlock->m_parent = code;
                 code->m_childBlocks.push_back(ifExpr->falseBlock);
+#ifdef DEBUG_PARSER
                 log(DEBUG, "parseCodeBlock: IF: ELSE DONE: %ls", ifExpr->falseBlock->toString().c_str());
+#endif
 
                 if (token->type == TOK_IF)
                 {
@@ -572,7 +581,9 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 m_pos--;
             }
             code->m_code.push_back(ifExpr);
+#ifdef DEBUG_PARSER
             log(DEBUG, "parseCodeBlock: *** IF: DONE ***");
+#endif
         }
         else if (token->type == TOK_FOR)
         {
@@ -727,7 +738,9 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
 
     if (success)
     {
+#ifdef DEBUG_PARSER
         log(DEBUG, "parseCodeBlock: DONE: %ls", code->toString().c_str());
+#endif
     }
     else
     {
