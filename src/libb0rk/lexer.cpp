@@ -29,6 +29,7 @@
 #include <b0rk/utf8.h>
 
 #undef DEBUG_LEXER
+#undef DEBUG_LEXER_DETAILED
 
 using namespace std;
 using namespace b0rk;
@@ -151,13 +152,13 @@ bool Lexer::lexer(char* buffer, int length)
             next = utf8::peek_next(pos, end);
         }
 
-#ifdef DEBUG_LEXER
+#ifdef DEBUG_LEXER_DETAILED
         printf("Lexer::lexer: cur=%d, next=%d\n", cur, next);
 #endif
 
         if (cur == '/')
         {
-#ifdef DEBUG_LEXER
+#ifdef DEBUG_LEXER_DETAILED
             printf("Lexer::lexer: Comment? n=%d (%c)\n", next, next);
 #endif
             if (next == '/')
@@ -269,7 +270,7 @@ bool Lexer::lexer(char* buffer, int length)
             while (pos < end)
             {
                 cur = utf8::next(pos, end);
-#ifdef DEBUG_LEXER
+#ifdef DEBUG_LEXER_DETAILED
             wprintf(L"Lexer: String: cur=0x%x %lc\n", cur, cur);
 #endif
                 if (cur == '\\')
