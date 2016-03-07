@@ -26,12 +26,14 @@
 #include <b0rk/class.h>
 #include <b0rk/runtime.h>
 
+#include <geek/core-logger.h>
+
 #include <vector>
 
 namespace b0rk
 {
 
-class Parser
+class Parser : Geek::Logger
 {
  private:
     Context* m_context;
@@ -42,7 +44,6 @@ class Parser
     size_t m_pos;
 
     Token* nextToken();
-    Token* peekToken();
     bool moreTokens() { return m_pos < m_tokens.size(); }
 
     Class* parseClass(bool addToExisting);
