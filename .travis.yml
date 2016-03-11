@@ -12,7 +12,7 @@ addons:
 
 before_script:
   - if [ $TRAVIS_OS_NAME == osx ]; then brew install libpng libxml2 jpeg; fi
-  - ./build/travis.sh
+  - bash ./build/travis.sh
   - ./autogen.sh --verbose 
   - ./configure
 
