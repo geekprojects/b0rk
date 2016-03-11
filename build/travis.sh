@@ -5,5 +5,8 @@ cd libgeek
 ./autogen.sh
 ./configure
 make
+
+export CC=`which $CC`
+export CXX=`which $CXX`
 sudo make install
 
