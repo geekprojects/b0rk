@@ -226,8 +226,13 @@ Class* Runtime::loadClass(Context* context, wstring name, bool addToExisting)
 
     char* buffer = new char[length + 128];
     memset(buffer + length, 0, 128);
-    fread(buffer, 1, length, fp);
+    int read = fread(buffer, 1, length, fp);
     fclose(fp);
+
+    if (read != length)
+    {
+        return NULL;
+    }
 
     Lexer lexer;
     bool res = lexer.lexer(buffer, length);
