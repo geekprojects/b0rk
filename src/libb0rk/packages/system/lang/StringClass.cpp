@@ -84,6 +84,12 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
     return true;
 }
 
+StringNative::StringNative(Object* instance, string str)
+    : NativeObject(instance)
+{
+    m_string = Utils::string2wstring(str);
+}
+
 StringNative::StringNative(Object* instance, wstring str)
     : NativeObject(instance)
 {
