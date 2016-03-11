@@ -1,0 +1,28 @@
+
+language: cpp
+sudo: required
+
+addons:
+  apt:
+    packages:
+      - libxml2-dev
+      - libpng12-dev
+      - libjpeg-dev
+      - libjpeg-turbo8
+
+before_script:
+  - if [ $TRAVIS_OS_NAME == osx ]; then brew install libpng libxml2 jpeg; fi
+  - ./build/travis.sh
+  - ./autogen.sh --verbose 
+  - ./configure
+
+script: make && make test
+
+compiler:
+  - clang
+  - gcc
+
+os:
+  - linux
+  - osx
+
