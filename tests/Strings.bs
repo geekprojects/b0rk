@@ -39,6 +39,15 @@ class tests.Strings
         {
             system.io.File.out.writeln(("char " + i) + " = " + str.at(i));
         }
+
+        if (str == "hello world!")
+        {
+            system.io.File.out.writeln("PASS");
+        }
+        else
+        {
+            system.io.File.out.writeln("FAIL");
+        }
     }
 }
 
