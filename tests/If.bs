@@ -28,23 +28,30 @@ class tests.If
     {
         var a = 2;
         var b = 3;
-        if (a == b)
+        if (true)
         {
-            File.out.writeln("it doesn't work :(");
-        }
-        else if (a < b)
-        {
-            File.out.writeln("it works!");
-        }
-        else if (a == 12345)
-        {
-            File.out.writeln("it doesn't work :(");
+            if (a == b)
+            {
+                File.out.writeln("it doesn't work :( (1)");
+            }
+            else if (a < b)
+            {
+                File.out.writeln("it works!");
+            }
+            else if (a == 12345)
+            {
+                File.out.writeln("it doesn't work :( (2)");
+            }
+            else
+            {
+                File.out.writeln("it doesn't work :( (3)");
+            }
+            File.out.writeln("Done!");
         }
         else
         {
-            File.out.writeln("it doesn't work :(");
+            File.out.writeln("it doesn't work :( (4)");
         }
-        File.out.writeln("Done!");
     }
 }
 
