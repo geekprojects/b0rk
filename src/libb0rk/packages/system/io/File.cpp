@@ -102,7 +102,7 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
             str = v.toString();
         }
 
-        int j;
+        unsigned int j;
         char outbuffer[4];
         for (j = 0; j < str.length(); j++)
         {

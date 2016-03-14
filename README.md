@@ -1,6 +1,8 @@
 b0rk b0rk b0rk
 ==============
 
+[![Build Status](https://travis-ci.org/geekprojects/b0rk.svg?branch=develop)](https://travis-ci.org/geekprojects/b0rk)
+
 Velcume-a tu zee-a b0rk prugremmeeng luonguoege-a designed fur simple-a
 scripting vit a femeeleer syntex und iesy imbeddeeng in ouzeer prujects.
 Bork Bork Bork!
@@ -14,12 +16,12 @@ Features
 
 * Java-style syntax
 * Easily embeddable in to other projects
-  * Link C++ objects to b0rk objects
+ * Link C++ objects to b0rk objects
 * Garbage Collection
 * Portable to any architecture (64 bit preferable)
 * Simple API of standard classes
 * Reasonable performance
-  * Uses intermediate bytecode and it's own VM
+** Uses intermediate bytecode and it's own VM
 * Unicode internally and reads/writes UTF-8
   * Use emoji for function names!
     * (Not that I endorse such things)
