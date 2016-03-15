@@ -715,6 +715,77 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
                 EXPECT_SEMICOLON("return");
             }
         }
+        else if (token->type == TOK_TRY)
+        {
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: Got try!");
+#endif
+
+            TryExpression* tryExpr = new TryExpression(code);
+            m_expressions.push_back(tryExpr);
+            code->m_code.push_back(tryExpr);
+
+            EXPECT_BRACE_LEFT("try");
+
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: TRY: Parsing try body...");
+#endif
+            tryExpr->tryBlock = parseCodeBlock(function);
+            if (tryExpr->tryBlock == NULL)
+            {
+                success = false;
+                break;
+            }
+
+            EXPECT("try", TOK_CATCH, "catch");
+            EXPECT_BRACKET_LEFT("try");
+
+            EXPECT("try", TOK_IDENTIFIER, "identifier");
+            tryExpr->exceptionVar = token->string;
+
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: TRY: catch var name=%ls", token->string.c_str());
+#endif
+            EXPECT_BRACKET_RIGHT("try");
+            EXPECT_BRACE_LEFT("try");
+
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: TRY: Parsing catch body...");
+#endif
+            tryExpr->catchBlock = parseCodeBlock(function);
+            if (tryExpr->catchBlock == NULL)
+            {
+                success = false;
+                break;
+            }
+
+            // Define the exception variable
+            tryExpr->catchBlock->m_vars.push_back(tryExpr->exceptionVar);
+
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: TRY: %ls", tryExpr->toString().c_str());
+#endif
+        }
+        else if (token->type == TOK_THROW)
+        {
+            ThrowExpression* throwExpr = new ThrowExpression(code);
+
+            throwExpr->throwValue = parseExpression(code);
+            if (throwExpr->throwValue == NULL)
+            {
+                log(ERROR, "parseCodeBlock: Expression expected after \"throw\"");
+                success = false;
+                break;
+            }
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: Got throw: %ls", throwExpr->toString().c_str());
+#endif
+
+            m_expressions.push_back(throwExpr);
+            code->m_code.push_back(throwExpr);
+
+            EXPECT_SEMICOLON("throw");
+        }
         else
         {
             // Expression ?
@@ -744,7 +815,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
     }
     else
     {
-        log(DEBUG, "parseCodeBlock: ERROR");
+        log(ERROR, "parseCodeBlock: Failed to parse code block");
         delete code;
         code = NULL;
     }

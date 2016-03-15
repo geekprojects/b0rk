@@ -42,6 +42,12 @@ struct Flags
     unsigned int overflow:1;
 };
 
+struct ExceptionHandler
+{
+    uint64_t excepVar;
+    uint64_t handlerPC;
+};
+
 struct Frame
 {
     AssembledCode* code;
@@ -52,6 +58,8 @@ struct Frame
 
     int localVarsCount;
     Value* localVars;
+
+    std::vector<ExceptionHandler> handlerStack;
 
     inline uint64_t fetch()
     {
@@ -68,6 +76,9 @@ class Context
     int m_stackPos;
     int m_stackSize;
     Value* m_stack;
+
+    bool m_exception;
+    Value m_exceptionValue;
 
  public:
     Context(Runtime* runtime);
@@ -116,6 +127,11 @@ class Context
 
         return value;
     }
+
+    void throwException(Value exception) { m_exception = true; m_exceptionValue = exception; }
+    void clearException() { m_exception = false; }
+    bool hasException() { return m_exception; }
+    Value& getExceptionValue() { return m_exceptionValue; }
 };
 
 };

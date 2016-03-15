@@ -32,6 +32,8 @@ Context::Context(Runtime* runtime)
     m_stackPos = 0;
     m_stackSize = 1024;
     m_stack = new Value[m_stackSize];
+
+    m_exception = false;
 }
 
 Context::~Context()

@@ -93,7 +93,11 @@ enum OpCode
     OPCODE_BG          = 0x85,
     OPCODE_BGE         = 0x86,
 
-    OPCODE_MAX         = 0x77
+    OPCODE_THROW       = 0x90,
+    OPCODE_PUSHTRY     = 0x91,
+    OPCODE_POPTRY      = 0x92,
+
+    OPCODE_MAX         = 0x92
 };
 
 };

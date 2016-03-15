@@ -919,7 +919,29 @@ static bool opcodeBGE(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     return true;
 }
 
+static bool opcodeThrow(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value excep = context->pop();
+    LOG("THROW: %ls", excep.toString().c_str());
+    context->throwException(excep);
+ 
+    return true;
+}
 
+static bool opcodePushHandler(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    ExceptionHandler handler;
+    handler.excepVar = frame->fetch();
+    handler.handlerPC = frame->fetch();
+    frame->handlerStack.push_back(handler);
+    return true;
+}
+
+static bool opcodePopHandler(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    frame->handlerStack.pop_back();
+    return true;
+}
 
 Executor::Executor()
 {
@@ -1048,6 +1070,9 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_BLE: success = opcodeBLE(thisPC, opcode, context, &frame); break;
             case OPCODE_BG: success = opcodeBG(thisPC, opcode, context, &frame); break;
             case OPCODE_BGE: success = opcodeBGE(thisPC, opcode, context, &frame); break;
+            case OPCODE_THROW: success = opcodeThrow(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHTRY: success = opcodePushHandler(thisPC, opcode, context, &frame); break;
+            case OPCODE_POPTRY: success = opcodePopHandler(thisPC, opcode, context, &frame); break;
             default:
                 fprintf(stderr, "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
                 success = false;
@@ -1057,9 +1082,72 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
         {
             frame.running = false;
         }
-    }
 
-    //context->getRuntime()->gc();
+        // Check for any exceptions
+        if (B0RK_UNLIKELY(context->hasException()))
+        {
+#ifdef DEBUG_EXECUTOR
+            fprintf(
+                stderr,
+                "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Exception thrown!\n",
+                frame.code->function->getFullName().c_str(),
+                thisPC,
+                opcode);
+#endif
+
+            if (frame.handlerStack.empty())
+            {
+                // There are no current exception handlers
+#ifdef DEBUG_EXECUTOR
+                fprintf(
+                    stderr,
+                    "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " -> No handler, leaving function!\n",
+                    frame.code->function->getFullName().c_str(),
+                    thisPC,
+                    opcode);
+#endif
+                success = true;
+                frame.running = false;
+
+                // Clear the stack until we find our current frame
+                while (true)
+                {
+                    Value v = context->pop();
+#ifdef DEBUG_EXECUTOR
+                    fprintf(stderr, "Executor::run: Popping frame entry: %ls\n", v.toString().c_str());
+#endif
+                    if (v.type == VALUE_FRAME)
+                    {
+                        if (v.pointer != &frame)
+                        {
+                            fprintf(stderr, "Executor::run: ERROR: Frame is not our frame!?\n");
+                        }
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // There is an exception handler!
+#ifdef DEBUG_EXECUTOR
+                fprintf(
+                    stderr,
+                    "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " -> Found handler!\n",
+                    frame.code->function->getFullName().c_str(),
+                    thisPC,
+                    opcode);
+#endif
+                ExceptionHandler handler = frame.handlerStack.back();
+                frame.handlerStack.pop_back();
+                context->clearException();
+
+                frame.pc = handler.handlerPC;
+                frame.localVars[handler.excepVar] = context->getExceptionValue();
+
+                context->getExceptionValue();
+            }
+        }
+    }
 
 #ifdef DEBUG_EXECUTOR
     printf("Executor::run: Leaving %ls\n", code->function->getFullName().c_str());

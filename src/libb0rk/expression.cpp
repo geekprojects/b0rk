@@ -359,6 +359,51 @@ wstring ReturnExpression::toString()
     return str;
 }
 
+TryExpression::TryExpression(CodeBlock* block)
+    : Expression(block)
+{
+    type = EXPR_TRY;
+    tryBlock = NULL;
+    catchBlock = NULL;
+}
+
+wstring TryExpression::toString()
+{
+    wstring str = L"{TRY:";
+    if (tryBlock != NULL)
+    {
+        str += tryBlock->toString();
+    }
+    str += L":";
+    if (catchBlock != NULL)
+    {
+        str += catchBlock->toString();
+    }
+    str += L"}";
+    return str;
+}
+
+
+ThrowExpression::ThrowExpression(CodeBlock* block)
+    : Expression(block)
+{
+    type = EXPR_THROW;
+    throwValue = NULL;
+}
+
+wstring ThrowExpression::toString()
+{
+    wstring str = L"{THROW";
+    if (throwValue != NULL)
+    {
+        str += L":";
+        str += throwValue->toString();
+    }
+    str += L"}";
+    return str;
+}
+
+
 VarExpression::VarExpression(CodeBlock* block)
     : Expression(block)
 {

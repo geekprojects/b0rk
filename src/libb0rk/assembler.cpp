@@ -697,6 +697,59 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             m_code.push_back(OPCODE_RETURN);
         } break;
 
+        case EXPR_TRY:
+        {
+            TryExpression* tryExpr = (TryExpression*)expr;
+
+
+            unsigned int excepVar = tryExpr->catchBlock->getVarId(tryExpr->exceptionVar);
+            if (excepVar == -1)
+            {
+                printf("Assembler::assembleExpression: TRY: Exception var %ls not found!\n", tryExpr->exceptionVar.c_str());
+                return false;
+            }
+
+            // Tell the executor what to do if there's an exception
+            m_code.push_back(OPCODE_PUSHTRY);
+            m_code.push_back(excepVar); // Will be filled in with the end address
+            m_code.push_back(0); // Will be filled in with the end address
+            unsigned int tryCatchPos = m_code.size() - 1;
+
+            // Add the body
+            res = assembleBlock(tryExpr->tryBlock);
+            if (!res)
+            {
+                return false;
+            }
+            m_code.push_back(OPCODE_POPTRY);
+
+            // No exceptions! Jump beyond handler
+            m_code.push_back(OPCODE_JMP);
+            m_code.push_back(0); // Will be filled in with the end address
+            unsigned int jmpToEndPos = m_code.size() - 1;
+            unsigned int catchPos = m_code.size();
+            m_code[tryCatchPos] = catchPos;
+
+            res = assembleBlock(tryExpr->catchBlock);
+            if (!res)
+            {
+                return false;
+            }
+            m_code[jmpToEndPos] = m_code.size();
+        } break;
+
+        case EXPR_THROW:
+        {
+            ThrowExpression* throwExpr = (ThrowExpression*)expr;
+
+            res = assembleExpression(block, throwExpr->throwValue, NULL, true);
+            if (!res)
+            {
+                return false;
+            }
+            m_code.push_back(OPCODE_THROW);
+        } break;
+
         case EXPR_VAR:
         {
             VarExpression* varExpr = (VarExpression*)expr;

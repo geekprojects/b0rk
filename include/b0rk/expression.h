@@ -58,6 +58,8 @@ enum ExpressionType
     EXPR_INTEGER,
     EXPR_DOUBLE,
     EXPR_FUNCTION,
+    EXPR_THROW,
+    EXPR_TRY,
 };
 
 struct Expression
@@ -176,6 +178,28 @@ struct ReturnExpression : public Expression
 
     virtual std::wstring toString();
 };
+
+struct TryExpression : public Expression
+{
+    CodeBlock* tryBlock;
+
+    std::wstring exceptionVar;
+    CodeBlock* catchBlock;
+
+    TryExpression(CodeBlock* block);
+
+    virtual std::wstring toString();
+};
+
+struct ThrowExpression : public Expression
+{
+    Expression* throwValue;
+
+    ThrowExpression(CodeBlock* block);
+
+    virtual std::wstring toString();
+};
+
 
 struct VarExpression : public Expression
 {
