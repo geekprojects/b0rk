@@ -25,6 +25,7 @@ Features
 * Unicode internally and reads/writes UTF-8
   * Use emoji for function names!
     * (Not that I endorse such things)
+* Simple exception throwing and handling
 
 
 Requirements
