@@ -15,7 +15,7 @@ class tests.Exceptions extends system.lang.Test
         }
         catch (e)
         {
-            system.io.File.out.writeln("simplExpression: Caught exception: " + e);
+            system.io.File.out.writeln("simplExpression: Caught exception: " + e.message);
         }
     }
 
@@ -27,7 +27,7 @@ class tests.Exceptions extends system.lang.Test
         }
         catch (e)
         {
-            system.io.File.out.writeln("exceptionReturn: Caught exception: " + e);
+            system.io.File.out.writeln("exceptionReturn: Caught exception: " + e.message);
             return;
         }
         system.io.File.out.writeln("exceptionReturn: This should never get called!");
@@ -42,7 +42,8 @@ class tests.Exceptions extends system.lang.Test
         }
         catch (e1)
         {
-            system.io.File.out.writeln("functionException: Caught exception: " + e1);
+            system.io.File.out.writeln("functionException: Caught exception: " + e1.message);
+e1.printStackTrace();
         }
         system.io.File.out.writeln("functionException: Done!");
     }

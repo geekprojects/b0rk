@@ -23,6 +23,7 @@
 #include <b0rk/utils.h>
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/lang/Array.h"
+#include "packages/system/lang/Exception.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -921,9 +922,10 @@ static bool opcodeBGE(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
 
 static bool opcodeThrow(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value excep = context->pop();
-    LOG("THROW: %ls", excep.toString().c_str());
-    context->throwException(excep);
+    Value value = context->pop();
+    LOG("THROW: value=%ls", value.toString().c_str());
+    Object* exception = Exception::createException(context, value);
+    context->throwException(exception);
  
     return true;
 }
