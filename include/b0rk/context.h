@@ -88,6 +88,7 @@ class Context
     Assembler& getAssembler() { return m_assembler; }
 
     int getStackSize() { return m_stackSize; }
+    int getStackPos() { return m_stackPos; }
     Value* getStack() { return m_stack; }
 
     inline void push(Value value)
@@ -128,10 +129,13 @@ class Context
         return value;
     }
 
-    void throwException(Value exception) { m_exception = true; m_exceptionValue = exception; }
+    void throwException(Value exception);
+    void throwException(Object* exception);
     void clearException() { m_exception = false; }
     bool hasException() { return m_exception; }
     Value& getExceptionValue() { return m_exceptionValue; }
+
+    std::vector<std::wstring> getStackTrace();
 };
 
 };
