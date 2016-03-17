@@ -45,7 +45,8 @@ class Exception : public Class
 
     static Object* createException(Context* context, std::string str);
     static Object* createException(Context* context, Value& value);
-
+    static Object* getExceptionValue(Context* context, Object* e);
+    static std::wstring getExceptionString(Context* context, Object* e);
 };
 
 };

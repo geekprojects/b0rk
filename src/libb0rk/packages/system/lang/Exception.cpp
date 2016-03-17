@@ -43,15 +43,14 @@ Exception::~Exception()
 
 bool Exception::printStackTraceB(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
-printf("Exception::printStackTrace: Here!\n");
     int stackTraceId = this->getFieldId(L"stacktrace");
     Value stacktraceValue = instance->getValue(stackTraceId);
-StackTrace* stackTrace = (StackTrace*)stacktraceValue.pointer;
-vector<wstring>::iterator it;
-for (it = stackTrace->stacktrace.begin(); it != stackTrace->stacktrace.end(); it++)
-{
-printf("Exception::printStackTrace: %ls\n", (*it).c_str());
-}
+    StackTrace* stackTrace = (StackTrace*)stacktraceValue.pointer;
+    vector<wstring>::iterator it;
+    for (it = stackTrace->stacktrace.begin(); it != stackTrace->stacktrace.end(); it++)
+    {
+        printf("Exception::printStackTrace: %ls\n", (*it).c_str());
+    }
     return true;
 }
 
@@ -81,5 +80,27 @@ Object* Exception::createException(Context* context, Value& value)
     object->setValue(stackTraceId, stacktraceValue);
 
     return object;
+}
+
+Object* Exception::getExceptionValue(Context* context, Object* e)
+{
+    Class* exceptionClass = context->getRuntime()->getExceptionClass();
+    int messageId = exceptionClass->getFieldId(L"message");
+    Value messageValue = e->getValue(messageId);
+    if (messageValue.type != VALUE_OBJECT)
+    {
+        return NULL;
+    }
+    return messageValue.object;
+}
+
+wstring Exception::getExceptionString(Context* context, Object* e)
+{
+    Object* messageObj = getExceptionValue(context, e);
+    if (messageObj == NULL)
+    {
+        return L"";
+    }
+    return String::getString(context, messageObj);
 }
 
