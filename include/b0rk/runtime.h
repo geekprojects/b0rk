@@ -54,6 +54,7 @@ class Runtime
 
     Class* m_objectClass;
     Class* m_stringClass;
+    Class* m_exceptionClass;
 
     std::vector<Context*> m_contexts;
 
@@ -91,6 +92,7 @@ class Runtime
 
     Class* getObjectClass() { return m_objectClass; }
     Class* getStringClass() { return m_stringClass; }
+    Class* getExceptionClass() { return m_exceptionClass; }
 
     Context* createContext();
 

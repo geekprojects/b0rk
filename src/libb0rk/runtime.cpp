@@ -36,6 +36,7 @@
 #include "packages/system/lang/StringClass.h"
 #include "packages/system/lang/Function.h"
 #include "packages/system/lang/Maths.h"
+#include "packages/system/lang/Exception.h"
 #include "packages/system/io/File.h"
 
 #include <cinttypes>
@@ -87,6 +88,8 @@ Runtime::Runtime()
     m_arenaTotal += m_arena.m_size;
 
     Context* initContext = new Context(this);
+
+    // system.lang classes
     m_objectClass = new ObjectClass();
     addClass(initContext, m_objectClass, true);
     addClass(initContext, new Array(), true);
@@ -94,7 +97,12 @@ Runtime::Runtime()
     addClass(initContext, m_stringClass, true);
     addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new Maths(), true);
+    m_exceptionClass = new Exception();
+    addClass(initContext, m_exceptionClass, true);
+
+    // system.io classes
     addClass(initContext, new File(), true);
+
     delete initContext;
 
     m_executor = new Executor();

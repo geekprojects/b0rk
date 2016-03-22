@@ -75,6 +75,9 @@ SimpleToken tokenTable[] = {
     { "return", 6, TOK_RETURN },
     { "true", 4, TOK_LITERAL },
     { "false", 5, TOK_LITERAL },
+    { "try", 3, TOK_TRY },
+    { "throw", 5, TOK_THROW },
+    { "catch", 5, TOK_CATCH },
 };
 
 Lexer::Lexer()
@@ -135,6 +138,11 @@ bool Lexer::checkWord(char** pos, SimpleToken* token)
 
 bool Lexer::lexer(char* buffer, int length)
 {
+    if (buffer == NULL || length == 0)
+    {
+        return false;
+    }
+
     char* pos = buffer;
     char* end = buffer + length;
 

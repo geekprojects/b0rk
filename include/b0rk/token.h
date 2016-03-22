@@ -81,6 +81,9 @@ enum TokenType
     TOK_INTEGER,
     TOK_DOUBLE,
     TOK_EXPRESSION,
+    TOK_TRY,
+    TOK_THROW,
+    TOK_CATCH,
     TOK_ANY = -1,
 };
 

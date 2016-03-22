@@ -26,6 +26,7 @@
 #include <b0rk/function.h>
 #include <b0rk/utils.h>
 #include "packages/system/lang/StringClass.h"
+#include "packages/system/lang/Exception.h"
 
 using namespace std;
 using namespace b0rk;
@@ -86,6 +87,15 @@ bool Function::execute(Context* context, Object* instance, int argCount, Value* 
     {
         return false;
     }
+    if (context->hasException())
+    {
+        Value e = context->getExceptionValue();
+        fprintf(
+            stderr,
+            "Function::execute: Uncaught exception: %ls\n",
+            Exception::getExceptionString(context, e.object).c_str());
+        return false;
+    }
     result = context->pop();
     return true;
 }
@@ -125,7 +135,10 @@ bool NativeFunction::execute(Context* context, Object* instance, int argCount)
         return false;
     }
 
-    context->push(result);
+    if (!context->hasException())
+    {
+        context->push(result);
+    }
     return true;
 }
 
@@ -163,7 +176,10 @@ bool NativeObjectFunction::execute(Context* context, Object* instance, int argCo
         return false;
     }
 
-    context->push(result);
+    if (!context->hasException())
+    {
+        context->push(result);
+    }
     return true;
 }
 

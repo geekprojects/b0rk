@@ -78,6 +78,9 @@ Disassembler::Disassembler()
     addOpcode(OPCODE_BLE, "BLE", "0x%llx", 1);
     addOpcode(OPCODE_BG, "BG", "0x%llx", 1);
     addOpcode(OPCODE_BGE, "BGE", "0x%llx", 1);
+    addOpcode(OPCODE_THROW, "THROW", "", 0);
+    addOpcode(OPCODE_PUSHTRY, "PUSHTRY", "v%lld, 0x%llx", 2);
+    addOpcode(OPCODE_POPTRY, "POPTRY", "", 0);
 }
 
 Disassembler::~Disassembler()
