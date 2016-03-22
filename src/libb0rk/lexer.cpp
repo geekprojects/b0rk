@@ -138,6 +138,11 @@ bool Lexer::checkWord(char** pos, SimpleToken* token)
 
 bool Lexer::lexer(char* buffer, int length)
 {
+    if (buffer == NULL || length == 0)
+    {
+        return false;
+    }
+
     char* pos = buffer;
     char* end = buffer + length;
 
