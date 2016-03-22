@@ -25,6 +25,7 @@
 #include <math.h>
 
 #include "packages/system/lang/Maths.h"
+#include "packages/system/lang/Exception.h"
 
 using namespace std;
 using namespace b0rk;
@@ -43,8 +44,8 @@ bool Maths::randomInt(Context* context, Object* instance, int argCount, Value* a
 {
     if (argCount != 2)
     {
-        printf("Maths::randomInt: Incorrect number of arguments\n");
-        return false;
+        context->throwException(Exception::createException(context, "Incorrect number of arguments"));
+        return true;
     }
 
     int from = args[0].i;
@@ -60,8 +61,8 @@ bool Maths::round(Context* context, Object* instance, int argCount, Value* args,
 {
     if (argCount != 1)
     {
-        printf("Maths::round: Incorrect number of arguments\n");
-        return false;
+        context->throwException(Exception::createException(context, "Incorrect number of arguments"));
+        return true;
     }
 
     result.type = VALUE_INTEGER;
