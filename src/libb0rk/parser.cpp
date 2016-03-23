@@ -91,20 +91,12 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
     m_tokens = tokens;
 
     Token* token;
+
+    // Imports
     while (moreTokens())
     {
         token = nextToken();
-
-        if (token->type == TOK_CLASS)
-        {
-            Class* clazz;
-            clazz = parseClass(addToExisting);
-            if (clazz == NULL)
-            {
-                return false;
-            }
-        }
-        else if (token->type == TOK_IMPORT)
+        if (token->type == TOK_IMPORT)
         {
             Identifier id;
             bool res = parseIdentifier(id);
@@ -114,17 +106,7 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
             }
 
             wstring end = id.end();
-            Class* clazz = m_context->getRuntime()->findClass(m_context, id.toString(), true);
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parse: import: %ls: %ls -> %p", id.toString().c_str(), end.c_str(), clazz);
-#endif
-            if (clazz == NULL)
-            {
-                log(ERROR, "parse: import: Imported class not found! %ls", id.toString().c_str());
-                return false;
-            }
-            m_imports.insert(make_pair(end, clazz));
+            m_imports.insert(make_pair(end, id));
 
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
@@ -132,11 +114,30 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
                 log(ERROR, "parse: Expected ;, got %ls", token->string.c_str());
                 return false;
             }
+ 
         }
         else
         {
-            log(ERROR, "parse: Unexpected symbol: %ls (%d)", token->string.c_str(), token->type);
-            return false;
+            m_pos--;
+            break;
+        }
+    }
+
+    while (moreTokens())
+    {
+        token = nextToken();
+        if (token->type == TOK_CLASS)
+        {
+            Class* clazz;
+            clazz = parseClass(addToExisting);
+            if (clazz == NULL)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            log(ERROR, "parse: Expected class, got %ls", token->string.c_str());
         }
     }
 
@@ -175,19 +176,17 @@ Class* Parser::parseClass(bool addToExisting)
             // Check for imported classes
             // TODO: These will override any local vars
             //       Is that right?
-            map<wstring, Class*>::iterator it = m_imports.find(superClassId.identifier.at(0));
+            map<wstring, Identifier>::iterator it = m_imports.find(superClassId.identifier.at(0));
             if (it != m_imports.end())
             {
-                wstring clazz = (it->second)->getName();
 #ifdef DEBUG_PARSER
                 log(
                     DEBUG,
                     "parseClass: NEW: Found imported class: %ls -> %ls",
                     superClassId.identifier.at(0).c_str(),
-                    clazz.c_str());
+                    it->second.toString().c_str());
 #endif
-
-                superClassId = Identifier::makeIdentifier(clazz);
+                superClassId = it->second;
             }
          }
 
@@ -221,21 +220,27 @@ Class* Parser::parseClass(bool addToExisting)
     log(DEBUG, "parseClass: Class name: %ls", name.c_str());
 #endif
 
-    bool existing = false;
-    Class* clazz = NULL;
-    if (addToExisting)
+    Class* clazz = m_context->getRuntime()->findClass(m_context, name, false);
+    if (clazz != NULL)
     {
-        clazz = m_context->getRuntime()->findClass(m_context, name, false);
-        if (clazz != NULL)
+        if (clazz->getState() == PARSING)
         {
-            existing = true;
+            return clazz;
+        }
+
+        if (!addToExisting)
+        {
+            log(ERROR, "Attempting to add to existing class?");
+            return NULL;
         }
     }
 
-    if (!existing)
+    if (clazz == NULL)
     {
         clazz = new Class(superClass, name);
+        m_context->getRuntime()->addClass(m_context, clazz);
     }
+    clazz->setState(PARSING);
 
     while (moreTokens())
     {
@@ -286,10 +291,7 @@ Class* Parser::parseClass(bool addToExisting)
         }
     }
 
-    if (!existing)
-    {
-        m_context->getRuntime()->addClass(m_context, clazz);
-    }
+    clazz->setState(COMPLETE);
 
     return clazz;
 }
@@ -1118,19 +1120,18 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             // Check for imported classes
             // TODO: These will override any local vars
             //       Is that right?
-            map<wstring, Class*>::iterator it = m_imports.find(id.identifier.at(0));
+            map<wstring, Identifier>::iterator it = m_imports.find(id.identifier.at(0));
             if (it != m_imports.end())
             {
-                wstring clazz = (it->second)->getName();
 #ifdef DEBUG_PARSER
                 log(
                     DEBUG,
                     "parseExpressionValue: NEW: Found imported class: %ls -> %ls",
                     id.identifier.at(0).c_str(),
-                    clazz.c_str());
+                    it->second.toString().c_str());
 #endif
 
-                id = Identifier::makeIdentifier(clazz);
+                id = it->second;
             }
          }
 
@@ -1173,17 +1174,22 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             // Check for imported classes
             // TODO: These will override any local vars
             //       Is that right?
-            map<wstring, Class*>::iterator it = m_imports.find(clazzname);
+            map<wstring, Identifier>::iterator it = m_imports.find(clazzname);
             if (it != m_imports.end())
             {
-                clazz = it->second;
 #ifdef DEBUG_PARSER
                 log(
                     DEBUG,
                     "parseExpressionValue: Found imported class: %ls -> %ls",
                     clazzname.c_str(),
-                    clazz->getName().c_str());
+                    it->second.toString().c_str());
 #endif
+                clazz = m_context->getRuntime()->findClass(m_context, it->second.toString(), true);
+                if (clazz == NULL)
+                {
+                    log(ERROR, "parseExpressionValue: Unable to find imported class: %ls", it->second.toString().c_str());
+                    return NULL;
+                }
                 m_pos -= 2;
             }
             int count = 2;

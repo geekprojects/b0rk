@@ -26,8 +26,9 @@ using namespace b0rk;
 
 Class::Class(Class* superClass, string name)
 {
-    m_superClass = superClass;
     m_name = Utils::string2wstring(name);
+    m_state = INIT;
+    m_superClass = superClass;
 
     m_fieldStartId = 0;
     if (m_superClass != NULL)

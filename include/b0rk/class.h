@@ -35,10 +35,18 @@ class Function;
 class Class;
 class Context;
 
+enum ClassState
+{
+    INIT,
+    PARSING,
+    COMPLETE
+};
+
 class Class
 {
  private:
     std::wstring m_name;
+    ClassState m_state;
     Class* m_superClass;
 
     std::map<std::wstring, Function*> m_methods;
@@ -54,6 +62,8 @@ class Class
     virtual ~Class();
 
     std::wstring getName() { return m_name; }
+    ClassState getState() { return m_state; }
+    void setState(ClassState state) { m_state = state; }
     void setSuperClass(Class* sc) { m_superClass = sc; }
     Class* getSuperClass() { return m_superClass; }
 
