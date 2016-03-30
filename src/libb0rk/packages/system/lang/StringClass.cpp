@@ -226,7 +226,7 @@ std::wstring String::getString(Context* context, Object* obj)
 {
     if (obj == NULL)
     {
-        return L"INVALID";
+        return L"null";
     }
     if (obj->getClass() != context->getRuntime()->getStringClass())
     {
