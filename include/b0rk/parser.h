@@ -51,7 +51,7 @@ class Parser : Geek::Logger
 
     CodeBlock* parseCodeBlock(ScriptFunction* function);
 
-    Expression* parseExpression(CodeBlock* code);
+    Expression* parseExpression(CodeBlock* code, TokenType endToken = TOK_ANY);
     Expression* parseExpressionValue(CodeBlock* code);
     Expression* buildTree(CodeBlock* code, std::vector<Expression*>& queue);
 

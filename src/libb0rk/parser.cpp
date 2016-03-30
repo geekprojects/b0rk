@@ -20,6 +20,7 @@
 
 
 #undef DEBUG_PARSER
+#undef DEBUG_PARSER_DETAILED
 #undef DEBUG_PARSER_TYPES
 
 #include <stdio.h>
@@ -826,7 +827,7 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
     return code;
 }
 
-Expression* Parser::parseExpression(CodeBlock* code)
+Expression* Parser::parseExpression(CodeBlock* code, TokenType endToken)
 {
     vector<Expression*> outputQueue;
     vector<OperationExpression*> operatorStack;
@@ -858,6 +859,11 @@ Expression* Parser::parseExpression(CodeBlock* code)
             }
         }
         else if (token->type == TOK_SEMICOLON || token->type == TOK_COMMA)
+        {
+            m_pos--;
+            break;
+        }
+        else if (token->type != TOK_ANY && token->type == endToken)
         {
             m_pos--;
             break;
@@ -1261,9 +1267,15 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             m_expressions.push_back(arrExpr);
             arrExpr->clazz = clazz;
             arrExpr->var = id;
-            arrExpr->indexExpr = parseExpression(code);
+            arrExpr->indexExpr = parseExpression(code, TOK_SQUARE_BRACKET_RIGHT);
+            if (arrExpr->indexExpr == NULL)
+            {
+                log(DEBUG, "parseExpressionValue: -> Error in array expression");
+                return NULL;
+            }
+
 #ifdef DEBUG_PARSER
-            log(DEBUG, "parseExpressionValue: -> Array: %ls[%ls]", id.c_str(), arrExpr->indexExpr->toString().c_str());
+            log(DEBUG, "parseExpressionValue: Array: Index expression=%ls", arrExpr->indexExpr->toString().c_str());
 #endif
             expression = arrExpr;
             token = nextToken();
