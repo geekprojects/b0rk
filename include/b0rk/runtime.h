@@ -55,6 +55,8 @@ class Runtime
     Class* m_objectClass;
     Class* m_stringClass;
     Class* m_exceptionClass;
+    Class* m_arrayClass;
+    Class* m_arrayDataClass;
 
     std::vector<Context*> m_contexts;
 
@@ -93,14 +95,17 @@ class Runtime
     Class* getObjectClass() { return m_objectClass; }
     Class* getStringClass() { return m_stringClass; }
     Class* getExceptionClass() { return m_exceptionClass; }
+    Class* getArrayClass() { return m_arrayClass; }
+    Class* getArrayDataClass() { return m_arrayDataClass; }
 
     Context* createContext();
 
-    Object* allocateObject(Class* clazz);
+    Object* allocateObject(Class* clazz, unsigned int extraValues = 0);
     Object* newObject(Context* context, Class* clazz, int argCount);
     Object* newObject(Context* context, std::wstring clazz, int argCount);
     Object* newObject(Context* context, Class* clazz, int argCount, Value* args);
     Object* newObject(Context* context, std::wstring clazz, int argCount, Value* args);
+    Object* newArray(Context* context, int size);
     bool isObjectValid(Object* obj);
 
     void setAppData(void* data) { m_appData = data; }

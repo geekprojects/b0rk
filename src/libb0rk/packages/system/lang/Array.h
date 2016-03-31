@@ -28,25 +28,27 @@
 namespace b0rk
 {
 
-// TODO: HACK HACK HACK THIS WORKS BUT ISN'T RIGHT!
-struct ArrayContainer
-{
-    std::map<std::wstring, Value> array;
-};
-
 class Array : public Class
 {
  private:
 
  public:
     Array();
-    ~Array();
+    virtual ~Array();
 
     bool constructor(Context* context, Object* instance, int argCount, Value* args, Value& result);
 
-    static ArrayContainer* getContainer(Object* array);
-    static bool load(Object* array, Value index, Value& value);
-    static bool store(Object* array, Value index, Value value);
+    virtual bool load(Context* context, Object* array, Value index, Value& value);
+    virtual bool store(Context* context, Object* array, Value index, Value value);
+
+    int size(Object* array);
+};
+
+class ArrayData : public Class
+{
+ public:
+    ArrayData() : Class(NULL, "system.lang.ArrayData") {}
+    ~ArrayData() {}
 };
 
 };

@@ -90,15 +90,13 @@ Runtime::Runtime()
     Context* initContext = new Context(this);
 
     // system.lang classes
-    m_objectClass = new ObjectClass();
-    addClass(initContext, m_objectClass, true);
-    addClass(initContext, new Array(), true);
-    m_stringClass = new String();
-    addClass(initContext, m_stringClass, true);
+    addClass(initContext, m_objectClass = new ObjectClass(), true);
+    addClass(initContext, m_arrayClass = new Array(), true);
+    addClass(initContext, m_arrayDataClass = new ArrayData(), true);
+    addClass(initContext, m_stringClass = new String(), true);
     addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new Maths(), true);
-    m_exceptionClass = new Exception();
-    addClass(initContext, m_exceptionClass, true);
+    addClass(initContext, m_exceptionClass = new Exception(), true);
 
     // system.io classes
     addClass(initContext, new File(), true);
@@ -271,8 +269,9 @@ Class* Runtime::loadClass(Context* context, wstring name, bool addToExisting)
     return NULL;
 }
 
-Object* Runtime::allocateObject(Class* clazz)
+Object* Runtime::allocateObject(Class* clazz, unsigned int extraValues)
 {
+
     if (m_currentBytes >= (m_arenaTotal / 4) * 3)
     {
 #ifdef DEBUG_GC
@@ -297,8 +296,8 @@ Object* Runtime::allocateObject(Class* clazz)
     // Disable GC otherwise it could collect the new object before we're finished!
     bool enabled = m_gcEnabled;
     m_gcEnabled = false;
- 
-    unsigned objSize = sizeof(Object) + (clazz->getFieldCount() * sizeof(Value));
+
+    unsigned objSize = sizeof(Object) + ((clazz->getFieldCount() + extraValues) * sizeof(Value));
 
     Object* freeObj = NULL;
     list<Object*>::iterator it;
@@ -371,7 +370,7 @@ exit(-1);
 
 Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
 {
-   Object* obj = allocateObject(clazz);
+    Object* obj = allocateObject(clazz);
 
     bool res = callConstructor(context, obj, clazz, argCount);
     if (!res)
@@ -410,6 +409,15 @@ Object* Runtime::newObject(Context* context, wstring clazzName, int argCount, Va
         return NULL;
     }
     return newObject(context, clazz, argCount, args);
+}
+
+Object* Runtime::newArray(Context* context, int size)
+{
+    Value sizeVal;
+    sizeVal.type = VALUE_INTEGER;
+    sizeVal.i = size;
+    context->push(sizeVal);
+    return newObject(context, m_arrayClass, 1);
 }
 
 bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int argCount)

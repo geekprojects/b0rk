@@ -188,15 +188,15 @@ static bool opcodeLoadArray(uint64_t thisPC, uint64_t opcode, Context* context, 
     Value indexValue = context->pop();
     Value arrayValue = context->pop();
 
-    LOG("STORE_ARRAY: indexValue=%ls", indexValue.toString().c_str());
-    LOG("STORE_ARRAY: arrayValue=%ls", arrayValue.toString().c_str());
+    LOG("LOAD_ARRAY: indexValue=%ls", indexValue.toString().c_str());
+    LOG("LOAD_ARRAY: arrayValue=%ls", arrayValue.toString().c_str());
 
     bool res = false;
     if (arrayValue.type == VALUE_OBJECT && arrayValue.object != NULL)
     {
         Object* array = arrayValue.object;
         Value valueValue;
-        res = Array::load(array, indexValue, valueValue);
+        res = ((Array*)array->m_class)->load(context, array, indexValue, valueValue);
         context->push(valueValue);
     }
     else
@@ -221,7 +221,7 @@ static bool opcodeStoreArray(uint64_t thisPC, uint64_t opcode, Context* context,
     if (arrayValue.type == VALUE_OBJECT && arrayValue.object != NULL)
     {
         Object* array = arrayValue.object;
-        res = Array::store(array, indexValue, valueValue);
+        res = ((Array*)array->m_class)->store(context, array, indexValue, valueValue);
     }
     else
     {
@@ -271,7 +271,7 @@ static bool opcodePushObj(uint64_t thisPC, uint64_t opcode, Context* context, Fr
     v.type = VALUE_OBJECT;
     Object* obj = (Object*)frame->fetch();
     v.object = obj;
-    LOG("PUSHD: %p", obj);
+    LOG("PUSHOBJ: %p", obj);
     context->push(v);
     return true;
 }
@@ -806,8 +806,8 @@ static bool opcodeCmp(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         // TODO: This should have been figured out by the assembler?
         Class* clazz = left.object->getClass();
         LOG("CMP OBJECT: class=%ls", clazz->getName().c_str());
-        Function* eqFunc = clazz->findMethod(L"operator==")
-        LOG("CMP OBJECT: cmp operator=%p", addFunc);
+        Function* eqFunc = clazz->findMethod(L"operator==");
+        LOG("CMP OBJECT: cmp operator=%p", eqFunc);
         bool res = eqFunc->execute(context, left.object, 1);
         if (!res)
         {
