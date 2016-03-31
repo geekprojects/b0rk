@@ -768,7 +768,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         case EXPR_ARRAY:
         {
             ArrayExpression* arrExpr = (ArrayExpression*)expr;
+
+#ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: ARRAY!\n");
+#endif
+
             // Load the array object
             res = load(block, arrExpr, reference);
             if (!res)
