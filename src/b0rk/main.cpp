@@ -24,11 +24,16 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <cinttypes>
+
 #include <b0rk/lexer.h>
 #include <b0rk/parser.h>
 #include <b0rk/assembler.h>
 #include <b0rk/executor.h>
 #include <b0rk/utils.h>
+
+#include <b0rk/packages/system/lang/Array.h>
+#include <b0rk/packages/system/lang/StringClass.h>
 
 using namespace std;
 using namespace b0rk;
@@ -63,7 +68,25 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    mainFunc->execute(context, NULL, 0);
+    Object* argsObj = runtime->newArray(context, argc - 2);
+    int i;
+    for (i = 2; i < argc; i++)
+    {
+        Value idx;
+        idx.type = VALUE_INTEGER;
+        idx.i = i - 2;
+        Value value;
+        value.type = VALUE_OBJECT;
+        value.object = String::createString(context, argv[i]);
+        ((Array*)runtime->getArrayClass())->store(context, argsObj, idx, value);
+    }
+
+    Value argsValue;
+    argsValue.type = VALUE_OBJECT;
+    argsValue.object = argsObj;
+
+    Value result;
+    mainFunc->execute(context, NULL, 1, &argsValue, result);
 
     delete runtime;
 

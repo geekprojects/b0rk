@@ -158,6 +158,10 @@ Class* Parser::parseClass(bool addToExisting)
         return NULL;
     }
 
+    // Import ourselves!
+    wstring end = classId.end();
+    m_imports.insert(make_pair(end, classId));
+
     wstring name = classId.toString();
     Class* superClass = NULL;
 

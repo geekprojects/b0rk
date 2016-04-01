@@ -23,19 +23,22 @@
  */
 class tests.Arrays
 {
-    function main() static
+    function main(args) static
     {
-        var array = new system.lang.Array();
+        var i;
+        for (i = 0; i < args.length; i++)
+        {
+            system.io.File.out.writeln("Arg: " + args[i]);
+        }
+
+        var array = new system.lang.Array(2);
         array[0] = "hello";
         array[1] = "world";
-        array["hello"] = "world";
-        array["foo"] = 1234;
 
         var hello = array[0];
         system.io.File.out.writeln(hello);
         system.io.File.out.writeln("Result: 0: " + array[0]);
-        system.io.File.out.writeln("Result: hello: " + array["hello"]);
-        system.io.File.out.writeln("Result: foo: " + array["foo"]);
+        system.io.File.out.writeln("Result: 1: " + array[1]);
     }
 }
 
