@@ -108,7 +108,7 @@ Runtime::Runtime()
 
 Runtime::~Runtime()
 {
-    gc();
+    gc(true);
     gcStats();
 
     // Get rid of classes
@@ -283,7 +283,7 @@ Object* Runtime::allocateObject(Class* clazz, unsigned int extraValues)
 #ifdef DEBUG_GC
             printf("Runtime::newObject: Less than 25%% of arena available, GCing\n");
 #endif
-            gc();
+            gc(true);
         }
 #ifdef DEBUG_GC
         else
@@ -305,7 +305,7 @@ Object* Runtime::allocateObject(Class* clazz, unsigned int extraValues)
     {
         Object* o = *it;
 #ifdef DEBUG_GC
-        printf("Runtime::allocateObject: Free: %p (size=%" PRId64 ", requested=%" PRId64 ")\n", o, o->m_size, objSize);
+        printf("Runtime::allocateObject: Free: %p (size=%ld, requested=%u)\n", o, o->m_size, objSize);
 #endif
         if (o->m_size >= objSize)
         {
@@ -477,7 +477,7 @@ bool Runtime::isObjectValid(Object* obj)
     return false;
 }
 
-void Runtime::gc()
+void Runtime::gc(bool force)
 {
     if (!m_gcEnabled)
     {
@@ -485,8 +485,11 @@ void Runtime::gc()
     }
 
     uint64_t now = getTimestamp();
+#ifdef DEBUG_GC
+    fprintf(stderr, "Runtime::gc: Marking, now=%" PRIx64 "\n", now);
+#endif
     int64_t freed = 0;
-    if (m_newObjects > m_gcLastAlloc)
+    if (force || m_newObjects > m_gcLastAlloc)
     {
 
         // Mark objects from static fields
@@ -515,7 +518,6 @@ void Runtime::gc()
     if (freed > 0)
     {
         fprintf(stderr, "Runtime::gc: Freed %" PRId64 " bytes\n", freed);
-        gcStats();
     }
     fprintf(stderr, "Runtime::gc: Time: %" PRId64 " msec\n", (endTime - now) / 1000);
 #endif
@@ -533,17 +535,21 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
         Context* ctx = *ctxit;
         int s;
 
-        for (s = 0; s < ctx->getStackSize(); s++)
+        for (s = 0; s < ctx->getStackPos(); s++)
         {
             Value* v = &(ctx->getStack()[s]);
             if (v->type == VALUE_OBJECT && isObjectValid(v->object))
             {
-                //printf("Runtime::gc: Stacked Object: %p\n", (*stackit).object);
+#ifdef DEBUG_GC
+                fprintf(stderr, "Runtime::gcArena: Stacked Object: %p\n", v->object);
+#endif
                 gcMarkObject(v->object, mark);
             }
             else if (v->type == VALUE_FRAME && v->pointer != NULL)
             {
-                //printf("Runtime::gc: Stacked Frame: %p\n", (*stackit).pointer);
+#ifdef DEBUG_GC
+                fprintf(stderr, "Runtime::gcArena: Stacked Frame: %p\n", v->pointer);
+#endif
                 Frame* frame = (Frame*)(v->pointer);
                 int i;
                 for (i = 0; i < frame->localVarsCount; i++)
@@ -551,7 +557,6 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
                     Object* obj = frame->localVars[i].object;
                     if (frame->localVars[i].type == VALUE_OBJECT && isObjectValid(obj))
                     {
-                        //printf("Runtime::gc: Object on Variable: %p\n", obj);
                         gcMarkObject(obj, mark);
                     }
                 }
@@ -599,7 +604,7 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
                     survived = (float)(mark - obj->m_gcMark) / (float)USEC_PER_SEC;
                 }
 
-                printf("Runtime::gc:  -> OLD! GC!! %" PRId64 "-%" PRId64 " = survived=%f\n", mark, obj->m_gcMark, survived);
+                fprintf(stderr, "Runtime::gc:  Collecting: %p (%ls) %" PRId64 "-%" PRId64 " = survived=%f\n", obj, obj->m_class->getName().c_str(), mark, obj->m_gcMark, survived);
 #endif
                 m_collectedObjects++;
                 obj->m_class = NULL;
@@ -632,7 +637,9 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
                 if ((uint64_t)freeObj == prevFreeObjEnd)
                 {
 #ifdef DEBUG_GC
-                    printf("Runtime::gc: Coalesce: prev=%p-0x%" PRIx64 ", this=%p-0x%" PRIx64 "\n",
+                    fprintf(
+                        stderr,
+                        "Runtime::gc: Coalesce: prev=%p-0x%" PRIx64 ", this=%p-0x%" PRIx64 "\n",
                         prevFreeObj,
                         (uint64_t)prevFreeObj + prevFreeObj->m_size,
                         freeObj,
@@ -664,8 +671,16 @@ void Runtime::gcMarkObject(Object* obj, uint64_t mark)
         return;
     }
 
+    // Note, the number of values this object has my be different
+    // to the number of it's classes fields, for instance the
+    // ArrayData class adds extra values to store it's data
+    int valueCount = (obj->m_size - sizeof(Object)) / sizeof(Value);
+#ifdef DEBUG_GC
+    fprintf(stderr, "Runtime::gcMarkObject: %p (%ls), values=%d\n", obj, obj->m_class->getName().c_str(), valueCount);
+#endif
+
     unsigned int i;
-    for (i = 0; i < obj->m_class->getFieldCount(); i++)
+    for (i = 0; i < valueCount; i++)
     {
         Object* child = obj->m_values[i].object;
         if (obj->m_values[i].type == VALUE_OBJECT && isObjectValid(child))
@@ -684,8 +699,29 @@ void Runtime::gcStats()
     fprintf(stderr, "Runtime:  New Bytes: %" PRId64 "\n", m_newBytes);
     fprintf(stderr, "Runtime:  Current Bytes: %" PRId64 "\n", m_currentBytes);
     fprintf(stderr, "Runtime:  GC Time: %" PRId64 " ms\n", m_gcTime / 1000);
+
 }
 
+void Runtime::gcDump()
+{
+    uint64_t pos = m_arena.m_start;
+    uint64_t end = m_arena.m_start + m_arena.m_size;
+    while (pos < end)
+    {
+        Object* obj = (Object*)pos;
+
+        if (obj->m_class != NULL)
+        {
+            fprintf(
+                stderr,
+                "Runtime: Dump: %p: %ls, size=%ld, gcMark=0x%" PRIx64 "\n",
+                obj,
+                obj->m_class->getName().c_str(),
+                obj->m_size, obj->m_gcMark);
+        }
+        pos += obj->m_size;
+    }
+}
 
 Context* Runtime::createContext()
 {

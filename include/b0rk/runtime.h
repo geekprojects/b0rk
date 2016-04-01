@@ -111,8 +111,9 @@ class Runtime
     void setAppData(void* data) { m_appData = data; }
     void* getAppData() { return m_appData; }
 
-    void gc();
+    void gc(bool force = false);
     void gcStats();
+    void gcDump();
 
     Executor* getExecutor();
 };
