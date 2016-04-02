@@ -674,9 +674,9 @@ void Runtime::gcMarkObject(Object* obj, uint64_t mark)
     // Note, the number of values this object has my be different
     // to the number of it's classes fields, for instance the
     // ArrayData class adds extra values to store it's data
-    int valueCount = (obj->m_size - sizeof(Object)) / sizeof(Value);
+    unsigned int valueCount = (obj->m_size - sizeof(Object)) / sizeof(Value);
 #ifdef DEBUG_GC
-    fprintf(stderr, "Runtime::gcMarkObject: %p (%ls), values=%d\n", obj, obj->m_class->getName().c_str(), valueCount);
+    fprintf(stderr, "Runtime::gcMarkObject: %p (%ls), values=%u\n", obj, obj->m_class->getName().c_str(), valueCount);
 #endif
 
     unsigned int i;
