@@ -32,8 +32,8 @@
 #include <b0rk/executor.h>
 #include <b0rk/utils.h>
 
-#include <b0rk/packages/system/lang/Array.h>
-#include <b0rk/packages/system/lang/StringClass.h>
+#include "packages/system/lang/Array.h"
+#include "packages/system/lang/StringClass.h"
 
 using namespace std;
 using namespace b0rk;
