@@ -701,8 +701,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         {
             TryExpression* tryExpr = (TryExpression*)expr;
 
-
-            unsigned int excepVar = tryExpr->catchBlock->getVarId(tryExpr->exceptionVar);
+            int excepVar = tryExpr->catchBlock->getVarId(tryExpr->exceptionVar);
             if (excepVar == -1)
             {
                 printf("Assembler::assembleExpression: TRY: Exception var %ls not found!\n", tryExpr->exceptionVar.c_str());
