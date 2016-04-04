@@ -51,13 +51,13 @@ bool File::init(Context* context, Object* instance, int argCount, Value* args, V
     Class* fileClass = context->getRuntime()->findClass(context, L"system.io.File");
     Object* outFile = context->getRuntime()->allocateObject(fileClass);
 
-    int fdId = getFieldId(L"fileDescriptor");
+    m_fdFieldId = getFieldId(L"fileDescriptor");
 
     // stdout
     Value outValue;
     outValue.type = VALUE_POINTER;
     outValue.pointer = stdout;
-    outFile->setValue(fdId, outValue);
+    outFile->setValue(m_fdFieldId, outValue);
 
     Value outObjValue;
     outObjValue.type = VALUE_OBJECT;
@@ -76,7 +76,7 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
     FILE* fd;
     if (instance != NULL)
     {
-        int fdId = getFieldId(L"fileDescriptor");
+        int fdId = m_fdFieldId;
         fd = (FILE*)instance->getValue(fdId).pointer;
     }
     else

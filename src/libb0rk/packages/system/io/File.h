@@ -28,6 +28,7 @@ namespace b0rk
 class File : public Class
 {
  private:
+    int m_fdFieldId;
 
  public:
     File();
