@@ -420,6 +420,21 @@ Object* Runtime::newArray(Context* context, int size)
     return newObject(context, m_arrayClass, 1);
 }
 
+Object* Runtime::newString(Context* context, wstring string)
+{
+    map<wstring, Object*>::iterator it;
+    it = m_stringTable.find(string);
+    if (it != m_stringTable.end())
+    {
+        return it->second;
+    }
+
+    Object* stringObj = String::createString(context, string);
+    m_stringTable.insert(make_pair(string, stringObj));
+    stringObj->setExternalGC();
+    return stringObj;
+}
+
 bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int argCount)
 {
     bool res;

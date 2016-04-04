@@ -60,6 +60,8 @@ class Runtime
 
     std::vector<Context*> m_contexts;
 
+    std::map<std::wstring, Object*> m_stringTable;
+
     Arena m_arena;
 
     Executor* m_executor;
@@ -106,6 +108,7 @@ class Runtime
     Object* newObject(Context* context, Class* clazz, int argCount, Value* args);
     Object* newObject(Context* context, std::wstring clazz, int argCount, Value* args);
     Object* newArray(Context* context, int size);
+    Object* newString(Context* context, std::wstring string);
     bool isObjectValid(Object* obj);
 
     void setAppData(void* data) { m_appData = data; }

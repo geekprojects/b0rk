@@ -239,7 +239,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 if (inReference)
                 {
                     m_code.push_back(OPCODE_PUSHOBJ);
-                    Object* strObj = String::createString(m_context, callExpr->function);
+                    Object* strObj = m_context->getRuntime()->newString(m_context, callExpr->function);
                     m_code.push_back((uint64_t)strObj);
                     strObj->setExternalGC();
                     m_code.push_back(OPCODE_CALL_NAMED);
@@ -827,7 +827,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #endif
 
             m_code.push_back(OPCODE_PUSHOBJ);
-            Object* strObj = String::createString(m_context, strExpr->str);
+            Object* strObj = m_context->getRuntime()->newString(m_context, strExpr->str);
             m_code.push_back((uint64_t)strObj);
             strObj->setExternalGC();
         } break;
@@ -1014,7 +1014,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         }
 
         m_code.push_back(OPCODE_PUSHOBJ);
-        Object* strObj = String::createString(m_context, varExpr->var);
+        Object* strObj = m_context->getRuntime()->newString(m_context, varExpr->var);
         m_code.push_back((uint64_t)strObj);
         strObj->setExternalGC();
 
@@ -1107,7 +1107,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         printf("Assembler::store: Var from reference: %ls\n", varExpr->var.c_str());
 
         m_code.push_back(OPCODE_PUSHOBJ);
-        Object* strObj = String::createString(m_context, varExpr->var);
+        Object* strObj = m_context->getRuntime()->newString(m_context, varExpr->var);
         m_code.push_back((uint64_t)strObj);
         strObj->setExternalGC();
 

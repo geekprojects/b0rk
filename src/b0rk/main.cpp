@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         idx.i = i - 2;
         Value value;
         value.type = VALUE_OBJECT;
-        value.object = String::createString(context, argv[i]);
+        value.object = runtime->newString(context, Utils::string2wstring(string(argv[i])));
         ((Array*)runtime->getArrayClass())->store(context, argsObj, idx, value);
     }
 
