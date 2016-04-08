@@ -49,7 +49,8 @@ class Parser : Geek::Logger
     Class* parseClass(bool addToExisting);
     Function* parseFunction(Class* clazz);
 
-    CodeBlock* parseCodeBlock(ScriptFunction* function);
+    CodeBlock* parseCodeBlock(ScriptFunction* function, bool single = false);
+    bool parseStatement(CodeBlock* block, bool& end);
 
     Expression* parseExpression(CodeBlock* code, TokenType endToken = TOK_ANY);
     Expression* parseExpressionValue(CodeBlock* code);

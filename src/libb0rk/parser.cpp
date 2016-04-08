@@ -56,9 +56,7 @@ OpDesc opTable[] = {
     if (token->type != _expectType) \
     { \
         log(ERROR, "%s: " _name ": Expected " _expectStr ", got %ls", __PRETTY_FUNCTION__, token->string.c_str()); \
-        delete code; \
-popDepth(); \
-        return NULL; \
+        return false; \
     }
 
 #define EXPECT_BRACKET_LEFT(_name) EXPECT(_name, TOK_BRACKET_LEFT, "(")
@@ -458,7 +456,7 @@ bool Parser::resolveTypes()
     return true;
 }
 
-CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
+CodeBlock* Parser::parseCodeBlock(ScriptFunction* function, bool single)
 {
     bool success = true;
 
@@ -467,350 +465,13 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
     CodeBlock* code = new CodeBlock();
     code->m_function = function;
 
-    while (success && moreTokens())
+    while (moreTokens())
     {
-        Token* token = nextToken();
-        if (token->type == TOK_BRACE_RIGHT)
+        bool end = false;
+        success = parseStatement(code, end);
+        if (!success || end)
         {
             break;
-        }
-        else if (token->type == TOK_VAR)
-        {
-            EXPECT("var", TOK_IDENTIFIER, "identifier");
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: VAR: name=%ls", token->string.c_str());
-#endif
-            code->m_vars.push_back(token->string);
-
-            // TODO: Handle assignment from var definition
-
-            token = nextToken();
-
-            if (token->type == TOK_ASSIGN)
-            {
-#ifdef DEBUG_PARSER
-                log(DEBUG, "parseCodeBlock: VAR equals!");
-#endif
-
-                // Reverse back up to the variable name and pretend it was just an assignment!
-                m_pos -= 2;
-                Expression* expr = parseExpression(code);
-                if (expr == NULL)
-                {
-                    success = false;
-                    break;
-                }
-                code->m_code.push_back(expr);
-
-                token = nextToken();
-            }
-            if (token->type != TOK_SEMICOLON)
-            {
-                log(ERROR, "parseCodeBlock: VAR: Expected ;, got %ls", token->string.c_str());
-                success = false;
-                break;
-            }
-        }
-        else if (token->type == TOK_IF)
-        {
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: *** IF ***");
-#endif
-            EXPECT_BRACKET_LEFT("IF");
-
-            IfExpression* ifExpr = new IfExpression(code);
-            m_expressions.push_back(ifExpr);
-
-            ifExpr->testExpr = parseExpression(code);
-            if (ifExpr->testExpr == NULL)
-            {
-                success = false;
-                break;
-            }
-
-            EXPECT_BRACKET_RIGHT("IF");
-            EXPECT_BRACE_LEFT("IF");
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "Parser::parseCodeBlock: IF: TRUE BLOCK...");
-#endif
-            ifExpr->trueBlock = parseCodeBlock(function);
-            if (ifExpr->trueBlock == NULL)
-            {
-                success = false;
-                break;
-            }
-            ifExpr->trueBlock->m_parent = code;
-            code->m_childBlocks.push_back(ifExpr->trueBlock);
-
-            token = nextToken();
-            if (token->type == TOK_ELSE)
-            {
-#ifdef DEBUG_PARSER
-                log(DEBUG, "parseCodeBlock: IF: ELSE...");
-#endif
-                token = nextToken();
-                if (token->type != TOK_IF && token->type != TOK_BRACE_LEFT)
-                {
-                    log(ERROR, "parseCodeBlock: IF ELSE: Expected if or {, got %ls", token->string.c_str());
-                    success = false;
-                    break;
-                }
-
-                if (token->type == TOK_IF)
-                {
-#ifdef DEBUG_PARSER
-                    log(DEBUG, "parseCodeBlock: IF: ELSE IF!");
-#endif
-                    m_pos--;
-                }
-
-                ifExpr->falseBlock = parseCodeBlock(function);
-                if (ifExpr->trueBlock == NULL)
-                {
-                    success = false;
-                    break;
-                }
-                ifExpr->falseBlock->m_parent = code;
-                code->m_childBlocks.push_back(ifExpr->falseBlock);
-#ifdef DEBUG_PARSER
-                log(DEBUG, "parseCodeBlock: IF: ELSE DONE: %ls", ifExpr->falseBlock->toString().c_str());
-#endif
-
-                if (token->type == TOK_IF)
-                {
-                    m_pos--;
-                }
-            }
-            else
-            {
-                m_pos--;
-            }
-            code->m_code.push_back(ifExpr);
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: *** IF: DONE ***");
-#endif
-        }
-        else if (token->type == TOK_FOR)
-        {
-            EXPECT_BRACKET_LEFT("for");
-
-            ForExpression* forExpr = new ForExpression(code);
-            m_expressions.push_back(forExpr);
-
-            forExpr->initExpr = parseExpression(code);
-            if (forExpr->initExpr == NULL)
-            {
-                success = false;
-                break;
-            }
-            forExpr->initExpr->parent = forExpr;
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: FOR: Init Expression: %ls", forExpr->initExpr->toString().c_str());
-#endif
-
-            EXPECT_SEMICOLON("for");
-
-            forExpr->testExpr = parseExpression(code);
-            if (forExpr->testExpr == NULL)
-            {
-                success = false;
-                break;
-            }
-            forExpr->testExpr->parent = forExpr;
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: FOR: Test Expression: %ls", forExpr->testExpr->toString().c_str());
-#endif
-
-            EXPECT_SEMICOLON("for");
-
-            forExpr->incExpr = parseExpression(code);
-            if (forExpr->incExpr == NULL)
-            {
-                success = false;
-                break;
-            }
-            forExpr->incExpr->parent = forExpr;
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: FOR: Inc Expression: %ls", forExpr->incExpr->toString().c_str());
-#endif
-
-            EXPECT_BRACKET_RIGHT("for");
-            EXPECT_BRACE_LEFT("for");
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: FOR: Parsing Body...");
-#endif
-            forExpr->body = parseCodeBlock(function);
-            if (forExpr->body == NULL)
-            {
-                success = false;
-                break;
-            }
-            forExpr->body->m_parent = code;
-            code->m_childBlocks.push_back(forExpr->body);
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: FOR: Got body!");
-#endif
-
-            code->m_code.push_back(forExpr);
-        }
-        else if (token->type == TOK_WHILE)
-        {
-            // A While expression is just a simple For loop
-
-            EXPECT_BRACKET_LEFT("for");
-
-            ForExpression* forExpr = new ForExpression(code);
-            m_expressions.push_back(forExpr);
-
-            forExpr->initExpr = NULL;
-            forExpr->incExpr = NULL;
-
-            forExpr->testExpr = parseExpression(code);
-            if (forExpr->testExpr == NULL)
-            {
-                success = false;
-                break;
-            }
-            forExpr->testExpr->parent = forExpr;
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: WHILE: Test Expression: %ls", forExpr->testExpr->toString().c_str());
-#endif
-
-            EXPECT_BRACKET_RIGHT("for");
-            EXPECT_BRACE_LEFT("for");
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: WHILE: Parsing Body...");
-#endif
-            forExpr->body = parseCodeBlock(function);
-            if (forExpr->body == NULL)
-            {
-                success = false;
-                break;
-            }
-
-            forExpr->body->m_parent = code;
-            code->m_childBlocks.push_back(forExpr->body);
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: WHILE: Got body!");
-#endif
-
-            code->m_code.push_back(forExpr);
-        }
-        else if (token->type == TOK_RETURN)
-        {
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: RETURN");
-#endif
-            ReturnExpression* retExpr = new ReturnExpression(code);
-            m_expressions.push_back(retExpr);
-            code->m_code.push_back(retExpr);
-            token = nextToken();
-            if (token->type == TOK_SEMICOLON)
-            {
-                retExpr->returnValue = NULL;
-            }
-            else
-            {
-                m_pos--;
-                retExpr->returnValue = parseExpression(code);
-
-                EXPECT_SEMICOLON("return");
-            }
-        }
-        else if (token->type == TOK_TRY)
-        {
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: Got try!");
-#endif
-
-            TryExpression* tryExpr = new TryExpression(code);
-            m_expressions.push_back(tryExpr);
-            code->m_code.push_back(tryExpr);
-
-            EXPECT_BRACE_LEFT("try");
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: TRY: Parsing try body...");
-#endif
-            tryExpr->tryBlock = parseCodeBlock(function);
-            if (tryExpr->tryBlock == NULL)
-            {
-                success = false;
-                break;
-            }
-
-            EXPECT("try", TOK_CATCH, "catch");
-            EXPECT_BRACKET_LEFT("try");
-
-            EXPECT("try", TOK_IDENTIFIER, "identifier");
-            tryExpr->exceptionVar = token->string;
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: TRY: catch var name=%ls", token->string.c_str());
-#endif
-            EXPECT_BRACKET_RIGHT("try");
-            EXPECT_BRACE_LEFT("try");
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: TRY: Parsing catch body...");
-#endif
-            tryExpr->catchBlock = parseCodeBlock(function);
-            if (tryExpr->catchBlock == NULL)
-            {
-                success = false;
-                break;
-            }
-
-            // Define the exception variable
-            tryExpr->catchBlock->m_vars.push_back(tryExpr->exceptionVar);
-
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: TRY: %ls", tryExpr->toString().c_str());
-#endif
-        }
-        else if (token->type == TOK_THROW)
-        {
-            ThrowExpression* throwExpr = new ThrowExpression(code);
-
-            throwExpr->throwValue = parseExpression(code);
-            if (throwExpr->throwValue == NULL)
-            {
-                log(ERROR, "parseCodeBlock: Expression expected after \"throw\"");
-                success = false;
-                break;
-            }
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: Got throw: %ls", throwExpr->toString().c_str());
-#endif
-
-            m_expressions.push_back(throwExpr);
-            code->m_code.push_back(throwExpr);
-
-            EXPECT_SEMICOLON("throw");
-        }
-        else
-        {
-            // Expression ?
-            m_pos--; // Rewind
-
-            Expression* expression;
-            expression = parseExpression(code);
-            if (expression == NULL)
-            {
-                success = false;
-                break;
-            }
-#ifdef DEBUG_PARSER
-            log(DEBUG, "parseCodeBlock: Expression: %ls", expression->toString().c_str());
-#endif
-
-            EXPECT_SEMICOLON("EXPRESSION");
-            code->m_code.push_back(expression);
         }
     }
 
@@ -830,6 +491,358 @@ CodeBlock* Parser::parseCodeBlock(ScriptFunction* function)
     popDepth();
     return code;
 }
+
+bool Parser::parseStatement(CodeBlock* code, bool& end)
+{
+    end = false;
+
+    Token* token = nextToken();
+    if (token->type == TOK_BRACE_RIGHT)
+    {
+        end = true;
+    }
+    else if (token->type == TOK_VAR)
+    {
+        EXPECT("var", TOK_IDENTIFIER, "identifier");
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: VAR: name=%ls", token->string.c_str());
+#endif
+        code->m_vars.push_back(token->string);
+
+        // TODO: Handle assignment from var definition
+
+        token = nextToken();
+
+        if (token->type == TOK_ASSIGN)
+        {
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: VAR equals!");
+#endif
+
+            // Reverse back up to the variable name and pretend it was just an assignment!
+            m_pos -= 2;
+            Expression* expr = parseExpression(code);
+            if (expr == NULL)
+            {
+                return false;
+            }
+            code->m_code.push_back(expr);
+
+            token = nextToken();
+        }
+        if (token->type != TOK_SEMICOLON)
+        {
+            log(ERROR, "parseCodeBlock: VAR: Expected ;, got %ls", token->string.c_str());
+            return false;
+        }
+    }
+    else if (token->type == TOK_IF)
+    {
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: *** IF ***");
+#endif
+        EXPECT_BRACKET_LEFT("IF");
+
+        IfExpression* ifExpr = new IfExpression(code);
+        m_expressions.push_back(ifExpr);
+
+        ifExpr->testExpr = parseExpression(code);
+        if (ifExpr->testExpr == NULL)
+        {
+            return false;
+        }
+
+        EXPECT_BRACKET_RIGHT("IF");
+        EXPECT_BRACE_LEFT("IF");
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "Parser::parseCodeBlock: IF: TRUE BLOCK...");
+#endif
+
+        ifExpr->trueBlock = parseCodeBlock(code->m_function);
+        if (ifExpr->trueBlock == NULL)
+        {
+            return false;
+        }
+        ifExpr->trueBlock->m_parent = code;
+        code->m_childBlocks.push_back(ifExpr->trueBlock);
+
+        token = nextToken();
+        if (token->type == TOK_ELSE)
+        {
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: IF: ELSE...");
+#endif
+            token = nextToken();
+            if (token->type != TOK_IF && token->type != TOK_BRACE_LEFT)
+            {
+                log(ERROR, "parseCodeBlock: IF ELSE: Expected if or {, got %ls", token->string.c_str());
+                return false;
+            }
+
+            if (token->type == TOK_IF)
+            {
+                // We have ...else if (..)...
+#ifdef DEBUG_PARSER
+                log(DEBUG, "parseCodeBlock: IF: ELSE IF!");
+#endif
+                m_pos--;
+                CodeBlock* elseIf = new CodeBlock();
+                elseIf->m_function = code->m_function;
+
+                // Parse it as a single IF statement
+                bool end;
+                bool res = parseStatement(elseIf, end);
+                if (res)
+                {
+                    ifExpr->falseBlock = elseIf;
+                }
+                else
+                {
+                    delete elseIf;
+                }
+            }
+            else
+            {
+                // Just an else
+                ifExpr->falseBlock = parseCodeBlock(code->m_function);
+            }
+
+            if (ifExpr->falseBlock == NULL)
+            {
+                return false;
+            }
+            ifExpr->falseBlock->m_parent = code;
+            code->m_childBlocks.push_back(ifExpr->falseBlock);
+#ifdef DEBUG_PARSER
+            log(DEBUG, "parseCodeBlock: IF: ELSE DONE: %ls", ifExpr->falseBlock->toString().c_str());
+#endif
+
+        }
+        else
+        {
+            m_pos--;
+        }
+        code->m_code.push_back(ifExpr);
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: *** IF: DONE ***");
+#endif
+    }
+    else if (token->type == TOK_FOR)
+    {
+        EXPECT_BRACKET_LEFT("for");
+
+        ForExpression* forExpr = new ForExpression(code);
+        m_expressions.push_back(forExpr);
+
+        forExpr->initExpr = parseExpression(code);
+        if (forExpr->initExpr == NULL)
+        {
+            return false;
+        }
+        forExpr->initExpr->parent = forExpr;
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: FOR: Init Expression: %ls", forExpr->initExpr->toString().c_str());
+#endif
+
+        EXPECT_SEMICOLON("for");
+
+        forExpr->testExpr = parseExpression(code);
+        if (forExpr->testExpr == NULL)
+        {
+            return false;
+        }
+        forExpr->testExpr->parent = forExpr;
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: FOR: Test Expression: %ls", forExpr->testExpr->toString().c_str());
+#endif
+
+        EXPECT_SEMICOLON("for");
+
+        forExpr->incExpr = parseExpression(code);
+        if (forExpr->incExpr == NULL)
+        {
+            return false;
+        }
+        forExpr->incExpr->parent = forExpr;
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: FOR: Inc Expression: %ls", forExpr->incExpr->toString().c_str());
+#endif
+
+        EXPECT_BRACKET_RIGHT("for");
+        EXPECT_BRACE_LEFT("for");
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: FOR: Parsing Body...");
+#endif
+        forExpr->body = parseCodeBlock(code->m_function);
+        if (forExpr->body == NULL)
+        {
+            return false;
+        }
+        forExpr->body->m_parent = code;
+        code->m_childBlocks.push_back(forExpr->body);
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: FOR: Got body!");
+#endif
+
+        code->m_code.push_back(forExpr);
+    }
+    else if (token->type == TOK_WHILE)
+    {
+        // A While expression is just a simple For loop
+
+        EXPECT_BRACKET_LEFT("for");
+
+        ForExpression* forExpr = new ForExpression(code);
+        m_expressions.push_back(forExpr);
+
+        forExpr->initExpr = NULL;
+        forExpr->incExpr = NULL;
+
+        forExpr->testExpr = parseExpression(code);
+        if (forExpr->testExpr == NULL)
+        {
+            return false;
+        }
+        forExpr->testExpr->parent = forExpr;
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: WHILE: Test Expression: %ls", forExpr->testExpr->toString().c_str());
+#endif
+
+        EXPECT_BRACKET_RIGHT("for");
+        EXPECT_BRACE_LEFT("for");
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: WHILE: Parsing Body...");
+#endif
+        forExpr->body = parseCodeBlock(code->m_function);
+        if (forExpr->body == NULL)
+        {
+            return false;
+        }
+
+        forExpr->body->m_parent = code;
+        code->m_childBlocks.push_back(forExpr->body);
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: WHILE: Got body!");
+#endif
+
+        code->m_code.push_back(forExpr);
+    }
+    else if (token->type == TOK_RETURN)
+    {
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: RETURN");
+#endif
+        ReturnExpression* retExpr = new ReturnExpression(code);
+        m_expressions.push_back(retExpr);
+        code->m_code.push_back(retExpr);
+        token = nextToken();
+        if (token->type == TOK_SEMICOLON)
+        {
+            retExpr->returnValue = NULL;
+        }
+        else
+        {
+            m_pos--;
+            retExpr->returnValue = parseExpression(code);
+
+            EXPECT_SEMICOLON("return");
+        }
+    }
+    else if (token->type == TOK_TRY)
+    {
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: Got try!");
+#endif
+
+        TryExpression* tryExpr = new TryExpression(code);
+        m_expressions.push_back(tryExpr);
+        code->m_code.push_back(tryExpr);
+
+        EXPECT_BRACE_LEFT("try");
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: TRY: Parsing try body...");
+#endif
+        tryExpr->tryBlock = parseCodeBlock(code->m_function);
+        if (tryExpr->tryBlock == NULL)
+        {
+            return false;
+        }
+
+        EXPECT("try", TOK_CATCH, "catch");
+        EXPECT_BRACKET_LEFT("try");
+
+        EXPECT("try", TOK_IDENTIFIER, "identifier");
+        tryExpr->exceptionVar = token->string;
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: TRY: catch var name=%ls", token->string.c_str());
+#endif
+        EXPECT_BRACKET_RIGHT("try");
+        EXPECT_BRACE_LEFT("try");
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: TRY: Parsing catch body...");
+#endif
+        tryExpr->catchBlock = parseCodeBlock(code->m_function);
+        if (tryExpr->catchBlock == NULL)
+        {
+            return false;
+        }
+
+        // Define the exception variable
+        tryExpr->catchBlock->m_vars.push_back(tryExpr->exceptionVar);
+
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: TRY: %ls", tryExpr->toString().c_str());
+#endif
+    }
+    else if (token->type == TOK_THROW)
+    {
+        ThrowExpression* throwExpr = new ThrowExpression(code);
+
+        throwExpr->throwValue = parseExpression(code);
+        if (throwExpr->throwValue == NULL)
+        {
+            log(ERROR, "parseCodeBlock: Expression expected after \"throw\"");
+            return false;
+        }
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: Got throw: %ls", throwExpr->toString().c_str());
+#endif
+
+        m_expressions.push_back(throwExpr);
+        code->m_code.push_back(throwExpr);
+
+        EXPECT_SEMICOLON("throw");
+    }
+    else
+    {
+        // Expression ?
+        m_pos--; // Rewind
+
+        Expression* expression;
+        expression = parseExpression(code);
+        if (expression == NULL)
+        {
+            return false;
+        }
+#ifdef DEBUG_PARSER
+        log(DEBUG, "parseCodeBlock: Expression: %ls", expression->toString().c_str());
+#endif
+
+        EXPECT_SEMICOLON("EXPRESSION");
+        code->m_code.push_back(expression);
+    }
+
+    return true;
+}
+
 
 Expression* Parser::parseExpression(CodeBlock* code, TokenType endToken)
 {
