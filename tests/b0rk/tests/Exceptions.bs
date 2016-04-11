@@ -33,8 +33,9 @@ class tests.Exceptions extends system.lang.Test
         system.io.File.out.writeln("exceptionReturn: This should never get called!");
     }
 
-    function functionException()
+    function functionException(arg)
     {
+        var var0 = "var0";
         try
         {
             throwsFunc();
@@ -42,7 +43,7 @@ class tests.Exceptions extends system.lang.Test
         }
         catch (e1)
         {
-            system.io.File.out.writeln("functionException: Caught exception: " + e1.message);
+            system.io.File.out.writeln("functionException: " + arg + ": Caught exception: " + e1.message + ", var0=" + var0);
 e1.printStackTrace();
         }
         system.io.File.out.writeln("functionException: Done!");
@@ -52,7 +53,7 @@ e1.printStackTrace();
     {
         simpleException();
         exceptionReturn();
-        functionException();
+        functionException("test");
    }
 }
 
