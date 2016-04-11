@@ -92,7 +92,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
         Expression* expr = code->m_code[i];
 
 #ifdef DEBUG_ASSEMBLER
-        printf("Assembler::assembleBlock: expr: %s\n", expr->toString().c_str());
+        printf("Assembler::assembleBlock: expr: %ls\n", expr->toString().c_str());
 #endif
 
         bool res;
@@ -108,7 +108,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
             while (IS_REFERENCE(pos))
             {
 #ifdef DEBUG_ASSEMBLER
-                printf("Assembler::assembleBlock: Checking reference: %s\n", pos->toString().c_str());
+                printf("Assembler::assembleBlock: Checking reference: %ls\n", pos->toString().c_str());
 #endif
                 pos = ((OperationExpression*)pos)->right;
             }
@@ -185,7 +185,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 count++;
             }
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: CALL: %s (class=%p)\n", callExpr->function.c_str(), callExpr->clazz);
+            printf("Assembler::assembleExpression: CALL: %ls (class=%p)\n", callExpr->function.c_str(), callExpr->clazz);
 #endif
 
             if (reference != NULL)
@@ -231,7 +231,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                         printf("Assembler::assembleExpression: CALL: Parent is not null but not a reference!?\n");
                         printf("Assembler::assembleExpression: CALL: parent=%p\n", callExpr->parent);
-                        printf("Assembler::assembleExpression: CALL: parent=%s\n", callExpr->parent->toString().c_str());
+                        printf("Assembler::assembleExpression: CALL: parent=%ls\n", callExpr->parent->toString().c_str());
 #endif
                     }
                 }
@@ -253,7 +253,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                     bool isVar = isVariable(block, NULL, callExpr->function);
 #ifdef DEBUG_ASSEMBLER
-                    printf("Assembler::assembleExpression: CALL: %s: isVar=%d\n", callExpr->function.c_str(), isVar);
+                    printf("Assembler::assembleExpression: CALL: %ls: isVar=%d\n", callExpr->function.c_str(), isVar);
 #endif
                     if (isVar)
                     {
@@ -321,7 +321,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     return false;
                 }
 #ifdef DEBUG_ASSEMBLER
-                printf("Assembler::assembleExpression: OPER: Reference: Assembling nearest non-ref child: %s\n", refChild->toString().c_str());
+                printf("Assembler::assembleExpression: OPER: Reference: Assembling nearest non-ref child: %ls\n", refChild->toString().c_str());
 #endif
                 return assembleExpression(block, refChild, opExpr, needResult);
             }
@@ -496,7 +496,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                     printf("Assembler::assembleExpression: OPER: SET\n");
                     printf("Assembler::assembleExpression: OPER: -> left=%p\n", opExpr->left);
-                    printf("Assembler::assembleExpression: OPER: -> left=%s\n", opExpr->left->toString().c_str());
+                    printf("Assembler::assembleExpression: OPER: -> left=%ls\n", opExpr->left->toString().c_str());
 #endif
 
                     if (needResult)
@@ -521,7 +521,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                             dest = ((OperationExpression*)dest)->right;
                         }
 #ifdef DEBUG_ASSEMBLER
-                        printf("Assembler::assembleExpression: OPER: -> first non reference=%s\n", dest->toString().c_str());
+                        printf("Assembler::assembleExpression: OPER: -> first non reference=%ls\n", dest->toString().c_str());
 #endif
                     }
 
@@ -753,7 +753,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         {
             VarExpression* varExpr = (VarExpression*)expr;
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: VAR: var=%s\n", varExpr->var.c_str());
+            printf("Assembler::assembleExpression: VAR: var=%ls\n", varExpr->var.c_str());
 #endif
             expr->resultOnStack = true;
 
@@ -793,7 +793,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             NewExpression* newExpr = (NewExpression*)expr;
             Class* clazz = m_context->getRuntime()->findClass(m_context, newExpr->clazz.toString());
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: NEW: %s = %p\n", newExpr->clazz.toString().c_str(), clazz);
+            printf("Assembler::assembleExpression: NEW: %ls = %p\n", newExpr->clazz.toString().c_str(), clazz);
 #endif
 
             if (clazz == NULL)
@@ -823,7 +823,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
         {
             StringExpression* strExpr = (StringExpression*)expr;
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: STRING: NEW STRING: %s\n", strExpr->str.c_str());
+            printf("Assembler::assembleExpression: STRING: NEW STRING: %ls\n", strExpr->str.c_str());
 #endif
 
             m_code.push_back(OPCODE_PUSHOBJ);
@@ -951,7 +951,7 @@ bool Assembler::assembleReference(CodeBlock* block, OperationExpression* expr)
 {
     bool res;
 #ifdef DEBUG_ASSEMBLER
-    printf("Assembler::assembleReference: Assembling Reference: %s\n", expr->toString().c_str());
+    printf("Assembler::assembleReference: Assembling Reference: %ls\n", expr->toString().c_str());
 #endif
 
     res = assembleExpression(block, expr->left, NULL, true);
@@ -1026,7 +1026,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
     {
 
 #ifdef DEBUG_ASSEMBLER
-        printf("Assembler::load: Looking for static field %s %s\n", varExpr->clazz->getName().c_str(), varExpr->var.c_str());
+        printf("Assembler::load: Looking for static field %ls %ls\n", varExpr->clazz->getName().c_str(), varExpr->var.c_str());
 #endif
 
         int id = varExpr->clazz->getStaticFieldId(varExpr->var);
