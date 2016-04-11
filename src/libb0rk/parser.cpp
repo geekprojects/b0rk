@@ -773,6 +773,7 @@ bool Parser::parseStatement(CodeBlock* code, bool& end)
         {
             return false;
         }
+        tryExpr->tryBlock->m_parent = code;
 
         EXPECT("try", TOK_CATCH, "catch");
         EXPECT_BRACKET_LEFT("try");
@@ -794,6 +795,7 @@ bool Parser::parseStatement(CodeBlock* code, bool& end)
         {
             return false;
         }
+        tryExpr->catchBlock->m_parent = code;
 
         // Define the exception variable
         tryExpr->catchBlock->m_vars.push_back(tryExpr->exceptionVar);
