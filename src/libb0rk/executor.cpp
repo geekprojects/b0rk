@@ -797,8 +797,11 @@ static bool opcodeCmp(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
         }
         else
         {
-            ERROR("CMP: UNHANDLED DATA TYPES: left=%d, right=%d\n", left.type, right.type);
-            return false;
+            // Incompatible types: They always get a result of -1
+            int result = -1;
+            frame->flags.zero = (result == 0);
+            frame->flags.sign = result < 0 && result != 0;
+            frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
         }
     }
     else if (left.type == VALUE_OBJECT)
