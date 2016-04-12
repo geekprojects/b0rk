@@ -23,6 +23,8 @@
 
 #include <b0rk/token.h>
 
+#include <geek/core-logger.h>
+
 #include <string>
 #include <vector>
 
@@ -36,7 +38,7 @@ struct SimpleToken
     TokenType token;
 };
 
-class Lexer
+class Lexer : Geek::Logger
 {
  private:
     std::vector<Token> m_tokens;

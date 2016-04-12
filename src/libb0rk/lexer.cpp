@@ -33,6 +33,7 @@
 
 using namespace std;
 using namespace b0rk;
+using namespace Geek;
 
 SimpleToken tokenTable[] = {
     { ".", 1, TOK_DOT },
@@ -80,7 +81,7 @@ SimpleToken tokenTable[] = {
     { "catch", 5, TOK_CATCH },
 };
 
-Lexer::Lexer()
+Lexer::Lexer() : Logger("Lexer")
 {
 }
 
@@ -146,6 +147,8 @@ bool Lexer::lexer(char* buffer, int length)
     char* pos = buffer;
     char* end = buffer + length;
 
+    int line = 1;
+
     while (pos < end)
     {
         wchar_t cur = utf8::next(pos, end);
@@ -161,13 +164,13 @@ bool Lexer::lexer(char* buffer, int length)
         }
 
 #ifdef DEBUG_LEXER_DETAILED
-        printf("Lexer::lexer: cur=%d, next=%d\n", cur, next);
+        log(DEBUG, "cur=%d, next=%d", cur, next);
 #endif
 
         if (cur == '/')
         {
 #ifdef DEBUG_LEXER_DETAILED
-            printf("Lexer::lexer: Comment? n=%d (%c)\n", next, next);
+            log(DEBUG, "Comment? n=%d (%c)", next, next);
 #endif
             if (next == '/')
             {
@@ -178,6 +181,7 @@ bool Lexer::lexer(char* buffer, int length)
                     next = utf8::peek_next(pos, end);
                     if (next == '\n' || next == '\r' || next == '\0')
                     {
+                        line++;
                         break;
                     }
                     utf8::next(pos, end);
@@ -205,6 +209,10 @@ bool Lexer::lexer(char* buffer, int length)
                     {
                         break;
                     }
+                    if (next == '\n')
+                    {
+                        line++;
+                    }
                     utf8::next(pos, end);
                 }
                 continue;
@@ -214,6 +222,10 @@ bool Lexer::lexer(char* buffer, int length)
         if (iswspace(cur))
         {
             // Skip whitespace
+            if (cur == '\n')
+            {
+                line++;
+            }
         }
         else if (iswdigit(cur) || (cur == '-' && iswdigit(next)))
         {
@@ -225,8 +237,7 @@ bool Lexer::lexer(char* buffer, int length)
                 {
                     if (str.length() > 0)
                     {
-                        printf("Lexer: OH NOES, WE'VE GOT A MINUS HERE\n");
-                        return false;
+                        break;
                     }
                     str += '-';
                 }
@@ -247,16 +258,17 @@ bool Lexer::lexer(char* buffer, int length)
                 cur = utf8::next(pos, end);
             }
 #ifdef DEBUG_LEXER
-            printf("Lexer: found number: %ls\n", str.c_str());
+            log(DEBUG, "found number: %ls", str.c_str());
 #endif
 
             Token token;
+            token.line = line;
             if (dot)
             {
                 token.d = atof(Utils::wstring2string(str).c_str());
                 token.type = TOK_DOUBLE;
 #ifdef DEBUG_LEXER
-                printf("Lexer: found number:  -> double: %0.2f\n", token.d);
+                log(DEBUG, "found number:  -> double: %0.2f", token.d);
 #endif
             }
             else
@@ -264,7 +276,7 @@ bool Lexer::lexer(char* buffer, int length)
                 token.i = atoi(Utils::wstring2string(str).c_str());
                 token.type = TOK_INTEGER;
 #ifdef DEBUG_LEXER
-                printf("Lexer: found number:  -> int: %d\n", token.i);
+                log(DEBUG, "found number:  -> int: %d", token.i);
 #endif
             }
             m_tokens.push_back(token);
@@ -272,14 +284,14 @@ bool Lexer::lexer(char* buffer, int length)
         else if (cur == '"')
         {
 #ifdef DEBUG_LEXER
-            printf("Lexer: Reading string...\n");
+            log(DEBUG, "Reading string...");
 #endif
             wstring str;
             while (pos < end)
             {
                 cur = utf8::next(pos, end);
 #ifdef DEBUG_LEXER_DETAILED
-            wprintf(L"Lexer: String: cur=0x%x %lc\n", cur, cur);
+                log(DEBUG, "String: cur=0x%x %lc", cur, cur);
 #endif
                 if (cur == '\\')
                 {
@@ -290,7 +302,7 @@ bool Lexer::lexer(char* buffer, int length)
                     }
                     else
                     {
-                        printf("Lexer: Unhandled backslash character: \\%lc\n", cur);
+                        log(ERROR, "Unhandled backslash character: \\%lc", cur);
                         return false;
                     }
                 }
@@ -304,14 +316,14 @@ bool Lexer::lexer(char* buffer, int length)
                 }
             }
 #ifdef DEBUG_LEXER
-            printf("Lexer: Found String: %ls\n", str.c_str());
+            log(DEBUG, "Found String: %ls", str.c_str());
 #endif
 
             Token token;
             token.type = TOK_STRING;
+            token.line = line;
             token.string = str;
             m_tokens.push_back(token);
-
         }
         else
         {
@@ -323,10 +335,11 @@ bool Lexer::lexer(char* buffer, int length)
                 if (checkWord(&pos, &(tokenTable[i])))
                 {
 #ifdef DEBUG_LEXER
-                    printf("Lexer: Found Token: %s\n", tokenTable[i].str);
+                    log(DEBUG, "line %d: Found Token: %s", line, tokenTable[i].str);
 #endif
                     Token token;
                     token.type = tokenTable[i].token;
+                    token.line = line;
                     token.string = Utils::string2wstring(tokenTable[i].str);
                     m_tokens.push_back(token);
                     found = true;
@@ -336,11 +349,11 @@ bool Lexer::lexer(char* buffer, int length)
 
             if (!found)
             {
-                utf8::next(pos, end);
                 if (isIdentifierChar(cur) && !iswdigit(cur))
                 {
                     wstring str;
                     str += cur;
+                    utf8::next(pos, end);
 
                     while (pos < end)
                     {
@@ -353,16 +366,23 @@ bool Lexer::lexer(char* buffer, int length)
                         str += cur;
                     }
 #ifdef DEBUG_LEXER
-                    printf("Lexer: found Identifier: %ls\n", str.c_str());
+                    log(DEBUG, "found Identifier: %ls", str.c_str());
 #endif
                     Token token;
                     token.type = TOK_IDENTIFIER;
+                    token.line = line;
                     token.string = str;
                     m_tokens.push_back(token);
                 }
-               else
+                else
                 {
-                    printf("Unknown token:\n%s\n", pos);
+                    string restOfLine = "";
+                    while (*pos != '\n' && *pos != '\0')
+                    {
+                        restOfLine += *pos;
+                        pos++;
+                    }
+                    log(ERROR, "Unknown token: Line %d: %s", line, restOfLine.c_str());
                     return false;
                 }
             }
