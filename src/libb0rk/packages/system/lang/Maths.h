@@ -40,6 +40,7 @@ class Maths : public Class
 
     bool randomInt(Context* context, Object* instance, int argCount, Value* args, Value& result);
     bool round(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool sqrt(Context* context, Object* instance, int argCount, Value* args, Value& result);
 };
 
 };

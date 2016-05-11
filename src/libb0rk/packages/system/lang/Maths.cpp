@@ -34,6 +34,7 @@ Maths::Maths() : Class(NULL, "system.lang.Maths")
 {
     addMethod("randomInt", new NativeFunction(this, (nativeFunction_t)&Maths::randomInt, true));
     addMethod("round", new NativeFunction(this, (nativeFunction_t)&Maths::round, true));
+    addMethod("sqrt", new NativeFunction(this, (nativeFunction_t)&Maths::sqrt, true));
 }
 
 Maths::~Maths()
@@ -67,6 +68,32 @@ bool Maths::round(Context* context, Object* instance, int argCount, Value* args,
 
     result.type = VALUE_INTEGER;
     result.i = lround(args[0].d);
+
+    return true;
+}
+
+bool Maths::sqrt(Context* context, Object* instance, int argCount, Value* args, Value& result)
+{
+    if (argCount != 1)
+    {
+        context->throwException(Exception::createException(context, "Incorrect number of arguments"));
+        return true;
+    }
+
+    if (args[0].type == VALUE_INTEGER)
+    {
+        result.type = VALUE_INTEGER;
+        result.i = sqrtl(args[0].i);
+    }
+    else if (args[0].type == VALUE_DOUBLE)
+    {
+        result.type = VALUE_DOUBLE;
+        result.d = ::sqrt(args[0].d);
+    }
+    else
+    {
+        context->throwException(Exception::createException(context, "Invalid argument"));
+    }
 
     return true;
 }
