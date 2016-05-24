@@ -232,7 +232,9 @@ bool Lexer::lexer(char* buffer, int length)
         else if (iswdigit(cur) || (cur == '-' && iswdigit(next)))
         {
             wstring str;
+            wstring exponent;
             bool dot = false;
+            bool enotation = false;
             while (true)
             {
                 if (cur == '-')
@@ -253,6 +255,29 @@ bool Lexer::lexer(char* buffer, int length)
                 {
                     str += cur;
                 }
+                else if (cur == 'e' || cur == 'E')
+                {
+                    cur = utf8::next(pos, end);
+                    if (cur != '-' && cur != '+')
+                    {
+                        log(ERROR, "Line %d: Invalid number, expected - or +, got %lc", line, cur);
+                        return false;
+                    }
+
+                    enotation = true;
+                    exponent += cur;
+                    while (true)
+                    {
+                        cur = utf8::next(pos, end);
+                        if (!isdigit(cur))
+                        {
+                            utf8::prior(pos, end);
+                            break;
+                        }
+                        exponent += cur;
+                    }
+                    break;
+                }
                 else
                 {
                     utf8::prior(pos, end);
@@ -266,9 +291,20 @@ bool Lexer::lexer(char* buffer, int length)
 
             Token token;
             token.line = line;
-            if (dot)
+            if (dot || enotation)
             {
                 token.d = atof(Utils::wstring2string(str).c_str());
+                if (enotation)
+                {
+#ifdef DEBUG_LEXER
+                    log(DEBUG, "Line %d: -> Exponent: %ls", line, exponent.c_str());
+#endif
+                    int exponenti = atof(Utils::wstring2string(exponent).c_str());
+                    token.d *= pow(10, exponenti);
+                }
+#ifdef DEBUG_LEXER
+                log(DEBUG, "Line %d: -> Double: %0.6f", line, token.d);
+#endif
                 token.type = TOK_DOUBLE;
 #ifdef DEBUG_LEXER
                 log(DEBUG, "found number:  -> double: %0.2f", token.d);
