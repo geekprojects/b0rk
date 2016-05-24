@@ -458,6 +458,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                             m_code.push_back(-1);
                         }
                         expr->resultOnStack = false;
+
+                        res = store(block, varExpr, reference);
+                        if (!res)
+                        {
+                            return false;
+                        }
                     }
                     else
                     {
@@ -470,12 +476,21 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                         if (needResult)
                         {
                             m_code.push_back(OPCODE_DUP);
+                            m_code.push_back(OPCODE_PUSHI);
+                            m_code.push_back(1);
+                            if (opExpr->operType == OP_DECREMENT)
+                            {
+                                // Order matters!
+                                m_code.push_back(OPCODE_SWAP);
+                            }
+                        }
+                        else
+                        {
+                            m_code.push_back(OPCODE_PUSHI);
+                            m_code.push_back(1);
                         }
 
                         expr->resultOnStack = needResult;
-
-                        m_code.push_back(OPCODE_PUSHI);
-                        m_code.push_back(1);
 
                         if (opExpr->operType == OP_INCREMENT)
                         {
