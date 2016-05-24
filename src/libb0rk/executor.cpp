@@ -287,6 +287,16 @@ static bool opcodeDup(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     return true;
 }
 
+static bool opcodeSwap(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v1 = context->pop();
+    Value v2 = context->pop();
+    LOG("SWAP: %ls, %ls", v1.toString().c_str(), v2.toString().c_str());
+    context->push(v1);
+    context->push(v2);
+    return true;
+}
+
 static bool opcodeAdd(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value v1 = context->pop();
@@ -703,7 +713,7 @@ static bool opcodeNew(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     }
     else
     {
-        ERROR("NEW: Failed to create new object! class=%ls\n", clazz->getName().c_str());
+        ERROR("NEW: Failed to create new object! class=%ls", clazz->getName().c_str());
         return false;
     }
     return true;
@@ -1041,6 +1051,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_PUSHD: success = opcodePushD(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHOBJ: success = opcodePushObj(thisPC, opcode, context, &frame); break;
             case OPCODE_DUP: success = opcodeDup(thisPC, opcode, context, &frame); break;
+            case OPCODE_SWAP: success = opcodeSwap(thisPC, opcode, context, &frame); break;
             case OPCODE_ADD: success = opcodeAdd(thisPC, opcode, context, &frame); break;
             case OPCODE_SUB: success = opcodeSub(thisPC, opcode, context, &frame); break;
             case OPCODE_MUL: success = opcodeMul(thisPC, opcode, context, &frame); break;

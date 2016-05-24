@@ -66,6 +66,7 @@ enum OpCode
     OPCODE_PUSHOBJ     = 0x43,
     OPCODE_DUP         = 0x44,
     OPCODE_POP         = 0x45,
+    OPCODE_SWAP        = 0x46,
 
     OPCODE_PUSHCE      = 0x50, // Push condition: Equals
     OPCODE_PUSHCL      = 0x51, // Push condition: Less than

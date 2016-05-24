@@ -45,6 +45,7 @@ Disassembler::Disassembler()
     addOpcode(OPCODE_PUSHOBJ, "PUSHOBJ", "object=0x%llx", 1);
     addOpcode(OPCODE_POP, "POP", "", 0);
     addOpcode(OPCODE_DUP, "DUP", "", 0);
+    addOpcode(OPCODE_SWAP, "SWAP", "", 0);
     addOpcode(OPCODE_ADD, "ADD", "", 0);
     addOpcode(OPCODE_SUB, "SUB", "", 0);
     addOpcode(OPCODE_MUL, "MUL", "", 0);
