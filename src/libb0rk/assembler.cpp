@@ -458,12 +458,6 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                             m_code.push_back(-1);
                         }
                         expr->resultOnStack = false;
-
-                        res = store(block, varExpr, reference);
-                        if (!res)
-                        {
-                            return false;
-                        }
                     }
                     else
                     {
