@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include <b0rk/lexer.h>
 #include <b0rk/utils.h>
@@ -47,6 +48,7 @@ SimpleToken tokenTable[] = {
     { ">=", 2, TOK_GREATER_THAN_EQUAL },
     { ">", 1, TOK_GREATER_THAN },
     { "+=", 2, TOK_ADD_ASSIGN },
+    { "-=", 2, TOK_SUB_ASSIGN },
     { "++", 2, TOK_INCREMENT },
     { "--", 2, TOK_DECREMENT },
     { "+", 1, TOK_PLUS },
@@ -237,6 +239,7 @@ bool Lexer::lexer(char* buffer, int length)
                 {
                     if (str.length() > 0)
                     {
+                        utf8::prior(pos, end);
                         break;
                     }
                     str += '-';

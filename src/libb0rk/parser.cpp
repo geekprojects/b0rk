@@ -41,6 +41,7 @@ OpDesc opTable[] = {
     {TOK_SLASH_FORWARD, OP_DIVIDE, true, true},
     {TOK_LOGICAL_AND, OP_LOGICAL_AND, true, true},
     {TOK_ADD_ASSIGN, OP_SET, true, true},
+    {TOK_SUB_ASSIGN, OP_SET, true, true},
     {TOK_EQUALS, OP_EQUALS, true, true},
     {TOK_LESS_THAN, OP_LESS_THAN, true, true},
     {TOK_LESS_THAN_EQUAL, OP_LESS_THAN_EQUAL, true, true},
@@ -1076,7 +1077,8 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
                 expr = intExpr;
             }
         }
-        else if (opExpr->operDesc.token == TOK_ADD_ASSIGN)
+        else if (opExpr->operDesc.token == TOK_ADD_ASSIGN ||
+                 opExpr->operDesc.token == TOK_SUB_ASSIGN)
         {
             // l += r -> l = (l + r)
 
@@ -1092,14 +1094,24 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
             }
             else
             {
-                log(ERROR, "buildTree: TOK_ADD_ASSIGN: Unhandled left type: %d: %ls", opExpr->left->type, opExpr->left->toString().c_str());
+                log(ERROR, "buildTree: TOK_x_ASSIGN: Unhandled left type: %d: %ls", opExpr->left->type, opExpr->left->toString().c_str());
                 return NULL;
             }
 
-            OpDesc addDesc = {TOK_PLUS, OP_ADD, true};
+OpType op;
+            if (opExpr->operDesc.token == TOK_ADD_ASSIGN)
+            {
+                op = OP_ADD;
+            }
+            else
+            {
+                op = OP_SUB;
+            }
+
+            OpDesc addDesc = {TOK_PLUS, op, true};
             OperationExpression* addExpr = new OperationExpression(code, addDesc);
             m_expressions.push_back(addExpr);
-            addExpr->operType = OP_ADD;
+            addExpr->operType = op;
             addExpr->left = copy;
             addExpr->left->parent = addExpr;
             addExpr->right = opExpr->right;

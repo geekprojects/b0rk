@@ -53,6 +53,7 @@ enum TokenType
     TOK_DECREMENT,
     TOK_INCREMENT,
     TOK_ADD_ASSIGN,
+    TOK_SUB_ASSIGN,
     TOK_PLUS,
     TOK_MINUS,
     TOK_BRACE_LEFT,
