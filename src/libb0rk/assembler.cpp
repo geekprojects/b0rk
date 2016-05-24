@@ -99,6 +99,7 @@ bool Assembler::assembleBlock(CodeBlock* code)
         res = assembleExpression(code, expr, NULL, false);
         if (!res)
         {
+            printf("Assembler::assembleBlock: ERROR: Failed to assemble expr: %ls\n", expr->toString().c_str());
             return false;
         }
 
@@ -180,6 +181,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 res = assembleExpression(block, param, NULL, true);
                 if (!res)
                 {
+                    printf("Assembler::assembleExpression: ERROR: Failed to assemble expr: %ls\n", expr->toString().c_str());
                     return false;
                 }
                 count++;
@@ -193,6 +195,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 res = assembleReference(block, reference);
                 if (!res)
                 {
+                    printf("Assembler::assembleExpression: ERROR: Failed to reference expr: %ls\n", expr->toString().c_str());
                     return false;
                 }
             }
@@ -557,7 +560,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     }
                     else
                     {
-                        printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable or array!\n");
+                        printf("Assembler::assembleExpression: OPER: SET: Error: Left must be a variable or array! expr=%ls\n", opExpr->toString().c_str());
                         return false;
                     }
                 } break;
@@ -1037,6 +1040,8 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
             m_code.push_back(id);
             return true;
         }
+
+        printf("Assembler::load: ERROR: Failed to find static field %ls %ls\n", varExpr->clazz->getName().c_str(), varExpr->var.c_str());
         return false;
     }
 
@@ -1104,7 +1109,9 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         {
             return false;
         }
+#ifdef DEBUG_ASSEMBLER
         printf("Assembler::store: Var from reference: %ls\n", varExpr->var.c_str());
+#endif
 
         m_code.push_back(OPCODE_PUSHOBJ);
         Object* strObj = m_context->getRuntime()->newString(m_context, varExpr->var);
