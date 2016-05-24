@@ -45,6 +45,7 @@ using namespace std;
 using namespace b0rk;
 
 #undef DEBUG_GC
+#undef DEBUG_RUNTIME_NEW
 
 #ifndef USEC_PER_SEC
 #define USEC_PER_SEC	1000000ull	/* microseconds per second */
@@ -275,20 +276,20 @@ Object* Runtime::allocateObject(Class* clazz, unsigned int extraValues)
     if (m_currentBytes >= (m_arenaTotal / 4) * 3)
     {
 #ifdef DEBUG_GC
-        printf("Runtime::newObject: Space Check: %" PRId64 "/%" PRId64 " = %0.2f%% used\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
+        printf("Runtime::allocateObject: Space Check: %" PRId64 "/%" PRId64 " = %0.2f%% used\n", m_currentBytes, m_arenaTotal, ((float)m_currentBytes / (float)m_arenaTotal) * 100);
 #endif
         if (m_gcEnabled)
         {
             // Check available space before we disable GC
 #ifdef DEBUG_GC
-            printf("Runtime::newObject: Less than 25%% of arena available, GCing\n");
+            printf("Runtime::allocateObject: Less than 25%% of arena available, GCing\n");
 #endif
             gc(true);
         }
 #ifdef DEBUG_GC
         else
         {
-            printf("Runtime::newObject: Less than 25%% of arena available, but GC is DISABLED\n");
+            printf("Runtime::allocateObject: Less than 25%% of arena available, but GC is DISABLED\n");
         }
 #endif
     }
@@ -375,6 +376,7 @@ Object* Runtime::newObject(Context* context, Class* clazz, int argCount)
     bool res = callConstructor(context, obj, clazz, argCount);
     if (!res)
     {
+        printf("Runtime::newObject: Constructor failed!\n");
         return NULL;
     }
 
@@ -386,6 +388,7 @@ Object* Runtime::newObject(Context* context, wstring clazzName, int argCount)
     Class* clazz = findClass(context, clazzName);
     if (clazz == NULL)
     {
+        printf("Runtime::newObject: Unable to find class: %ls\n", clazzName.c_str());
         return NULL;
     }
     return newObject(context, clazz, argCount);
@@ -448,7 +451,7 @@ bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int a
     }
 
 #ifdef DEBUG_RUNTIME_NEW
-    printf("Runtime::callConstructor: obj=%p, class=%s, super=%p\n", obj, clazz->getName().c_str(), clazz->getSuperClass());
+    printf("Runtime::callConstructor: obj=%p, class=%ls, super=%p\n", obj, clazz->getName().c_str(), clazz->getSuperClass());
 #endif
 
     // The constructor should be named after the
@@ -462,7 +465,7 @@ bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int a
 
     Function* ctor = clazz->findMethod(ctorName);
 #ifdef DEBUG_RUNTIME_NEW
-    printf("Runtime::callConstructor: constructor name: %s = %p\n", ctorName.c_str(), ctor);
+    printf("Runtime::callConstructor: constructor name: %ls = %p\n", ctorName.c_str(), ctor);
 #endif
 
     if (ctor != NULL)
@@ -470,6 +473,9 @@ bool Runtime::callConstructor(Context* context, Object* obj, Class* clazz, int a
         res = ctor->execute(context, obj, argCount);
         if (!res)
         {
+#ifdef DEBUG_RUNTIME_NEW
+    printf("Runtime::callConstructor: Execution failed! ctor=%ls\n", ctor->getFullName().c_str());
+#endif
             return false;
         }
 
