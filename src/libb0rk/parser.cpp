@@ -52,11 +52,19 @@ OpDesc opTable[] = {
     {TOK_DOT, OP_REFERENCE, true, true},
 };
 
+#ifdef DEBUG_PARSER
+#define EXPECT_ERROR(__name, __expectStr) \
+        log(ERROR, "%s: " __name ": Line %d: Expected " __expectStr ", got %ls", __PRETTY_FUNCTION__, token->line, token->string.c_str());
+#else
+#define EXPECT_ERROR(__name, __expectStr) \
+        log(ERROR, __name ": Line %d: Expected " __expectStr ", got %ls", token->line, token->string.c_str());
+#endif
+
 #define EXPECT(_name, _expectType, _expectStr) \
     token = nextToken(); \
     if (token->type != _expectType) \
     { \
-        log(ERROR, "%s: " _name ": Expected " _expectStr ", got %ls", __PRETTY_FUNCTION__, token->string.c_str()); \
+        EXPECT_ERROR(_name, _expectStr); \
         return false; \
     }
 
@@ -108,13 +116,7 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
             wstring end = id.end();
             m_imports.insert(make_pair(end, id));
 
-            token = nextToken();
-            if (token->type != TOK_SEMICOLON)
-            {
-                log(ERROR, "parse: Expected ;, got %ls", token->string.c_str());
-                return false;
-            }
- 
+            EXPECT_SEMICOLON("import");
         }
         else
         {
@@ -137,7 +139,8 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
         }
         else
         {
-            log(ERROR, "parse: Expected class, got %ls", token->string.c_str());
+            EXPECT_ERROR("class", "class");
+            return false;
         }
     }
 
@@ -216,7 +219,7 @@ Class* Parser::parseClass(bool addToExisting)
 
     if (token->type != TOK_BRACE_LEFT)
     {
-        log(ERROR, "parseClass: Expected {");
+        EXPECT_ERROR("class", "{");
         return NULL;
     }
 
@@ -265,7 +268,7 @@ Class* Parser::parseClass(bool addToExisting)
             token = nextToken();
             if (token->type != TOK_SEMICOLON)
             {
-                log(ERROR, "parseClass: Expected = or ;");
+                EXPECT_ERROR("var", ";");
                 delete clazz;
                 return NULL;
             }
@@ -289,7 +292,7 @@ Class* Parser::parseClass(bool addToExisting)
         }
         else
         {
-            log(ERROR, "parseClass: ERROR: Unexpected token: %s", Utils::wstring2string(token->string).c_str());
+            EXPECT_ERROR("class", "function or var");
             delete clazz;
             return NULL;
         }
@@ -332,7 +335,7 @@ Function* Parser::parseFunction(Class* clazz)
     }
     if (token->type != TOK_BRACE_LEFT)
     {
-        log(ERROR, "parseFunction: Function: Expected {");
+        EXPECT_ERROR("function", "{");
         return NULL;
     }
 
@@ -340,6 +343,7 @@ Function* Parser::parseFunction(Class* clazz)
     code = parseCodeBlock(function);
     if (code == NULL)
     {
+        log(ERROR, "parseFunction: Failed to parse function body!");
         return NULL;
     }
 
@@ -355,9 +359,23 @@ Function* Parser::parseFunction(Class* clazz)
     return function;
 }
 
+/*
+ *    E
+ *  /  \
+ * L    R
+ *
+ *
+ * If E is UNKNOWN and 
+ */
+
 bool Parser::resolveTypes()
 {
     vector<Expression*>::iterator exprIt;
+int changes = 0;
+
+    /*
+     * Infer types of OperationExpressions from their operands
+     */
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {
         Expression* expr = *exprIt;
@@ -394,6 +412,7 @@ bool Parser::resolveTypes()
                         if (varId != -1)
                         {
                             varExpr->block->setVarType(varId, opExpr->valueType);
+changes++;
                         }
                 }
             }
@@ -402,10 +421,17 @@ bool Parser::resolveTypes()
                 opExpr->left->valueType == opExpr->right->valueType)
             {
                 opExpr->valueType = opExpr->left->valueType;
+changes++;
             }
         }
     }
+#ifdef DEBUG_PARSER
+    log(DEBUG, "resolveTypes: resolve: changes=%d", changes);
+#endif
 
+    /*
+     * Attempt to find the type of var expressions from what they get assigned to
+     */
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {
         Expression* expr = *exprIt;
@@ -534,7 +560,7 @@ bool Parser::parseStatement(CodeBlock* code, bool& end)
         }
         if (token->type != TOK_SEMICOLON)
         {
-            log(ERROR, "parseCodeBlock: VAR: Expected ;, got %ls", token->string.c_str());
+            EXPECT_ERROR("var", ";");
             return false;
         }
     }
@@ -578,7 +604,7 @@ bool Parser::parseStatement(CodeBlock* code, bool& end)
             token = nextToken();
             if (token->type != TOK_IF && token->type != TOK_BRACE_LEFT)
             {
-                log(ERROR, "parseCodeBlock: IF ELSE: Expected if or {, got %ls", token->string.c_str());
+                EXPECT_ERROR("else", "if or {");
                 return false;
             }
 
@@ -965,10 +991,7 @@ Expression* Parser::parseExpression(CodeBlock* code, TokenType endToken)
 #endif
                     break;
                 }
-                else
-                {
-                    outputQueue.push_back(op);
-                }
+                outputQueue.push_back(op);
             }
         }
         else
@@ -997,7 +1020,10 @@ Expression* Parser::parseExpression(CodeBlock* code, TokenType endToken)
 
     Expression* expr = buildTree(code, outputQueue);
 #ifdef DEBUG_PARSER
-    log(DEBUG, "parseExpression: DONE: Tree: %ls", expr->toString().c_str());
+    if (expr != NULL)
+    {
+        log(DEBUG, "parseExpression: DONE: Tree: %ls", expr->toString().c_str());
+    }
 #endif
 
     return expr;
@@ -1005,8 +1031,20 @@ Expression* Parser::parseExpression(CodeBlock* code, TokenType endToken)
 
 Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
 {
+    if (queue.size() == 0)
+    {
+        log(ERROR, "buildTree: queue is empty!");
+        return NULL;
+    }
+
     Expression* expr = queue.back();
     queue.pop_back();
+
+    if (expr == NULL)
+    {
+        log(ERROR, "buildTree: expr is NULL!");
+        return NULL;
+    }
 
     if (expr->type == EXPR_OPER)
     {
@@ -1021,9 +1059,11 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
             }
             opExpr->right->parent = opExpr;
         }
+
         opExpr->left = buildTree(code, queue);
         if (opExpr->left == NULL)
         {
+            log(ERROR, "buildTree: No left: %ls", opExpr->toString().c_str());
             return NULL;
         }
         opExpr->left->parent = opExpr;
@@ -1312,7 +1352,7 @@ Expression* Parser::parseExpressionValue(CodeBlock* code)
             token = nextToken();
             if (token->type != TOK_SQUARE_BRACKET_RIGHT)
             {
-                log(ERROR, "parseExpressionValue: Array: Expected ], got %ls", token->string.c_str());
+                EXPECT_ERROR("array", "]");
                 return NULL;
             }
         }
@@ -1412,7 +1452,7 @@ bool Parser::parseIdentifier(Identifier& id)
         token = nextToken();
         if (token->type != TOK_IDENTIFIER)
         {
-            log(ERROR, "parseIdentifier: Invalid identifier");
+            EXPECT_ERROR("identifier", "identifier");
             return false;
         }
         id.identifier.push_back(token->string);
@@ -1426,7 +1466,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
     Token* token = nextToken();
     if (token->type != TOK_BRACKET_LEFT)
     {
-        log(ERROR, "parseList: Expected (");
+        EXPECT_ERROR("list", "(");
         return false;
     }
 
@@ -1447,7 +1487,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
         }
         else
         {
-            log(ERROR, "parseList: Expected identifier or )");
+            EXPECT_ERROR("list", "identifier or )");
             return false;
         }
 
@@ -1458,7 +1498,7 @@ bool Parser::parseList(vector<Token*>& list, TokenType type)
         }
         else if (token->type != TOK_COMMA)
         {
-            log(ERROR, "parseList: Function: Expected , or )");
+            EXPECT_ERROR("list", ", or )");
             return false;
         }
     }
@@ -1470,7 +1510,7 @@ bool Parser::parseExpressionList(CodeBlock* code, vector<Expression*>& list)
     Token* token = nextToken();
     if (token->type != TOK_BRACKET_LEFT)
     {
-        log(ERROR, "parseExpressionList: Expected (");
+        EXPECT_ERROR("list", "(");
         return false;
     }
 
@@ -1497,7 +1537,7 @@ bool Parser::parseExpressionList(CodeBlock* code, vector<Expression*>& list)
         }
         else if (token->type != TOK_COMMA)
         {
-            log(ERROR, "parseList: Function: Expected , or )");
+            EXPECT_ERROR("list", ", or )");
             return false;
         }
     }
