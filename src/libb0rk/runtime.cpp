@@ -150,8 +150,6 @@ bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
 
     m_classes.insert(make_pair(clazz->getName(), clazz));
 
-    clazz->initStaticFields();
-
     Function* initFunction = clazz->findMethod(L"<staticinit>");
 
     if (initFunction != NULL)

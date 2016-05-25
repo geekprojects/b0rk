@@ -167,6 +167,21 @@ static bool opcodeLoadStaticField(uint64_t thisPC, uint64_t opcode, Context* con
     return true;
 }
 
+static bool opcodeStoreStaticField(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Class* clazz = (Class*)frame->fetch();
+    int fieldId = frame->fetch();
+
+    Value v = context->pop();
+
+    clazz->setStaticField(fieldId, v);
+
+    LOG("STORE_STATIC_FIELD: f%d, class=%ls, v=%ls", fieldId, clazz->getName().c_str(), v.toString().c_str());
+
+    return true;
+}
+
+
 static bool opcodeStoreField(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value objValue = context->pop();
@@ -1040,10 +1055,11 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_LOAD_VAR: success = opcodeLoadVar(thisPC, opcode, context, &frame); break;
             case OPCODE_STORE_VAR: success = opcodeStoreVar(thisPC, opcode, context, &frame); break;
             case OPCODE_LOAD_FIELD: success = opcodeLoadField(thisPC, opcode, context, &frame); break;
+            case OPCODE_STORE_FIELD: success = opcodeStoreField(thisPC, opcode, context, &frame); break;
             case OPCODE_LOAD_FIELD_NAMED: success = opcodeLoadFieldNamed(thisPC, opcode, context, &frame); break;
             case OPCODE_STORE_FIELD_NAMED: success = opcodeStoreFieldNamed(thisPC, opcode, context, &frame); break;
             case OPCODE_LOAD_STATIC_FIELD: success = opcodeLoadStaticField(thisPC, opcode, context, &frame); break;
-            case OPCODE_STORE_FIELD: success = opcodeStoreField(thisPC, opcode, context, &frame); break;
+            case OPCODE_STORE_STATIC_FIELD: success = opcodeStoreStaticField(thisPC, opcode, context, &frame); break;
             case OPCODE_LOAD_ARRAY: success = opcodeLoadArray(thisPC, opcode, context, &frame); break;
             case OPCODE_STORE_ARRAY: success = opcodeStoreArray(thisPC, opcode, context, &frame); break;
             case OPCODE_INC_VAR: success = opcodeIncVar(thisPC, opcode, context, &frame); break;

@@ -35,8 +35,6 @@ Class::Class(Class* superClass, string name)
     {
         m_fieldStartId = m_superClass->getFieldCount();
     }
-
-    m_staticValues = NULL;
 }
 
 Class::Class(Class* superClass, wstring name)
@@ -49,8 +47,6 @@ Class::Class(Class* superClass, wstring name)
     {
         m_fieldStartId = m_superClass->getFieldCount();
     }
-
-    m_staticValues = NULL;
 }
 
 
@@ -60,11 +56,6 @@ Class::~Class()
     for (methIt = m_methods.begin(); methIt != m_methods.end(); methIt++)
     {
         delete methIt->second;
-    }
-
-    if (m_staticValues != NULL)
-    {
-        delete[] m_staticValues;
     }
 }
 
@@ -102,14 +93,21 @@ int Class::getFieldId(wstring name)
     return -1;
 }
 
-void Class::addStaticField(string name)
+int Class::addStaticField(string name)
 {
-    addStaticField(Utils::string2wstring(name));
+    return addStaticField(Utils::string2wstring(name));
 }
 
-void Class::addStaticField(wstring name)
+int Class::addStaticField(wstring name)
 {
+    int id = m_staticFields.size();
     m_staticFields.push_back(name);
+
+    Value initValue;
+    initValue.type = VALUE_VOID;
+    m_staticValues.push_back(initValue);
+
+    return id;
 }
 
 size_t Class::getStaticFieldCount()
@@ -136,6 +134,7 @@ int Class::getStaticFieldId(wstring name)
     return -1;
 }
 
+/*
 void Class::initStaticFields()
 {
     int count = m_staticFields.size();
@@ -147,6 +146,7 @@ void Class::initStaticFields()
         m_staticValues[i].type = VALUE_VOID;
     }
 }
+*/
 
 void Class::addMethod(string name, Function* function)
 {

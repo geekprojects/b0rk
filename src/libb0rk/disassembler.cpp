@@ -33,10 +33,11 @@ Disassembler::Disassembler()
     addOpcode(OPCODE_LOAD_VAR, "LOAD_VAR", "v%lld", 1);
     addOpcode(OPCODE_STORE_VAR, "STORE_VAR", "v%lld", 1);
     addOpcode(OPCODE_LOAD_FIELD,  "LOAD_FIELD", "f%lld", 1);
+    addOpcode(OPCODE_STORE_FIELD, "STORE_FIELD", "f%lld", 1);
     addOpcode(OPCODE_LOAD_FIELD_NAMED,  "LOAD_FIELD_NAMED", "<pop>", 0);
     addOpcode(OPCODE_STORE_FIELD_NAMED,  "STORE_FIELD_NAMED", "<pop>", 0);
     addOpcode(OPCODE_LOAD_STATIC_FIELD,  "LOAD_STATIC_FIELD", "class=0x%llx, field=%lld", 2);
-    addOpcode(OPCODE_STORE_FIELD, "STORE_FIELD", "f%lld", 1);
+    addOpcode(OPCODE_STORE_STATIC_FIELD,  "STORE_STATIC_FIELD", "class=0x%llx, field=%lld", 2);
     addOpcode(OPCODE_LOAD_ARRAY, "LOAD_ARRAY", "", 0);
     addOpcode(OPCODE_STORE_ARRAY, "STORE_ARRAY", "", 0);
     addOpcode(OPCODE_INC_VAR, "INC_VAR", "v%lld, %lld", 2);

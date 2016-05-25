@@ -1095,16 +1095,29 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         }
         else
         {
-            printf("Assembler::load: Error: Unknown variable: %ls\n", varExpr->var.c_str());
-            if (m_function->getClass() != NULL)
+            id = m_function->getClass()->getStaticFieldId(varExpr->var);
+            if (id != -1)
             {
-                printf("Assembler::load:  -> class=%ls\n", m_function->getClass()->getName().c_str());
+                // static class field!
+                m_code.push_back(OPCODE_LOAD_STATIC_FIELD);
+                m_code.push_back((uint64_t)m_function->getClass());
+                m_code.push_back(id);
+                return true;
             }
             else
             {
-                printf("Assembler::load:  -> class=NULL\n");
+ 
+                printf("Assembler::load: Error: Unknown variable: %ls\n", varExpr->var.c_str());
+                if (m_function->getClass() != NULL)
+                {
+                    printf("Assembler::load:  -> class=%ls\n", m_function->getClass()->getName().c_str());
+                }
+                else
+                {
+                    printf("Assembler::load:  -> class=NULL\n");
+                }
+                return false;
             }
-            return false;
         }
     }
 }
@@ -1171,8 +1184,20 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         }
         else
         {
-            printf("Assembler::store: Error: Unknown variable: %ls\n", name.c_str());
-            return false;
+            id = m_function->getClass()->getStaticFieldId(name);
+            if (id != -1)
+            {
+                // static class field!
+                m_code.push_back(OPCODE_STORE_STATIC_FIELD);
+                m_code.push_back((uint64_t)m_function->getClass());
+                m_code.push_back(id);
+                return true;
+            }
+            else
+            {
+                printf("Assembler::store: Error: Unknown variable: %ls\n", name.c_str());
+                return false;
+            }
         }
     }
 }

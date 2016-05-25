@@ -54,7 +54,8 @@ class Class
     std::vector<std::wstring> m_fields;
     std::vector<std::wstring> m_staticFields;
 
-    Value* m_staticValues;
+    std::vector<Value> m_staticValues;
+    //Value* m_staticValues;
 
  public:
     Class(Class* superClass, std::string name);
@@ -74,12 +75,12 @@ class Class
     void addField(std::wstring name);
     int getFieldId(std::wstring name);
 
-    void addStaticField(std::string name);
-    void addStaticField(std::wstring name);
+    int addStaticField(std::string name);
+    int addStaticField(std::wstring name);
     int getStaticFieldId(std::wstring name);
     Value getStaticField(int slot) { return m_staticValues[slot]; }
     void setStaticField(int slot, Value v) { m_staticValues[slot] = v; }
-    void initStaticFields();
+    //void initStaticFields();
     std::vector<std::wstring>& getStaticFields();
 
     void addMethod(std::string name, Function* function);

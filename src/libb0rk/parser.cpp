@@ -29,6 +29,8 @@
 #include <b0rk/parser.h>
 #include <b0rk/utils.h>
 
+#include "packages/system/lang/StringClass.h"
+
 using namespace std;
 using namespace b0rk;
 using namespace Geek;
@@ -263,9 +265,70 @@ Class* Parser::parseClass(bool addToExisting)
 #ifdef DEBUG_PARSER
             log(DEBUG, "parseClass: Variable: %ls", varName.c_str());
 #endif
-            clazz->addField(varName);
+
+            bool isStatic = false;
+            Value staticValue;
+            staticValue.type = VALUE_VOID;
 
             token = nextToken();
+            if (token->type == TOK_STATIC)
+            {
+                isStatic = true;
+                token = nextToken();
+#ifdef DEBUG_PARSER
+                log(DEBUG, "parseClass:  -> Static (next=%ls)", token->string.c_str());
+#endif
+                if (token->type == TOK_ASSIGN)
+                {
+                    token = nextToken();
+#ifdef DEBUG_PARSER
+                    log(DEBUG, "parseClass: Static Variable: Type=%d", token->type);
+#endif
+                    switch (token->type)
+                    {
+                        case TOK_STRING:
+                            staticValue.type = VALUE_OBJECT;
+                            staticValue.object = String::createString(m_context, token->string);
+                            break;
+
+                        case TOK_INTEGER:
+                            staticValue.type = VALUE_INTEGER;
+                            staticValue.i = token->i;
+                            break;
+
+                        case TOK_DOUBLE:
+                            staticValue.type = VALUE_DOUBLE;
+                            staticValue.i = token->d;
+                            break;
+
+                        default:
+                            EXPECT_ERROR("var", "STRING, INTEGER or DOUBLE");
+                            delete clazz;
+                            return NULL;
+                            break;
+                    }
+#ifdef DEBUG_PARSER
+                    log(DEBUG, "parseClass: Static Variable: Value=%ls", staticValue.toString().c_str());
+#endif
+                    token = nextToken();
+                }
+            }
+
+            if (!isStatic)
+            {
+                clazz->addField(varName);
+            }
+            else
+            {
+                int id = clazz->addStaticField(varName);
+#ifdef DEBUG_PARSER
+                log(DEBUG, "parseClass: Static Variable id=%d", id);
+#endif
+                if (staticValue.type != VALUE_VOID)
+                {
+                    clazz->setStaticField(id, staticValue);
+                }
+            }
             if (token->type != TOK_SEMICOLON)
             {
                 EXPECT_ERROR("var", ";");
