@@ -494,6 +494,21 @@ static bool opcodeAnd(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
 return true;
 }
 
+static bool opcodeNot(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v1 = context->pop();
+
+    Value result;
+    result.type = VALUE_INTEGER;
+    result.i = !v1.i;
+
+    LOG("NOT: %lld = %lld", v1.i, result.i);
+
+    context->push(result);
+    return true;
+}
+
+
 static bool opcodeAddI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value v1 = context->pop();
@@ -575,6 +590,17 @@ static bool opcodePushCE(uint64_t thisPC, uint64_t opcode, Context* context, Fra
     context->push(v);
     LOG("PUSHCE: %lld", v.i);
     LOG("PUSHCE:  -> zero=%d, sign=%d, overflow=%d", frame->flags.zero, frame->flags.sign, frame->flags.overflow);
+    return true;
+}
+
+static bool opcodePushCNE(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v;
+    v.type = VALUE_INTEGER;
+    v.i = !frame->flags.zero;
+    context->push(v);
+    LOG("PUSHCNE: %lld", v.i);
+    LOG("PUSHCNE:  -> zero=%d, sign=%d, overflow=%d", frame->flags.zero, frame->flags.sign, frame->flags.overflow);
     return true;
 }
 
@@ -1073,13 +1099,17 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_MUL: success = opcodeMul(thisPC, opcode, context, &frame); break;
             case OPCODE_DIV: success = opcodeDiv(thisPC, opcode, context, &frame); break;
             case OPCODE_AND: success = opcodeAnd(thisPC, opcode, context, &frame); break;
+            case OPCODE_NOT: success = opcodeNot(thisPC, opcode, context, &frame); break;
             case OPCODE_ADDI: success = opcodeAddI(thisPC, opcode, context, &frame); break;
             case OPCODE_SUBI: success = opcodeSubI(thisPC, opcode, context, &frame); break;
+            case OPCODE_ANDI: success = opcodeAnd(thisPC, opcode, context, &frame); break;
+            case OPCODE_NOTI: success = opcodeNot(thisPC, opcode, context, &frame); break;
             case OPCODE_ADDD: success = opcodeAddD(thisPC, opcode, context, &frame); break;
             case OPCODE_SUBD: success = opcodeSubD(thisPC, opcode, context, &frame); break;
             case OPCODE_MULI: success = opcodeMulI(thisPC, opcode, context, &frame); break;
             case OPCODE_MULD: success = opcodeMulD(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHCE: success = opcodePushCE(thisPC, opcode, context, &frame); break;
+            case OPCODE_PUSHCNE: success = opcodePushCNE(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHCL: success = opcodePushCL(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHCLE: success = opcodePushCLE(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHCG: success = opcodePushCG(thisPC, opcode, context, &frame); break;

@@ -132,7 +132,7 @@ void OperationExpression::resolveType()
         printf("OperationExpression::resolveType: Expression type=%d (Left Only)\n", valueType);
 #endif
     }
-    else
+    else if (left != NULL)
     {
         ValueType leftType = left->valueType;
         ValueType rightType = right->valueType;
@@ -201,6 +201,9 @@ wstring OperationExpression::toString()
             break;
         case OP_REFERENCE:
             str +=L"REFERENCE";
+            break;
+        case OP_NOT:
+            str +=L"NOT";
             break;
         default:
             str += L"?OP?";

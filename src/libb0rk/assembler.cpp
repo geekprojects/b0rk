@@ -338,7 +338,10 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 }
             }
 
-            if (opExpr->operType != OP_SET && opExpr->operType != OP_INCREMENT && opExpr->operType != OP_DECREMENT)
+            if (opExpr->operType != OP_SET &&
+                opExpr->operType != OP_INCREMENT &&
+                opExpr->operType != OP_DECREMENT &&
+                opExpr->operDesc.hasLeftExpr)
             {
                 res = assembleExpression(block, opExpr->left, NULL, true);
                 if (!res)
@@ -377,6 +380,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     pushOperator(OPCODE_DIV, opExpr->valueType);
                     break;
 
+                case OP_NOT:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: NOT\n");
+#endif
+                    pushOperator(OPCODE_NOT, opExpr->valueType);
+                    break;
 
                 case OP_LOGICAL_AND:
 #ifdef DEBUG_ASSEMBLER
@@ -392,6 +401,15 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     pushCMP(opExpr->valueType);
                     m_code.push_back(OPCODE_PUSHCE);
                     break;
+
+                case OP_NOT_EQUAL:
+#ifdef DEBUG_ASSEMBLER
+                    printf("Assembler::assembleExpression: OPER: NOT_EQUAL\n");
+#endif
+                    pushCMP(opExpr->valueType);
+                    m_code.push_back(OPCODE_PUSHCNE);
+                    break;
+
 
                 case OP_LESS_THAN:
 #ifdef DEBUG_ASSEMBLER

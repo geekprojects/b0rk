@@ -46,6 +46,7 @@ enum OpCode
     OPCODE_MUL         = 0x12,
     OPCODE_DIV         = 0x13,
     OPCODE_AND         = 0x14,
+    OPCODE_NOT         = 0x15,
 
     // Arithmetic: Integers
     OPCODE_ADDI        = 0x20,
@@ -53,6 +54,7 @@ enum OpCode
     OPCODE_MULI        = 0x22,
     OPCODE_DIVI        = 0x23,
     OPCODE_ANDI        = 0x24,
+    OPCODE_NOTI        = 0x25,
 
     // Arithmetic: Doubles
     OPCODE_ADDD        = 0x30,
@@ -69,10 +71,11 @@ enum OpCode
     OPCODE_SWAP        = 0x46,
 
     OPCODE_PUSHCE      = 0x50, // Push condition: Equals
-    OPCODE_PUSHCL      = 0x51, // Push condition: Less than
-    OPCODE_PUSHCLE     = 0x52, // Push condition: Less than or equal
-    OPCODE_PUSHCG      = 0x53, // Push condition: Greater than
-    OPCODE_PUSHCGE     = 0x54, // Push condition: Greater than or equal
+    OPCODE_PUSHCNE     = 0x51, // Push condition: Not Equals
+    OPCODE_PUSHCL      = 0x52, // Push condition: Less than
+    OPCODE_PUSHCLE     = 0x53, // Push condition: Less than or equal
+    OPCODE_PUSHCG      = 0x54, // Push condition: Greater than
+    OPCODE_PUSHCGE     = 0x55, // Push condition: Greater than or equal
 
     OPCODE_CALL        = 0x60,
     OPCODE_CALL_STATIC = 0x61,

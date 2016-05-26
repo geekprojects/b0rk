@@ -107,6 +107,7 @@ enum OpType
     OP_SET,
     OP_LOGICAL_AND,
     OP_EQUALS,
+    OP_NOT_EQUAL,
     OP_LESS_THAN,
     OP_LESS_THAN_EQUAL,
     OP_GREATER_THAN,
@@ -117,6 +118,7 @@ enum OpType
     OP_DIVIDE,
     OP_INCREMENT,
     OP_DECREMENT,
+    OP_NOT,
     OP_REFERENCE,
     OP_ARRAY
 };

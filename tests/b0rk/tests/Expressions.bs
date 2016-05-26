@@ -44,13 +44,21 @@ class tests.Expressions
     {
         var a = 2;
         var b = 3;
+
         test("- ", a - b, -1);
         test("+ ", a + b, 5);
-        test("< ", a < b, 1);
-        test("<=", a <= b, 1);
-        test("> ", a > b, 0);
-        test(">=", a >= b, 0);
-        test("==", a == b, 0);
+        test("* ", a * b, 6);
+        test("/ ", 6 / b, 2);
+
+        test("< ", a < b, true);
+        test("<=", a <= b, true);
+        test("> ", a > b, false);
+        test(">=", a >= b, false);
+        test("==", a == b, false);
+        test("!=", a != b, true);
+
+        test("!true", !true, false);
+        test("!false", !false, true);
 
         test("Precedence 1", (1 + a * b), 7);
         test("Precedence 2", (a * b + 1), 7);
@@ -61,7 +69,12 @@ class tests.Expressions
         var i = 1;
         test("Increment", i++, 1);
         test("Decrement", i--, 2);
+        test("Decrement(After)", i, 1);
 
+        i += 1;
+        test("Add/Assign", i, 2);
+        i -= 1;
+        test("Sub/Assign", i, 1);
     }
 }
 

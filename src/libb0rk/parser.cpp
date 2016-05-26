@@ -39,12 +39,14 @@ OpDesc opTable[] = {
     {TOK_ASSIGN, OP_SET, true, true},
     {TOK_PLUS, OP_ADD, true, true},
     {TOK_MINUS, OP_SUB, true, true},
+    {TOK_NOT, OP_NOT, false, true},
     {TOK_ASTERISK, OP_MULTIPLY, true, true},
     {TOK_SLASH_FORWARD, OP_DIVIDE, true, true},
     {TOK_LOGICAL_AND, OP_LOGICAL_AND, true, true},
     {TOK_ADD_ASSIGN, OP_SET, true, true},
     {TOK_SUB_ASSIGN, OP_SET, true, true},
     {TOK_EQUALS, OP_EQUALS, true, true},
+    {TOK_NOT_EQUAL, OP_NOT_EQUAL, true, true},
     {TOK_LESS_THAN, OP_LESS_THAN, true, true},
     {TOK_LESS_THAN_EQUAL, OP_LESS_THAN_EQUAL, true, true},
     {TOK_GREATER_THAN, OP_GREATER_THAN, true, true},
@@ -454,7 +456,7 @@ int changes = 0;
             if (opExpr->valueType != VALUE_UNKNOWN)
             {
 #ifdef DEBUG_PARSER_TYPES
-                log(DEBUG, "resolveTypes: resolve:  -> left type=%d", opExpr->left->type);
+                //log(DEBUG, "resolveTypes: resolve:  -> left type=%d", opExpr->left->type);
 #endif
                 if (opExpr->operType == OP_SET && opExpr->left->type == EXPR_VAR)
                 {
@@ -531,7 +533,6 @@ changes++;
             varExpr->valueType = varType;
         }
     }
-
 
     for (exprIt = m_expressions.begin(); exprIt != m_expressions.end(); exprIt++)
     {
@@ -1123,13 +1124,16 @@ Expression* Parser::buildTree(CodeBlock* code, vector<Expression*>& queue)
             opExpr->right->parent = opExpr;
         }
 
-        opExpr->left = buildTree(code, queue);
-        if (opExpr->left == NULL)
+        if (opExpr->operDesc.hasLeftExpr)
         {
-            log(ERROR, "buildTree: No left: %ls", opExpr->toString().c_str());
-            return NULL;
+            opExpr->left = buildTree(code, queue);
+            if (opExpr->left == NULL)
+            {
+                log(ERROR, "buildTree: No left: %ls", opExpr->toString().c_str());
+                return NULL;
+            }
+            opExpr->left->parent = opExpr;
         }
-        opExpr->left->parent = opExpr;
 
         if (opExpr->operType == OP_MULTIPLY || opExpr->operType == OP_ADD)
         {
