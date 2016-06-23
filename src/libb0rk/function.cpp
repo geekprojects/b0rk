@@ -169,7 +169,7 @@ bool NativeObjectFunction::execute(Context* context, Object* instance, int argCo
     printf("NativeObjectFunction::execute: native object=%p\n", instance->m_nativeObject);
 #endif
 
-    bool res = ((instance->m_nativeObject)->*m_native)(context, argCount, args, result);
+    bool res = ((instance->getNativeObject(m_class))->*m_native)(context, argCount, args, result);
 
     if (!res)
     {

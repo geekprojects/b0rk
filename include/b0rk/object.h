@@ -24,6 +24,7 @@
 #include <b0rk/class.h>
 #include <b0rk/value.h>
 
+#include <stdio.h>
 #include <stdint.h>
 
 #include <map>
@@ -52,12 +53,24 @@ struct Object
     Class* m_class;
     size_t m_size;
     uint64_t m_gcMark;
-    NativeObject* m_nativeObject;
     Value m_values[0];
 
     Class* getClass() { return m_class; }
     Value getValue(int slot) { return m_values[slot]; }
     void setValue(int slot, Value v) { m_values[slot] = v; }
+
+    void setNativeObject(Class* clazz, NativeObject* object)
+    {
+        int nativeField = clazz->getFieldCount() - 1;
+        m_values[nativeField].pointer = object;
+    }
+
+    NativeObject* getNativeObject(Class* clazz)
+    {
+        int nativeField = clazz->getFieldCount() - 1;
+        NativeObject* no = (NativeObject*)(m_values[nativeField].pointer);
+        return no;
+    }
 
     void setExternalGC() { m_gcMark = B0RK_GC_EXTERNAL; }
     void clearExternalGC() { m_gcMark = 0; }

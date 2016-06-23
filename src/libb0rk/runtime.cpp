@@ -296,7 +296,10 @@ Object* Runtime::allocateObject(Class* clazz, unsigned int extraValues)
     bool enabled = m_gcEnabled;
     m_gcEnabled = false;
 
-    unsigned objSize = sizeof(Object) + ((clazz->getFieldCount() + extraValues) * sizeof(Value));
+    int valueCount = clazz->getFieldCount();
+    valueCount += extraValues;
+
+    unsigned objSize = sizeof(Object) + (valueCount * sizeof(Value));
 
     Object* freeObj = NULL;
     list<Object*>::iterator it;

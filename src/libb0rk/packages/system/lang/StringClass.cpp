@@ -23,6 +23,7 @@
 
 #include "packages/system/lang/StringClass.h"
 #include <b0rk/context.h>
+#include <b0rk/object.h>
 #include <b0rk/utils.h>
 
 #include <wchar.h>
@@ -31,7 +32,7 @@ using namespace std;
 using namespace b0rk;
 
 String::String()
-    : Class(NULL, "system.lang.String")
+    : Class(NULL, L"system.lang.String")
 {
     addMethod("String", new NativeFunction(this, (nativeFunction_t)&String::constructor));
 
@@ -53,7 +54,7 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
 
     if (argCount == 0)
     {
-        instance->m_nativeObject = new StringNative(instance, "");
+        instance->setNativeObject(this, new StringNative(instance, L""));
     }
     else if (argCount == 1)
     {
@@ -62,7 +63,7 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
             args[0].object != NULL &&
             args[0].object->getClass() == this)
         {
-            StringNative* strNative = (StringNative*)(args[0].object->m_nativeObject);
+            StringNative* strNative = (StringNative*)(args[0].object->getNativeObject(this));
             str = strNative->getString();
         }
         else
@@ -73,7 +74,7 @@ bool String::constructor(Context* context, Object* instance, int argCount, Value
 #ifdef DEBUG_STRING
         printf("String::constructor: str=%ls\n", str.c_str());
 #endif
-        instance->m_nativeObject = new StringNative(instance, str);
+        instance->setNativeObject(this, new StringNative(instance, str));
     }
     else
     {
@@ -185,7 +186,7 @@ Object* String::createString(Context* context, std::string str)
         return NULL;
     }
 
-    object->m_nativeObject = new StringNative(object, str);
+    object->setNativeObject(context->getRuntime()->getStringClass(), new StringNative(object, str));
 #ifdef DEBUG_STRING
     printf("String::createString: str=%s\n", str.c_str());
 #endif
@@ -201,7 +202,7 @@ Object* String::createString(Context* context, wstring str)
         return NULL;
     }
 
-    object->m_nativeObject = new StringNative(object, str);
+    object->setNativeObject(context->getRuntime()->getStringClass(), new StringNative(object, str));
 #ifdef DEBUG_STRING
     printf("String::createString: str=%ls\n", str.c_str());
 #endif
@@ -232,6 +233,6 @@ std::wstring String::getString(Context* context, Object* obj)
     {
         return L"NOTASTRING";
     }
-    return ((StringNative*)obj->m_nativeObject)->getString();
+    return ((StringNative*)obj->getNativeObject(obj->getClass()))->getString();
 }
 

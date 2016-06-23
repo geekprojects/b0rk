@@ -53,7 +53,7 @@ Class::~Class()
 
 size_t Class::getFieldCount()
 {
-    return m_fieldStartId + m_fields.size();
+    return m_fieldStartId + m_fields.size() + 1;
 }
 
 void Class::addField(string name)
@@ -94,8 +94,6 @@ int Class::addStaticField(wstring name)
 {
     int id = m_staticFields.size();
     m_staticFields.push_back(name);
-
-printf("addStaticField: name=%ls, id=%d\n", name.c_str(), id);
 
     Value initValue;
     initValue.type = VALUE_VOID;
