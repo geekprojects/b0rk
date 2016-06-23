@@ -24,28 +24,20 @@
 using namespace std;
 using namespace b0rk;
 
-Class::Class(Class* superClass, string name)
-{
-    m_name = Utils::string2wstring(name);
-    m_state = INIT;
-    m_superClass = superClass;
-
-    m_fieldStartId = 0;
-    if (m_superClass != NULL)
-    {
-        m_fieldStartId = m_superClass->getFieldCount();
-    }
-}
-
 Class::Class(Class* superClass, wstring name)
 {
     m_superClass = superClass;
     m_name = name;
 
-    m_fieldStartId = 0;
     if (m_superClass != NULL)
     {
         m_fieldStartId = m_superClass->getFieldCount();
+        m_staticFieldStartId = m_superClass->getStaticFieldCount();
+    }
+    else
+    {
+        m_fieldStartId = 0;
+        m_staticFieldStartId = 0;
     }
 }
 
@@ -103,6 +95,8 @@ int Class::addStaticField(wstring name)
     int id = m_staticFields.size();
     m_staticFields.push_back(name);
 
+printf("addStaticField: name=%ls, id=%d\n", name.c_str(), id);
+
     Value initValue;
     initValue.type = VALUE_VOID;
     m_staticValues.push_back(initValue);
@@ -112,7 +106,7 @@ int Class::addStaticField(wstring name)
 
 size_t Class::getStaticFieldCount()
 {
-    return m_staticFields.size();
+    return m_staticFieldStartId + m_staticFields.size();
 }
 
 int Class::getStaticFieldId(wstring name)
@@ -122,31 +116,17 @@ int Class::getStaticFieldId(wstring name)
     {
         if (m_staticFields[i] == name)
         {
-            return i;// + m_fieldStartId;
+            return i + m_staticFieldStartId;
         }
     }
-/*
+
     if (m_superClass != NULL)
     {
-        return m_superClass->getFieldId(name);
+        return m_superClass->getStaticFieldId(name);
     }
-*/
+
     return -1;
 }
-
-/*
-void Class::initStaticFields()
-{
-    int count = m_staticFields.size();
-    m_staticValues = new Value[count];
-
-    int i;
-    for (i = 0; i < count; i++)
-    {
-        m_staticValues[i].type = VALUE_VOID;
-    }
-}
-*/
 
 void Class::addMethod(string name, Function* function)
 {

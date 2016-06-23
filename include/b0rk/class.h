@@ -50,15 +50,16 @@ class Class
     Class* m_superClass;
 
     std::map<std::wstring, Function*> m_methods;
+
     int m_fieldStartId;
     std::vector<std::wstring> m_fields;
-    std::vector<std::wstring> m_staticFields;
 
+    int m_staticFieldStartId;
+    std::vector<std::wstring> m_staticFields;
     std::vector<Value> m_staticValues;
     //Value* m_staticValues;
 
  public:
-    Class(Class* superClass, std::string name);
     Class(Class* superClass, std::wstring name);
     virtual ~Class();
 
@@ -78,8 +79,8 @@ class Class
     int addStaticField(std::string name);
     int addStaticField(std::wstring name);
     int getStaticFieldId(std::wstring name);
-    Value getStaticField(int slot) { return m_staticValues[slot]; }
-    void setStaticField(int slot, Value v) { m_staticValues[slot] = v; }
+    Value getStaticField(int slot) { return m_staticValues[slot - m_staticFieldStartId]; }
+    void setStaticField(int slot, Value v) { m_staticValues[slot - m_staticFieldStartId] = v; }
     //void initStaticFields();
     std::vector<std::wstring>& getStaticFields();
 
