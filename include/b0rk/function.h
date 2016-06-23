@@ -24,7 +24,6 @@
 #include <b0rk/class.h>
 #include <b0rk/context.h>
 #include <b0rk/expression.h>
-#include <b0rk/object.h>
 #include <b0rk/assembler.h>
 
 #include <vector>
