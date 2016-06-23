@@ -30,7 +30,7 @@
 using namespace std;
 using namespace b0rk;
 
-Maths::Maths() : Class(NULL, "system.lang.Maths")
+Maths::Maths() : Class(NULL, L"system.lang.Maths")
 {
     addMethod("randomInt", new NativeFunction(this, (nativeFunction_t)&Maths::randomInt, true));
     addMethod("round", new NativeFunction(this, (nativeFunction_t)&Maths::round, true));

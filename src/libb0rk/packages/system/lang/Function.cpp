@@ -24,13 +24,14 @@
 #include <unistd.h>
 
 #include <b0rk/utils.h>
+#include <b0rk/object.h>
 
 #include "packages/system/lang/Function.h"
 
 using namespace std;
 using namespace b0rk;
 
-FunctionClass::FunctionClass() : Class(NULL, "system.lang.Function")
+FunctionClass::FunctionClass() : Class(NULL, L"system.lang.Function")
 {
     addField("function");
     addMethod("Function", new NativeFunction(this, (nativeFunction_t)&FunctionClass::constructor));

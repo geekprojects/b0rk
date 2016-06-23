@@ -47,7 +47,7 @@ class Array : public Class
 class ArrayData : public Class
 {
  public:
-    ArrayData() : Class(NULL, "system.lang.ArrayData") {}
+    ArrayData() : Class(NULL, L"system.lang.ArrayData") {}
     ~ArrayData() {}
 };
 

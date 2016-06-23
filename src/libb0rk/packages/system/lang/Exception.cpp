@@ -29,7 +29,7 @@
 using namespace std;
 using namespace b0rk;
 
-Exception::Exception() : Class(NULL, "system.lang.Exception")
+Exception::Exception() : Class(NULL, L"system.lang.Exception")
 {
     addField("message");
     addField("stacktrace");

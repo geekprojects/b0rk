@@ -32,7 +32,7 @@
 using namespace std;
 using namespace b0rk;
 
-File::File() : Class(NULL, "system.io.File")
+File::File() : Class(NULL, L"system.io.File")
 {
     addMethod("<staticinit>", new NativeFunction(this, (nativeFunction_t)&File::init));
     addMethod("write", new NativeFunction(this, (nativeFunction_t)&File::write));

@@ -28,12 +28,14 @@
 #include "packages/system/lang/Array.h"
 #include "packages/system/lang/Exception.h"
 
+#include <b0rk/object.h>
+
 #undef DEBUG_ARRAYS
 
 using namespace std;
 using namespace b0rk;
 
-Array::Array() : Class(NULL, "system.lang.Array")
+Array::Array() : Class(NULL, L"system.lang.Array")
 {
     addField("length");
     addField("data");

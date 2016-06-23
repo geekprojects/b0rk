@@ -22,6 +22,7 @@
 
 #include <string>
 #include <b0rk/class.h>
+#include <b0rk/object.h>
 
 namespace b0rk
 {

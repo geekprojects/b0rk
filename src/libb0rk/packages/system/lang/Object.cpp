@@ -28,7 +28,7 @@
 using namespace std;
 using namespace b0rk;
 
-ObjectClass::ObjectClass() : Class(NULL, "system.lang.Object")
+ObjectClass::ObjectClass() : Class(NULL, L"system.lang.Object")
 {
     addField("ObjectClass");
 
