@@ -29,12 +29,16 @@
 
 #include "packages/system/lang/StringClass.h"
 
+#include <stdarg.h>
+
 using namespace std;
 using namespace b0rk;
 
 Assembler::Assembler(Context* context)
 {
     m_context = context;
+
+    OpCodeInfo::init();
 
     // TODO: Config
     m_disassembler = new Disassembler();
@@ -63,17 +67,57 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
         return false;
     }
 
-    m_code.push_back(OPCODE_PUSHI);
-    m_code.push_back(0);
-    m_code.push_back(OPCODE_RETURN);
+    pushInstruction(OPCODE_PUSHI, 0);
+    pushInstruction(OPCODE_RETURN);
 
-    asmCode.code = new uint64_t[m_code.size()];
-    asmCode.size = m_code.size();
+    asmCode.size = 0;
+    vector<Instruction>::iterator it;
+    asmCode.size = 0;
+    for (it = m_code.begin(); it != m_code.end(); it++)
+    {
+        (*it).address = asmCode.size;
+        asmCode.size++;
+        asmCode.size += (*it).args.size();
+    }
+
+    asmCode.code = new uint64_t[asmCode.size];
     asmCode.localVars = code->m_maxVarId + 1;
 
-    for (i = 0; i < m_code.size(); i++)
+    i = 0;
+    for (it = m_code.begin(); it != m_code.end(); it++)
     {
-        asmCode.code[i] = m_code[i];
+        Instruction inst = *it;
+        OpCodeInfo opCodeInfo = OpCodeInfo::getOpcodeInfo(inst.op);
+        asmCode.code[i++] = inst.op;
+
+        if (opCodeInfo.args != inst.args.size())
+        {
+            printf(
+                "Assembler::assemble: ERROR: Wrong number of arguments for op 0x%x, got %lu expected %d\n",
+                (int)inst.op,
+                inst.args.size(),
+                opCodeInfo.args);
+            return false;
+        }
+
+        int j;
+        for (j = 0; j < opCodeInfo.args; j++)
+        {
+            uint64_t arg = inst.args[j];
+            if (j == opCodeInfo.address)
+            {
+                if (arg >= m_code.size())
+                {
+                    printf(
+                        "Assembler::assemble: ERROR: Instruction address is out of range!\n");
+                    return false;
+                }
+
+                // Map an instruction address to it's assembled code address
+                arg = m_code[arg].address;
+            }
+            asmCode.code[i++] = arg;
+        }
     }
 
     m_disassembler->disassemble(asmCode);
@@ -129,13 +173,13 @@ void Assembler::pushOperator(OpCode opcode, ValueType type)
     switch (type)
     {
         case VALUE_INTEGER:
-            m_code.push_back((int)opcode + 0x10);
+            pushInstruction((OpCode)((int)opcode + 0x10));
             break;
         case VALUE_DOUBLE:
-            m_code.push_back((int)opcode + 0x20);
+            pushInstruction((OpCode)((int)opcode + 0x20));
             break;
         default:
-            m_code.push_back(opcode);
+            pushInstruction(opcode);
             break;
     }
 }
@@ -145,13 +189,13 @@ void Assembler::pushCMP(ValueType type)
     switch (type)
     {
         case VALUE_INTEGER:
-            m_code.push_back(OPCODE_CMPI);
+            pushInstruction(OPCODE_CMPI);
             break;
         case VALUE_DOUBLE:
-            m_code.push_back(OPCODE_CMPD);
+            pushInstruction(OPCODE_CMPD);
             break;
         default:
-            m_code.push_back(OPCODE_CMP);
+            pushInstruction(OPCODE_CMP);
             break;
     }
 }
@@ -209,9 +253,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                 printf("Assembler::assembleExpression: CALL: Static call: %ls.%ls\n", callExpr->clazz->getName().c_str(), id.c_str());
 #endif
-                m_code.push_back(OPCODE_CALL_STATIC);
-                m_code.push_back((uint64_t)func);
-                m_code.push_back(count);
+                pushInstruction(OPCODE_CALL_STATIC, (uint64_t)func, count);
             }
             else
             {
@@ -222,7 +264,8 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 bool inReference = false;
                 if (callExpr->parent != NULL)
                 {
-                    if (callExpr->parent->type == EXPR_OPER && ((OperationExpression*)(callExpr->parent))->operType == OP_REFERENCE)
+                    if (callExpr->parent->type == EXPR_OPER &&
+                        ((OperationExpression*)(callExpr->parent))->operType == OP_REFERENCE)
                     {
 #ifdef DEBUG_ASSEMBLER
                         printf("Assembler::assembleExpression: CALL: Parent is a reference\n");
@@ -241,12 +284,11 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                 if (inReference)
                 {
-                    m_code.push_back(OPCODE_PUSHOBJ);
                     Object* strObj = m_context->getRuntime()->newString(m_context, callExpr->function);
-                    m_code.push_back((uint64_t)strObj);
                     strObj->setExternalGC();
-                    m_code.push_back(OPCODE_CALL_NAMED);
-                    m_code.push_back(count);
+
+                    pushInstruction(OPCODE_PUSHOBJ, (uint64_t)strObj);
+                    pushInstruction(OPCODE_CALL_NAMED, count);
                 }
                 else
                 {
@@ -264,8 +306,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                         varExpr.clazz = NULL;
                         varExpr.var = callExpr->function;
                         load(block, &varExpr, reference);
-                        m_code.push_back(OPCODE_CALL_OBJ);
-                        m_code.push_back(count);
+                        pushInstruction(OPCODE_CALL_OBJ, count);
                     }
                     else
                     {
@@ -279,25 +320,20 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                         if (func->getStatic())
                         {
-                            m_code.push_back(OPCODE_CALL_STATIC);
-                            m_code.push_back((uint64_t)func);
-                            m_code.push_back(count);
+                            pushInstruction(OPCODE_CALL_STATIC, (uint64_t)func, count);
                         }
                         else
                         {
-                            m_code.push_back(OPCODE_LOAD_VAR);
-                            m_code.push_back(0); // this
+                            pushInstruction(OPCODE_LOAD_VAR, 0); // Load "this"
 
-                            m_code.push_back(OPCODE_CALL);
-                            m_code.push_back((uint64_t)func);
-                            m_code.push_back(count);
+                            pushInstruction(OPCODE_CALL, (uint64_t)func, count);
                         }
                     }
                 }
             }
             if (!needResult)
             {
-                m_code.push_back(OPCODE_POP);
+                pushInstruction(OPCODE_POP);
                 expr->resultOnStack = false;
             }
         } break;
@@ -399,7 +435,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: EQUALS\n");
 #endif
                     pushCMP(opExpr->valueType);
-                    m_code.push_back(OPCODE_PUSHCE);
+                    pushInstruction(OPCODE_PUSHCE);
                     break;
 
                 case OP_NOT_EQUAL:
@@ -407,7 +443,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: NOT_EQUAL\n");
 #endif
                     pushCMP(opExpr->valueType);
-                    m_code.push_back(OPCODE_PUSHCNE);
+                    pushInstruction(OPCODE_PUSHCNE);
                     break;
 
 
@@ -416,7 +452,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: LESS_THAN\n");
 #endif
                     pushCMP(opExpr->valueType);
-                    m_code.push_back(OPCODE_PUSHCL);
+                    pushInstruction(OPCODE_PUSHCL);
                     break;
 
                 case OP_LESS_THAN_EQUAL:
@@ -424,7 +460,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: LESS_THAN_EQUAL\n");
 #endif
                     pushCMP(opExpr->valueType);
-                    m_code.push_back(OPCODE_PUSHCLE);
+                    pushInstruction(OPCODE_PUSHCLE);
                     break;
 
 
@@ -433,7 +469,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
 #endif
                     pushCMP(opExpr->valueType);
-                    m_code.push_back(OPCODE_PUSHCG);
+                    pushInstruction(OPCODE_PUSHCG);
                     break;
 
                 case OP_GREATER_THAN_EQUAL:
@@ -441,7 +477,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     printf("Assembler::assembleExpression: OPER: GREATER_THAN\n");
 #endif
                     pushCMP(opExpr->valueType);
-                    m_code.push_back(OPCODE_PUSHCGE);
+                    pushInstruction(OPCODE_PUSHCGE);
                     break;
 
                 case OP_INCREMENT:
@@ -465,16 +501,17 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
                         printf("Assembler::assembleExpression: OPER: POST xCREMENT: Use INC_VAR!\n");
 #endif
-                        m_code.push_back(OPCODE_INC_VAR);
-                        m_code.push_back(id);
+
+                        uint64_t inc;
                         if (opExpr->operType == OP_INCREMENT)
                         {
-                            m_code.push_back(1);
+                            inc = 1;
                         }
                         else
                         {
-                            m_code.push_back(-1);
+                            inc = -1;
                         }
+                        pushInstruction(OPCODE_INC_VAR, id, inc);
                         expr->resultOnStack = false;
                     }
                     else
@@ -487,30 +524,28 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                         if (needResult)
                         {
-                            m_code.push_back(OPCODE_DUP);
-                            m_code.push_back(OPCODE_PUSHI);
-                            m_code.push_back(1);
+                            pushInstruction(OPCODE_DUP);
+                            pushInstruction(OPCODE_PUSHI, 1);
                             if (opExpr->operType == OP_DECREMENT)
                             {
                                 // Order matters!
-                                m_code.push_back(OPCODE_SWAP);
+                                pushInstruction(OPCODE_SWAP);
                             }
                         }
                         else
                         {
-                            m_code.push_back(OPCODE_PUSHI);
-                            m_code.push_back(1);
+                            pushInstruction(OPCODE_PUSHI, 1);
                         }
 
                         expr->resultOnStack = needResult;
 
                         if (opExpr->operType == OP_INCREMENT)
                         {
-                            m_code.push_back(OPCODE_ADDI);
+                            pushInstruction(OPCODE_ADDI);
                         }
                         else
                         {
-                            m_code.push_back(OPCODE_SUBI);
+                            pushInstruction(OPCODE_SUBI);
                         }
                         res = store(block, varExpr, reference);
                         if (!res)
@@ -531,7 +566,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 
                     if (needResult)
                     {
-                        m_code.push_back(OPCODE_DUP);
+                        pushInstruction(OPCODE_DUP);
                     }
 
                     expr->resultOnStack = needResult;
@@ -583,7 +618,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                             return false;
                         }
 
-                        m_code.push_back(OPCODE_STORE_ARRAY);
+                        pushInstruction(OPCODE_STORE_ARRAY);
                     }
                     else
                     {
@@ -624,23 +659,22 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             if (ifExpr->falseBlock != NULL)
             {
                 // Jump to end
-                m_code.push_back(OPCODE_JMP);
-                m_code.push_back(0);
+                pushInstruction(OPCODE_JMP, 0);
                 jmpToEndPos = m_code.size() - 1;
             }
 
-            m_code[bneToFalsePos] = m_code.size();
+            m_code[bneToFalsePos].args[0] = m_code.size();
             if (ifExpr->falseBlock != NULL)
             {
 
-                // Add the body
+                // Add the false body
                 res = assembleBlock(ifExpr->falseBlock);
                 if (!res)
                 {
                     return false;
                 }
 
-                m_code[jmpToEndPos] = m_code.size();
+                m_code[jmpToEndPos].args[0] = m_code.size();
             }
         } break;
 
@@ -696,13 +730,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             printf("Assembler::assembleExpression: FOR: jump...\n");
 #endif
             // Jump back to the test above
-            m_code.push_back(OPCODE_JMP);
-            m_code.push_back(loopTop);
+            pushInstruction(OPCODE_JMP, loopTop);
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FOR: done!\n");
 #endif
 
-            m_code[bneToEndPos] = m_code.size();
+            m_code[bneToEndPos].args[0] = m_code.size();
         } break;
 
         case EXPR_RETURN:
@@ -713,8 +746,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #endif
             if (retExpr->returnValue == NULL)
             {
-                m_code.push_back(OPCODE_PUSHI);
-                m_code.push_back(0);
+                pushInstruction(OPCODE_PUSHI, 0);
             }
             else
             {
@@ -724,11 +756,12 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                     return false;
                 }
             }
-            m_code.push_back(OPCODE_RETURN);
+            pushInstruction(OPCODE_RETURN);
         } break;
 
         case EXPR_TRY:
         {
+            // Do or do not, there is no.. Oh wait.
             TryExpression* tryExpr = (TryExpression*)expr;
 
             int excepVar = tryExpr->catchBlock->getVarId(tryExpr->exceptionVar);
@@ -739,9 +772,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             }
 
             // Tell the executor what to do if there's an exception
-            m_code.push_back(OPCODE_PUSHTRY);
-            m_code.push_back(excepVar); // Will be filled in with the end address
-            m_code.push_back(0); // Will be filled in with the end address
+            pushInstruction(OPCODE_PUSHTRY, excepVar, 0); // Will be filled in with the end address
             unsigned int tryCatchPos = m_code.size() - 1;
 
             // Add the body
@@ -750,21 +781,20 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             {
                 return false;
             }
-            m_code.push_back(OPCODE_POPTRY);
+            pushInstruction(OPCODE_POPTRY);
 
             // No exceptions! Jump beyond handler
-            m_code.push_back(OPCODE_JMP);
-            m_code.push_back(0); // Will be filled in with the end address
+            pushInstruction(OPCODE_JMP, 0); // Will be filled in with the end address
             unsigned int jmpToEndPos = m_code.size() - 1;
             unsigned int catchPos = m_code.size();
-            m_code[tryCatchPos] = catchPos;
+            m_code[tryCatchPos].args[1] = catchPos;
 
             res = assembleBlock(tryExpr->catchBlock);
             if (!res)
             {
                 return false;
             }
-            m_code[jmpToEndPos] = m_code.size();
+            m_code[jmpToEndPos].args[0] = m_code.size();
         } break;
 
         case EXPR_THROW:
@@ -776,7 +806,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             {
                 return false;
             }
-            m_code.push_back(OPCODE_THROW);
+            pushInstruction(OPCODE_THROW);
         } break;
 
         case EXPR_VAR:
@@ -815,7 +845,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 return false;
             }
 
-            m_code.push_back(OPCODE_LOAD_ARRAY);
+            pushInstruction(OPCODE_LOAD_ARRAY);
         } break;
 
         case EXPR_NEW:
@@ -844,9 +874,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
                 count++;
             }
 
-            m_code.push_back(OPCODE_NEW);
-            m_code.push_back((uint64_t)clazz);
-            m_code.push_back(count);
+            pushInstruction(OPCODE_NEW, (uint64_t)clazz, count);
         } break;
 
         case EXPR_STRING:
@@ -856,20 +884,18 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
             printf("Assembler::assembleExpression: STRING: NEW STRING: %ls\n", strExpr->str.c_str());
 #endif
 
-            m_code.push_back(OPCODE_PUSHOBJ);
             Object* strObj = m_context->getRuntime()->newString(m_context, strExpr->str);
-            m_code.push_back((uint64_t)strObj);
             strObj->setExternalGC();
+            pushInstruction(OPCODE_PUSHOBJ, (uint64_t)strObj);
         } break;
 
         case EXPR_INTEGER:
         {
             IntegerExpression* intExpr = (IntegerExpression*)expr;
 #ifdef DEBUG_ASSEMBLER
-            printf("Assembler::assembleExpression: INTEGER: PUSH %d\n", intExpr->i);
+            printf("Assembler::assembleExpression: INTEGER: PUSH %lld\n", intExpr->i);
 #endif
-            m_code.push_back(OPCODE_PUSHI);
-            m_code.push_back(intExpr->i);
+            pushInstruction(OPCODE_PUSHI, intExpr->i);
         } break;
 
         case EXPR_DOUBLE:
@@ -878,9 +904,8 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: DOUBLE: PUSH %0.2f\n", doubleExpr->d);
 #endif
-            m_code.push_back(OPCODE_PUSHD);
             int64_t* dtoi = (int64_t*)(&(doubleExpr->d));
-            m_code.push_back(*dtoi);
+            pushInstruction(OPCODE_PUSHD, *dtoi);
         } break;
 
         case EXPR_FUNCTION:
@@ -889,8 +914,7 @@ bool Assembler::assembleExpression(CodeBlock* block, Expression* expr, Operation
 #ifdef DEBUG_ASSEMBLER
             printf("Assembler::assembleExpression: FUNCTION: NEW FUNCTION %p\n", funcExpr->function);
 #endif
-            m_code.push_back(OPCODE_NEW_FUNCTION);
-            m_code.push_back((uint64_t)funcExpr->function);
+            pushInstruction(OPCODE_NEW_FUNCTION, (uint64_t)funcExpr->function);
         } break;
 
         default:
@@ -922,15 +946,15 @@ bool Assembler::assembleTest(CodeBlock* block, Expression* testExpr)
         return false;
     }
 
-    int branchOpcode = -1;
+    OpCode branchOpcode = OPCODE_MAX;
     if (m_code.size() > 2)
     {
         // Optimisation: Can we collapse the compare in the test expression and our own CMP?
-        uint64_t last0 = m_code[m_code.size() - 2];
+        uint64_t last0 = m_code[m_code.size() - 2].op;
 
         if (last0 == OPCODE_CMP || last0 == OPCODE_CMPI || OPCODE_CMPD)
         {
-            uint64_t last1 = m_code[m_code.size() - 1];
+            uint64_t last1 = m_code[m_code.size() - 1].op;
 
             // Note that we flip the condition as we want to branch if
             // the condition is false, i.e. skip the true block
@@ -961,18 +985,16 @@ bool Assembler::assembleTest(CodeBlock* block, Expression* testExpr)
         }
     }
 
-    if (branchOpcode == -1)
+    if (branchOpcode == OPCODE_MAX)
     {
         // Check whether the test expression was *false*
-        m_code.push_back(OPCODE_PUSHI);
-        m_code.push_back(0);
-        m_code.push_back(OPCODE_CMPI);
+        pushInstruction(OPCODE_PUSHI, 0);
+        pushInstruction(OPCODE_CMPI);
         branchOpcode = OPCODE_BEQ;
     }
 
     // If false, skip to the end
-    m_code.push_back(branchOpcode);
-    m_code.push_back(0); // Will be filled in with the end address
+    pushInstruction(branchOpcode, 0); // Will be filled in with the end address
 
     return true;
 }
@@ -1043,12 +1065,11 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
             return false;
         }
 
-        m_code.push_back(OPCODE_PUSHOBJ);
         Object* strObj = m_context->getRuntime()->newString(m_context, varExpr->var);
-        m_code.push_back((uint64_t)strObj);
         strObj->setExternalGC();
 
-        m_code.push_back(OPCODE_LOAD_FIELD_NAMED);
+        pushInstruction(OPCODE_PUSHOBJ, (uint64_t)strObj);
+        pushInstruction(OPCODE_LOAD_FIELD_NAMED);
         return true;
     }
 
@@ -1062,9 +1083,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         int id = varExpr->clazz->getStaticFieldId(varExpr->var);
         if (id != -1)
         {
-            m_code.push_back(OPCODE_LOAD_STATIC_FIELD);
-            m_code.push_back((uint64_t)varExpr->clazz);
-            m_code.push_back(id);
+            pushInstruction(OPCODE_LOAD_STATIC_FIELD, (uint64_t)varExpr->clazz, id);
             return true;
         }
 
@@ -1088,8 +1107,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
     if (id != -1)
     {
         // Local variable!
-        m_code.push_back(OPCODE_LOAD_VAR);
-        m_code.push_back(id);
+        pushInstruction(OPCODE_LOAD_VAR, id);
         return true;
     }
     else
@@ -1105,10 +1123,8 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
         if (id != -1)
         {
             // object field!
-            m_code.push_back(OPCODE_LOAD_VAR);
-            m_code.push_back(0); // this
-            m_code.push_back(OPCODE_LOAD_FIELD);
-            m_code.push_back(id);
+            pushInstruction(OPCODE_LOAD_VAR, 0); // Load "this"
+            pushInstruction(OPCODE_LOAD_FIELD, id);
             return true;
         }
         else
@@ -1117,9 +1133,7 @@ bool Assembler::load(CodeBlock* block, VarExpression* varExpr, OperationExpressi
             if (id != -1)
             {
                 // static class field!
-                m_code.push_back(OPCODE_LOAD_STATIC_FIELD);
-                m_code.push_back((uint64_t)m_function->getClass());
-                m_code.push_back(id);
+                pushInstruction(OPCODE_LOAD_STATIC_FIELD, (uint64_t)m_function->getClass(), id);
                 return true;
             }
             else
@@ -1153,12 +1167,12 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         printf("Assembler::store: Var from reference: %ls\n", varExpr->var.c_str());
 #endif
 
-        m_code.push_back(OPCODE_PUSHOBJ);
         Object* strObj = m_context->getRuntime()->newString(m_context, varExpr->var);
-        m_code.push_back((uint64_t)strObj);
         strObj->setExternalGC();
 
-        m_code.push_back(OPCODE_STORE_FIELD_NAMED);
+        pushInstruction(OPCODE_PUSHOBJ, (uint64_t)strObj);
+        pushInstruction(OPCODE_STORE_FIELD_NAMED);
+
         return true;
     }
 
@@ -1180,8 +1194,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
     if (id != -1)
     {
         // Local variable!
-        m_code.push_back(OPCODE_STORE_VAR);
-        m_code.push_back(id);
+        pushInstruction(OPCODE_STORE_VAR, id);
         return true;
     }
     else
@@ -1194,10 +1207,8 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
         if (id != -1)
         {
             // object field!
-            m_code.push_back(OPCODE_LOAD_VAR);
-            m_code.push_back(0); // this
-            m_code.push_back(OPCODE_STORE_FIELD);
-            m_code.push_back(id);
+            pushInstruction(OPCODE_LOAD_VAR, 0); // Load "this"
+            pushInstruction(OPCODE_STORE_FIELD, id);
             return true;
         }
         else
@@ -1206,9 +1217,7 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
             if (id != -1)
             {
                 // static class field!
-                m_code.push_back(OPCODE_STORE_STATIC_FIELD);
-                m_code.push_back((uint64_t)m_function->getClass());
-                m_code.push_back(id);
+                pushInstruction(OPCODE_STORE_STATIC_FIELD, (uint64_t)m_function->getClass(), id);
                 return true;
             }
             else
@@ -1218,5 +1227,25 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
             }
         }
     }
+}
+
+void Assembler::pushInstruction(OpCode op, ...)
+{
+    va_list vl;
+    va_start(vl, op);
+
+    Instruction inst;
+    inst.op = op;
+
+    OpCodeInfo opInfo = OpCodeInfo::getOpcodeInfo(op);
+
+    int i;
+    for (i = 0; i < opInfo.args; i++)
+    {
+        uint64_t arg = va_arg(vl, uint64_t);
+        inst.args.push_back(arg);
+    }
+    m_code.push_back(inst);
+    va_end(vl);
 }
 

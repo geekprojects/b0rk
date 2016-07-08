@@ -46,6 +46,13 @@ struct AssembledCode
     int localVars;
 };
 
+struct Instruction
+{
+    OpCode op;
+    int address;
+    std::vector<uint64_t> args;
+};
+
 class Assembler
 {
  private:
@@ -53,7 +60,9 @@ class Assembler
     ScriptFunction* m_function;
     Disassembler* m_disassembler;
 
-    std::vector<uint64_t> m_code;
+    std::vector<Instruction> m_code;
+
+    void pushInstruction(OpCode op, ...);
 
     void pushOperator(OpCode opcode, ValueType type);
     void pushCMP(ValueType type);
