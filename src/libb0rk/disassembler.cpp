@@ -34,62 +34,6 @@ using namespace b0rk;
 
 Disassembler::Disassembler()
 {
-    addOpcode(OPCODE_LOAD_VAR, "LOAD_VAR", "v%d", 1);
-    addOpcode(OPCODE_STORE_VAR, "STORE_VAR", "v%d", 1);
-    addOpcode(OPCODE_LOAD_FIELD,  "LOAD_FIELD", "f%d", 1);
-    addOpcode(OPCODE_STORE_FIELD, "STORE_FIELD", "f%d", 1);
-    addOpcode(OPCODE_LOAD_FIELD_NAMED,  "LOAD_FIELD_NAMED", "<pop>", 0);
-    addOpcode(OPCODE_STORE_FIELD_NAMED,  "STORE_FIELD_NAMED", "<pop>", 0);
-    addOpcode(OPCODE_LOAD_STATIC_FIELD,  "LOAD_STATIC_FIELD", "class=%C, field=%d", 2);
-    addOpcode(OPCODE_STORE_STATIC_FIELD,  "STORE_STATIC_FIELD", "class=%C, field=%d", 2);
-    addOpcode(OPCODE_LOAD_ARRAY, "LOAD_ARRAY", "", 0);
-    addOpcode(OPCODE_STORE_ARRAY, "STORE_ARRAY", "", 0);
-    addOpcode(OPCODE_INC_VAR, "INC_VAR", "v%d, %d", 2);
-    addOpcode(OPCODE_PUSHI, "PUSHI", "%d", 1);
-    addOpcode(OPCODE_PUSHD, "PUSHD", "0x%x", 1);
-    addOpcode(OPCODE_PUSHOBJ, "PUSHOBJ", "object=%O", 1);
-    addOpcode(OPCODE_POP, "POP", "", 0);
-    addOpcode(OPCODE_DUP, "DUP", "", 0);
-    addOpcode(OPCODE_SWAP, "SWAP", "", 0);
-    addOpcode(OPCODE_ADD, "ADD", "", 0);
-    addOpcode(OPCODE_SUB, "SUB", "", 0);
-    addOpcode(OPCODE_MUL, "MUL", "", 0);
-    addOpcode(OPCODE_DIV, "DIV", "", 0);
-    addOpcode(OPCODE_AND, "AND", "", 0);
-    addOpcode(OPCODE_NOT, "NOT", "", 0);
-    addOpcode(OPCODE_ADDI, "ADDI", "", 0);
-    addOpcode(OPCODE_SUBI, "SUBI", "", 0);
-    addOpcode(OPCODE_ADDD, "ADDD", "", 0);
-    addOpcode(OPCODE_SUBD, "SUBD", "", 0);
-    addOpcode(OPCODE_MULI, "MULI", "", 0);
-    addOpcode(OPCODE_ANDI, "ANDI", "", 0);
-    addOpcode(OPCODE_NOTI, "NOTI", "", 0);
-    addOpcode(OPCODE_MULD, "MULD", "", 0);
-    addOpcode(OPCODE_PUSHCE, "PUSHCE", "", 0);
-    addOpcode(OPCODE_PUSHCL, "PUSHCL", "", 0);
-    addOpcode(OPCODE_PUSHCLE, "PUSHCLE", "", 0);
-    addOpcode(OPCODE_PUSHCG, "PUSHCG", "", 0);
-    addOpcode(OPCODE_PUSHCGE, "PUSHCGE", "", 0);
-    addOpcode(OPCODE_CALL, "CALL", "function=%F, args=%d", 2);
-    addOpcode(OPCODE_CALL_STATIC, "CALL_STATIC", "function=%F, args=%d", 2);
-    addOpcode(OPCODE_CALL_NAMED, "CALL_NAMED", "(%d args)", 1);
-    addOpcode(OPCODE_CALL_OBJ, "CALL_OBJ", "(%d args)", 1);
-    addOpcode(OPCODE_NEW, "NEW", "class=%C, args=%d", 2);
-    addOpcode(OPCODE_NEW_FUNCTION, "NEW_FUNCTION", "function=%x", 1);
-    addOpcode(OPCODE_RETURN, "RETURN", "", 0);
-    addOpcode(OPCODE_CMP, "CMP", "", 0);
-    addOpcode(OPCODE_CMPI, "CMPI", "", 0);
-    addOpcode(OPCODE_CMPD, "CMPD", "", 0);
-    addOpcode(OPCODE_JMP, "JMP", "0x%x", 1);
-    addOpcode(OPCODE_BEQ, "BEQ", "0x%x", 1);
-    addOpcode(OPCODE_BNE, "BNE", "0x%x", 1);
-    addOpcode(OPCODE_BL, "BL", "0x%x", 1);
-    addOpcode(OPCODE_BLE, "BLE", "0x%x", 1);
-    addOpcode(OPCODE_BG, "BG", "0x%x", 1);
-    addOpcode(OPCODE_BGE, "BGE", "0x%x", 1);
-    addOpcode(OPCODE_THROW, "THROW", "", 0);
-    addOpcode(OPCODE_PUSHTRY, "PUSHTRY", "v%d, 0x%x", 2);
-    addOpcode(OPCODE_POPTRY, "POPTRY", "", 0);
 }
 
 Disassembler::~Disassembler()
@@ -112,14 +56,8 @@ bool Disassembler::disassemble(AssembledCode& code)
     {
         int opcodePos = pos++;
         int opcode = code.code[opcodePos];
-        map<int, OpCodeInfo>::iterator it = m_opcodes.find(opcode);
-        if (it == m_opcodes.end())
-        {
-            fprintf(fp, "Disassembler::disassemble: 0x%x: Unknown opcode: 0x%x\n", opcodePos, opcode);
-            break;
-        }
 
-        OpCodeInfo info = it->second;
+        OpCodeInfo info = OpCodeInfo::getOpcodeInfo((OpCode)opcode);
         fprintf(fp, "\t0x%04x: %s ", opcodePos, info.name.c_str());
 
         wstring output = L"";

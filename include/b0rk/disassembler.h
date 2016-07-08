@@ -33,27 +33,8 @@ namespace b0rk
 
 struct AssembledCode;
 
-struct OpCodeInfo
-{
-    std::string name;
-    std::string format;
-    int args;
-};
-
 class Disassembler
 {
- private:
-    std::map<int, OpCodeInfo> m_opcodes;
-
-    void addOpcode(int opcode, std::string name, std::string format, int args)
-    {
-        OpCodeInfo info;
-        info.name = name;
-        info.format = format;
-        info.args = args;
-         m_opcodes.insert(std::make_pair(opcode, info));
-    }
-
  public:
     Disassembler();
     ~Disassembler();

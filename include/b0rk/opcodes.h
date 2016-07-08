@@ -21,6 +21,8 @@
 #ifndef __BSCRIPT_OPCODES_H_
 #define __BSCRIPT_OPCODES_H_
 
+#include <string>
+
 namespace b0rk
 {
 
@@ -101,8 +103,35 @@ enum OpCode
     OPCODE_PUSHTRY     = 0x91,
     OPCODE_POPTRY      = 0x92,
 
-    OPCODE_MAX         = 0x92
+    OPCODE_MAX         = 0x93
 };
+
+struct OpCodeInfo
+{
+    std::string name;
+    std::string format;
+    int args;
+    int address;
+
+    OpCodeInfo()
+    {
+    }
+
+    OpCodeInfo(std::string _name, std::string _format, int _args, int _address)
+    {
+        name = _name;
+        format = _format;
+        args = _args;
+        address = _address;
+    }
+
+    static OpCodeInfo g_opCodeInfo[OPCODE_MAX];
+    static void addOpcode(OpCode op, std::string name, std::string format, int args, int address = -1);
+    static void init();
+    static OpCodeInfo getOpcodeInfo(OpCode op);
+    
+};
+
 
 };
 
