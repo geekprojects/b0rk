@@ -129,6 +129,11 @@ class Context
         return value;
     }
 
+    inline Value peek() const
+    {
+        return m_stack[m_stackPos - 1];
+    }
+
     void throwException(Value exception);
     void throwException(Object* exception);
     void clearException() { m_exception = false; }

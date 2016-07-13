@@ -295,9 +295,8 @@ static bool opcodePushObj(uint64_t thisPC, uint64_t opcode, Context* context, Fr
 static bool opcodeDup(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     Value v;
-    v = context->pop();
+    v = context->peek();
     LOG("DUP: %ls", v.toString().c_str());
-    context->push(v);
     context->push(v);
     return true;
 }
@@ -569,6 +568,17 @@ static bool opcodeMulI(uint64_t thisPC, uint64_t opcode, Context* context, Frame
     return true;
 }
 
+static bool opcodeDivI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v1 = context->pop();
+    Value v2 = context->pop();
+    Value result;
+    result.type = VALUE_INTEGER;
+    result.i = v1.i / v2.i;
+    LOG("DIVI: %lld * %lld = %lld", v1.i, v2.i, result.i);
+    context->push(result);
+    return true;
+}
 
 static bool opcodeMulD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
@@ -581,6 +591,19 @@ static bool opcodeMulD(uint64_t thisPC, uint64_t opcode, Context* context, Frame
     context->push(result);
     return true;
 }
+
+static bool opcodeDivD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    Value v1 = context->pop();
+    Value v2 = context->pop();
+    Value result;
+    result.type = VALUE_DOUBLE;
+    result.d = v1.d / v2.d;
+    LOG("DIVD: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
+    context->push(result);
+    return true;
+}
+
 
 static bool opcodePushCE(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
@@ -868,10 +891,10 @@ static bool opcodeCmp(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
             return false;
         }
 
-Value result = context->pop();
-frame->flags.zero = (result.i == 0);
-frame->flags.sign = result.i < 0 && result.i != 0;
-frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
+        Value result = context->pop();
+        frame->flags.zero = (result.i == 0);
+        frame->flags.sign = result.i < 0 && result.i != 0;
+        frame->flags.overflow = !frame->flags.zero || frame->flags.sign;
     }
     else
     {
@@ -1038,7 +1061,10 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
     frame.flags.sign = false;
     frame.flags.overflow = false;
 
-    int frameSize = sizeof(Frame) * code->localVars;
+    // Allocate local vars on our real stack
+    // This is UNSAFE. It could allow b0rk code
+    // to hijack the interpreter
+    int frameSize = sizeof(Value) * code->localVars;
     frame.localVars = (Value*)alloca(frameSize);
     memset(frame.localVars, 0, frameSize);
 
@@ -1100,14 +1126,19 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_DIV: success = opcodeDiv(thisPC, opcode, context, &frame); break;
             case OPCODE_AND: success = opcodeAnd(thisPC, opcode, context, &frame); break;
             case OPCODE_NOT: success = opcodeNot(thisPC, opcode, context, &frame); break;
+
             case OPCODE_ADDI: success = opcodeAddI(thisPC, opcode, context, &frame); break;
             case OPCODE_SUBI: success = opcodeSubI(thisPC, opcode, context, &frame); break;
+            case OPCODE_MULI: success = opcodeMulI(thisPC, opcode, context, &frame); break;
+            case OPCODE_DIVI: success = opcodeDivI(thisPC, opcode, context, &frame); break;
             case OPCODE_ANDI: success = opcodeAnd(thisPC, opcode, context, &frame); break;
             case OPCODE_NOTI: success = opcodeNot(thisPC, opcode, context, &frame); break;
+
             case OPCODE_ADDD: success = opcodeAddD(thisPC, opcode, context, &frame); break;
             case OPCODE_SUBD: success = opcodeSubD(thisPC, opcode, context, &frame); break;
-            case OPCODE_MULI: success = opcodeMulI(thisPC, opcode, context, &frame); break;
             case OPCODE_MULD: success = opcodeMulD(thisPC, opcode, context, &frame); break;
+            case OPCODE_DIVD: success = opcodeDivD(thisPC, opcode, context, &frame); break;
+
             case OPCODE_PUSHCE: success = opcodePushCE(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHCNE: success = opcodePushCNE(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHCL: success = opcodePushCL(thisPC, opcode, context, &frame); break;
