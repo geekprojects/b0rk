@@ -83,6 +83,14 @@ bool Disassembler::disassemble(AssembledCode& code)
                         output += buffer;
                         break;
 
+                    case 'f':
+                    {
+	                uint64_t di = code.code[pos + arg++];
+                        double* dp = (double*)&di;
+                        swprintf(buffer, 32, L"%0.5f", *dp);
+                        output += buffer;
+                    } break;
+
                     case 'C':
                     {
                         Class* cls = (Class*)code.code[pos + arg++];

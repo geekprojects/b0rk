@@ -20,6 +20,7 @@
 
 
 #undef DEBUG_ASSEMBLER
+#define DEBUG_OPTIMISER
 
 #include <b0rk/assembler.h>
 #include <b0rk/runtime.h>
@@ -30,6 +31,8 @@
 #include "packages/system/lang/StringClass.h"
 
 #include <stdarg.h>
+
+#include <set>
 
 using namespace std;
 using namespace b0rk;
@@ -70,6 +73,10 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     pushInstruction(OPCODE_PUSHI, 0);
     pushInstruction(OPCODE_RETURN);
 
+    asmCode.localVars = code->m_maxVarId + 1;
+
+    optimise(asmCode);
+
     asmCode.size = 0;
     vector<Instruction>::iterator it;
     asmCode.size = 0;
@@ -81,7 +88,6 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
     }
 
     asmCode.code = new uint64_t[asmCode.size];
-    asmCode.localVars = code->m_maxVarId + 1;
 
     i = 0;
     for (it = m_code.begin(); it != m_code.end(); it++)
@@ -1247,5 +1253,338 @@ void Assembler::pushInstruction(OpCode op, ...)
     }
     m_code.push_back(inst);
     va_end(vl);
+}
+
+struct VarInfo
+{
+    int type;
+    int loaded;
+    int stored;
+    Value lastValue;
+};
+
+bool Assembler::optimise(AssembledCode& code)
+{
+set<int> removeList;
+    VarInfo vars[code.localVars];
+    int i;
+
+    // Set up vars array
+    for (i = 0; i < code.localVars; i++)
+    {
+        vars[i].type = 0;
+        vars[i].loaded = 0;
+        vars[i].stored = (i <= m_function->getArgCount());
+        vars[i].lastValue.type = VALUE_UNKNOWN;
+    }
+
+    int prevType = 0;
+    Value lastValue;
+    lastValue.type = VALUE_UNKNOWN;
+
+    /*
+     * Pass 1: Infer types, update any arithmetic to use these types if
+     * possible and any other obvious optimisations (Double loads etc)
+     */
+    vector<Instruction>::iterator it;
+    for (it = m_code.begin(); it != m_code.end(); it++)
+    {
+        OpCode op = it->op;
+
+        int type = (op & 0xf0) >> 4;
+#ifdef DEBUG_OPTIMISER
+        fprintf(stderr, "Assembler::optimise: %ls: Opcode 0x%x: Type: %d\n", m_function->getFullName().c_str(), op, type);
+#endif
+
+        if (op == OPCODE_LOAD_VAR)
+        {
+            int v = (*it).args[0];
+            prevType = vars[v].type;
+            vars[v].loaded++;
+#ifdef DEBUG_OPTIMISER
+            fprintf(stderr, "Assembler::optimise: %ls: LOAD_VAR: v=%d, type=%d\n", m_function->getFullName().c_str(), v, prevType);
+            if (vars[v].lastValue.type != VALUE_UNKNOWN)
+            {
+                fprintf(stderr, "Assembler::optimise: %ls: LOAD_VAR:  -> Loading known value: %ls\n", m_function->getFullName().c_str(), vars[v].lastValue.toString().c_str());
+            }
+#endif
+            lastValue = vars[v].lastValue;
+        }
+        else if (op == OPCODE_STORE_VAR)
+        {
+            int v = (*it).args[0];
+#ifdef DEBUG_OPTIMISER
+            fprintf(stderr, "Assembler::optimise: %ls: STORE_VAR: v=%d, prevType=%d\n", m_function->getFullName().c_str(), v, prevType);
+#endif
+            vars[v].stored++;
+            vars[v].type = prevType;
+
+            if (lastValue.type != VALUE_UNKNOWN)
+            {
+#ifdef DEBUG_OPTIMISER
+                fprintf(
+                    stderr,
+                    "Assembler::optimise: %ls: STORE_VAR:  -> Storing known value: %ls\n",
+                    m_function->getFullName().c_str(),
+                    lastValue.toString().c_str());
+#endif
+            }
+            vars[v].lastValue = lastValue;
+        }
+        else if (op == OPCODE_INC_VAR)
+        {
+            int v = (*it).args[0];
+            vars[v].type = 0;
+            vars[v].loaded++;
+            vars[v].stored++;
+        }
+        else
+        {
+            if (prevType != 0 && type == 0 && (op & 0xf00) == 0x200)
+            {
+                OpCode newOp = (OpCode)((int)op | (prevType << 4));
+#ifdef DEBUG_OPTIMISER
+                fprintf(
+                    stderr,
+                    "Assembler::optimise: %ls: ADDING TYPE TO ARITHMETIC OP 0x%x -> 0x%x\n",
+                    m_function->getFullName().c_str(),
+                    op,
+                    newOp);
+#endif
+                (*(it)).op = newOp;
+            }
+            else if (op == OPCODE_DUP)
+            {
+                // Same as the previous!
+            }
+            else
+            {
+                prevType = type;
+            }
+
+            if (op == OPCODE_PUSHI)
+            {
+                lastValue.type = VALUE_INTEGER;
+                lastValue.i = (*it).args[0];
+            }
+            else if (op == OPCODE_PUSHD)
+            {
+                lastValue.type = VALUE_DOUBLE;
+                uint64_t id = (*it).args[0];
+                double* dp = (double*)&id;
+                lastValue.d = *dp;
+            }
+            else
+            {
+                lastValue.type = VALUE_UNKNOWN;
+                lastValue.i = 0;
+            }
+        }
+
+        if ((it + 1) != m_code.end())
+        {
+            // Optimisations that require looking at the next var
+            if ((*it).op == OPCODE_LOAD_VAR && (*(it + 1)).op == OPCODE_LOAD_VAR)
+            {
+                /*
+                 * LOAD_VAR vX
+                 * LOAD_VAR vX
+                 *  to
+                 * LOAD_VAR vX
+                 * DUP
+                 */
+                if ((*it).args.at(0) == (*(it + 1)).args.at(0))
+                {
+#ifdef DEBUG_OPTIMISER
+                    fprintf(
+                        stderr,
+                        "Assembler::optimise: %ls: Optimised out two LOAD_VARs\n",
+                        m_function->getFullName().c_str());
+#endif
+                    (*(it + 1)).op = OPCODE_DUP;
+                    (*(it + 1)).args.clear();
+                }
+            }
+        }
+    }
+
+    /*
+     * Check variables
+     * Sanity check that all variables are correctly written etc.
+     * If we only store a var once or it's never read, we'll need another
+     * pass to deal with them
+     */
+    bool varPass = false;
+    for (i = 0; i < code.localVars; i++)
+    {
+#ifdef DEBUG_OPTIMISER
+        fprintf(
+            stderr,
+            "Assembler::optimise: %ls: v%d: type=%d, loaded=%d, stored=%d\n",
+            m_function->getFullName().c_str(),
+            i,
+            vars[i].type,
+            vars[i].loaded,
+            vars[i].stored);
+#endif
+        if (vars[i].stored == 1 && vars[i].lastValue.type != VALUE_UNKNOWN)
+        {
+            varPass = true;
+        }
+        if (vars[i].loaded == 0)
+        {
+            varPass = true;
+        }
+    }
+
+    /*
+     * Pass 2: Replace known variable loads with a PUSHx
+     */
+    if (varPass)
+    {
+        for (it = m_code.begin(); it != m_code.end(); it++)
+        {
+            OpCode op = it->op;
+            if (op == OPCODE_LOAD_VAR)
+            {
+                int v = it->args[0];
+                if (vars[v].stored == 1 && vars[v].lastValue.type != VALUE_UNKNOWN)
+                {
+#ifdef DEBUG_OPTIMISER
+                    fprintf(
+                        stderr,
+                        "Assembler::optimise: %ls: VAR PASS: LOAD_VAR:  -> Loading known value: %ls\n",
+                        m_function->getFullName().c_str(),
+                        vars[v].lastValue.toString().c_str());
+#endif
+
+                    if (vars[v].type == 1)
+                    {
+                        (*it).op = OPCODE_PUSHI;
+                        (*it).args[0] = vars[v].lastValue.i;
+#ifdef DEBUG_OPTIMISER
+                        fprintf(
+                            stderr,
+                            "Assembler::optimise: %ls: LOAD_VAR -> PUSHI %lld\n",
+                            m_function->getFullName().c_str(),
+                            vars[v].lastValue.i);
+#endif
+                        vars[v].loaded--;
+                    }
+                    else if (vars[v].type == 2)
+                    {
+                        (*it).op = OPCODE_PUSHD;
+                        int64_t* dtoi = (int64_t*)(&(vars[v].lastValue.d));
+                        (*it).args[0] = *dtoi;
+#ifdef DEBUG_OPTIMISER
+                        fprintf(
+                            stderr,
+                            "Assembler::optimise: %ls: LOAD_VAR -> PUSHD %0.2f\n",
+                            m_function->getFullName().c_str(),
+                            vars[v].lastValue.d);
+#endif
+                        vars[v].loaded--;
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Another variable check. If variables are never loaded
+     * (Either through optimisation or otherwise), we'll need
+     * a pass to get rid of them
+     */
+    bool removePass = false;
+    for (i = 0; i < code.localVars; i++)
+    {
+#ifdef DEBUG_OPTIMISER
+        fprintf(
+            stderr,
+            "Assembler::optimise: %ls: v%d: type=%d, loaded=%d, stored=%d\n",
+            m_function->getFullName().c_str(),
+            i,
+            vars[i].type,
+            vars[i].loaded,
+            vars[i].stored);
+#endif
+        if (vars[i].loaded == 0)
+        {
+            removePass = true;
+        }
+    }
+
+    /*
+     * Pass 3: Check for operations that we can ditch
+     */
+    if (removePass)
+    {
+        int pos;
+        OpCode prevOp = OPCODE_NOP;
+        for (it = m_code.begin(), pos = 0; it != m_code.end(); it++, pos++)
+        {
+            OpCode op = it->op;
+            if (op == OPCODE_STORE_VAR)
+            {
+                int v = (*it).args[0];
+                if (vars[v].loaded == 0 && (prevOp == OPCODE_PUSHI || prevOp == OPCODE_PUSHD))
+                {
+                    fprintf(
+                        stderr,
+                        "Assembler::optimise: %ls: REMOVE: STORE_VAR v%d: Removing push and store!\n",
+                        m_function->getFullName().c_str(),
+                        v);
+                    removeList.insert(pos - 1);
+                    removeList.insert(pos);
+                }
+            }
+
+            prevOp = op;
+        }
+
+        /*
+         * Do the removal!
+         */
+        set<int>::iterator rIt;
+        for (rIt = removeList.begin(), pos = 0; rIt != removeList.end(); rIt++, pos++)
+        {
+            removeInstruction(*rIt - pos);
+        }
+    }
+
+    return true;
+}
+
+bool Assembler::removeInstruction(int pos)
+{
+    int i;
+    vector<Instruction>::iterator it;
+
+    // Remove the instruction...
+    for (it = m_code.begin(), i = 0; it != m_code.end(); it++, i++)
+    {
+        if (i == pos)
+        {
+            m_code.erase(it);
+            break;
+        }
+    }
+
+    // Update addresses
+    for (it = m_code.begin(), i = 0; it != m_code.end(); it++, i++)
+    {
+        OpCode op = it->op;
+        OpCodeInfo info = OpCodeInfo::getOpcodeInfo(op);
+        if (info.address != -1)
+        {
+            uint64_t addr = it->args[info.address];
+            if (addr > pos)
+            {
+                addr--;
+            }
+            it->args[info.address] = addr;
+        }
+    }
+    return true;
 }
 

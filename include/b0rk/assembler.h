@@ -77,6 +77,9 @@ class Assembler
     bool load(CodeBlock* block, VarExpression* var, OperationExpression* reference);
     bool store(CodeBlock* block, VarExpression* var, OperationExpression* reference);
 
+    bool optimise(AssembledCode& code);
+    bool removeInstruction(int pos);
+
     Function* findFunction(CodeBlock* block, Identifier id);
 
  public:
