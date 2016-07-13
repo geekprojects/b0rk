@@ -236,7 +236,7 @@ struct StringExpression : public Expression
 
 struct IntegerExpression : public Expression
 {
-    int i;
+    int64_t i;
 
     IntegerExpression(CodeBlock* block);
 
