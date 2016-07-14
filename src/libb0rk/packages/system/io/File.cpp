@@ -36,6 +36,7 @@ File::File() : Class(NULL, L"system.io.File")
 {
     addMethod("<staticinit>", new NativeFunction(this, (nativeFunction_t)&File::init));
     addMethod("write", new NativeFunction(this, (nativeFunction_t)&File::write));
+    addMethod("writeln", new NativeFunction(this, (nativeFunction_t)&File::writeln));
 
     addField("fileDescriptor");
 
@@ -73,6 +74,26 @@ bool File::init(Context* context, Object* instance, int argCount, Value* args, V
 
 bool File::write(Context* context, Object* instance, int argCount, Value* args, Value& result)
 {
+    FILE* fd = getDescriptor(instance);
+    doWrite(context, fd, argCount, args);
+
+    result.type = VALUE_VOID;
+    return true;
+}
+
+bool File::writeln(Context* context, Object* instance, int argCount, Value* args, Value& result)
+{
+    FILE* fd = getDescriptor(instance);
+    doWrite(context, fd, argCount, args);
+    fputs("\n", fd);
+
+    result.type = VALUE_VOID;
+    return true;
+}
+
+
+FILE* File::getDescriptor(Object* instance)
+{
     FILE* fd;
     if (instance != NULL)
     {
@@ -84,7 +105,11 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
         // Called statically. Just use stdout
         fd = stdout;
     }
+    return fd;
+}
 
+bool File::doWrite(Context* context, FILE* fd, int argCount, Value* args)
+{
     int i;
     for (i = 0; i < argCount; i++)
     {
@@ -111,8 +136,6 @@ bool File::write(Context* context, Object* instance, int argCount, Value* args, 
             fwrite(outbuffer, 1, 1, fd);
         }
     }
-
-    result.type = VALUE_VOID;
 
     return true;
 }

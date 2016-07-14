@@ -30,13 +30,19 @@ class File : public Class
  private:
     int m_fdFieldId;
 
+    FILE* getDescriptor(Object* instance);
+
+    bool doWrite(Context* context, FILE* fd, int argCount, Value* args);
+
  public:
     File();
     virtual ~File();
 
-    bool write(Context* context, Object* instance, int argCount, Value* args, Value& result);
     bool init(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool write(Context* context, Object* instance, int argCount, Value* args, Value& result);
+    bool writeln(Context* context, Object* instance, int argCount, Value* args, Value& result);
 };
+
 }
 
 #endif
