@@ -52,21 +52,23 @@ using namespace b0rk;
 
 #ifdef DEBUG_EXECUTOR_STATS
 int g_stats[OPCODE_MAX];
-#endif
 
 uint64_t g_loadVarCount = 0;
 uint64_t g_loadVarThisCount = 0;
+#endif
 
 static bool opcodeLoadVar(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
     int varId = frame->fetch();
     context->push(frame->localVars[varId]);
     LOG("LOAD_VAR: v%d: %ls", varId, frame->localVars[varId].toString().c_str());
+#ifdef DEBUG_EXECUTOR_STATS
     g_loadVarCount++;
     if (varId == 0)
     {
         g_loadVarThisCount++;
     }
+#endif
     return true;
 }
 
@@ -490,7 +492,7 @@ static bool opcodeAnd(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
     LOG("AND: %lld + %lld = %lld", v1.i, v2.i, result.i);
 
     context->push(result);
-return true;
+    return true;
 }
 
 static bool opcodeNot(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
@@ -1050,8 +1052,8 @@ Executor::~Executor()
 
 bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int argCount)
 {
-    wstring functionName = code->function->getFullName();
 #ifdef DEBUG_EXECUTOR
+    wstring functionName = code->function->getFullName();
     printf("Executor::run: Entering %ls\n", functionName.c_str());
 #endif
     Frame frame;
