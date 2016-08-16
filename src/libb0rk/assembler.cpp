@@ -20,7 +20,7 @@
 
 
 #undef DEBUG_ASSEMBLER
-#define DEBUG_OPTIMISER
+#undef DEBUG_OPTIMISER
 
 #include <b0rk/assembler.h>
 #include <b0rk/runtime.h>
@@ -33,6 +33,9 @@
 #include <stdarg.h>
 
 #include <set>
+
+#define DOUBLE_TO_INT64(_d) *((int64_t*)(&(_d)))
+#define INT64_TO_DOUBLE(_i) *((double*)&(_i))
 
 using namespace std;
 using namespace b0rk;
@@ -1265,7 +1268,30 @@ struct VarInfo
 
 bool Assembler::optimise(AssembledCode& code)
 {
-set<int> removeList;
+    bool changed = true;
+    while (changed)
+    {
+        bool res;
+        changed = false;
+
+        res = optimiseVars(code, changed);
+        if (!res)
+        {
+            return false;
+        }
+
+        res = optimiseArithmetic(code, changed);
+        if (!res)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Assembler::optimiseVars(AssembledCode& code, bool& hasOptimised)
+{
+    set<int> removeList;
     VarInfo vars[code.localVars];
     int i;
 
@@ -1331,7 +1357,7 @@ set<int> removeList;
             }
             vars[v].lastValue = lastValue;
         }
-        else if (op == OPCODE_INC_VAR)
+        else if (op == OPCODE_INC_VAR || op == OPCODE_INC_VARD)
         {
             int v = (*it).args[0];
             vars[v].type = 0;
@@ -1529,11 +1555,13 @@ set<int> removeList;
                 int v = (*it).args[0];
                 if (vars[v].loaded == 0 && (prevOp == OPCODE_PUSHI || prevOp == OPCODE_PUSHD))
                 {
+#ifdef DEBUG_OPTIMISER
                     fprintf(
                         stderr,
                         "Assembler::optimise: %ls: REMOVE: STORE_VAR v%d: Removing push and store!\n",
                         m_function->getFullName().c_str(),
                         v);
+#endif
                     removeList.insert(pos - 1);
                     removeList.insert(pos);
                 }
@@ -1549,7 +1577,219 @@ set<int> removeList;
         for (rIt = removeList.begin(), pos = 0; rIt != removeList.end(); rIt++, pos++)
         {
             removeInstruction(*rIt - pos);
+            hasOptimised = true;
         }
+    }
+
+    return true;
+}
+
+bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
+{
+    bool changed = true;
+    while (changed)
+    {
+        changed = false;
+        int pos;
+        OpCode prevOp1 = OPCODE_NOP;
+        OpCode prevOp2 = OPCODE_NOP;
+        OpCode prevOp3 = OPCODE_NOP;
+
+        set<int> removeList;
+        vector<Instruction>::iterator it;
+        for (it = m_code.begin(), pos = 0; it != m_code.end(); it++, pos++)
+        {
+            OpCode op = it->op;
+#ifdef DEBUG_OPTIMISER
+            fprintf(
+                stderr,
+                "Assembler::optimiseArithmetic: op=0x%x, prevOp1=0x%x, prevOp2=0x%x\n",
+                op & 0xf00,
+                prevOp1 & 0xf00,
+                prevOp2 & 0xf00);
+#endif
+
+            int opt = (int)op & 0xf0;
+            int op1 = (int)prevOp1 & 0xf0;
+            int op2 = (int)prevOp2 & 0xf0;
+            int op3 = (int)prevOp3 & 0xf0;
+    
+            if (OPCODE_IS_ARITHMETIC(op) &&
+                OPCODE_IS_STACK(prevOp1) &&
+                OPCODE_IS_STACK(prevOp2))
+            {
+
+#ifdef DEBUG_OPTIMISER
+                fprintf(
+                    stderr,
+                    "Assembler::optimiseArithmetic:  -> opt=0x%x, opt1=0x%x, opt2=0x%x\n",
+                    opt, op1, op2);
+#endif
+ 
+                bool optimised = false;
+                if (opt == op1 && opt == op2)
+                {
+                    if (opt == 0x10)
+                    {
+                        int64_t i1 = m_code[pos - 1].args[0];
+                        int64_t i2 = m_code[pos - 2].args[0];
+                        int64_t result = 0;
+                        switch (op)
+                        {
+                            case OPCODE_ADDI:
+                                result = i1 + i2;
+                                optimised = true;
+                                break;
+                            case OPCODE_SUBI:
+                                result = i1 - i2;
+                                optimised = true;
+                                break;
+                            case OPCODE_MULI:
+                                result = i1 * i2;
+                                optimised = true;
+                                break;
+                            case OPCODE_DIVI:
+                                result = i1 / i2;
+                                optimised = true;
+                                break;
+                            case OPCODE_ANDI:
+                                result = i1 & i2;
+                                optimised = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        if (optimised)
+                        {
+#ifdef DEBUG_OPTIMISER
+                            fprintf(
+                                stderr,
+                                "Assembler::optimiseArithmetic: %ls: xxxI: %lld X %lld = %lld\n",
+                                m_function->getFullName().c_str(),
+                                i1, i2, result);
+#endif
+                        removeList.insert(pos - 1);
+                        removeList.insert(pos - 2);
+                            m_code[pos].op = OPCODE_PUSHI;
+                            m_code[pos].args.push_back(result);
+                            changed = true;
+                        }
+                    }
+                    else if (opt == 0x20)
+                    {
+                        double d1 = INT64_TO_DOUBLE(m_code[pos - 1].args[0]);
+                        double d2 = INT64_TO_DOUBLE(m_code[pos - 2].args[0]);
+                        double result = 0;
+                        switch (op)
+                        {
+                            case OPCODE_ADDD:
+                                result = d1 + d2;
+                                optimised = true;
+                                break;
+                            case OPCODE_SUBD:
+                                result = d1 - d2;
+                                optimised = true;
+                                break;
+                            case OPCODE_MULD:
+                                result = d1 * d2;
+                                optimised = true;
+                                break;
+                            case OPCODE_DIVD:
+                                result = d1 / d2;
+                                optimised = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        if (optimised)
+                        {
+#ifdef DEBUG_OPTIMISER
+                            fprintf(
+                                stderr,
+                                "Assembler::optimiseArithmetic: %ls: xxxD: %0.5f X %0.5f = %0.5f\n",
+                                m_function->getFullName().c_str(),
+                                d1, d2, result);
+#endif
+                            removeList.insert(pos - 1);
+                            removeList.insert(pos - 2);
+                            m_code[pos].op = OPCODE_PUSHD;
+                            m_code[pos].args.push_back(DOUBLE_TO_INT64(result));
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            else if (op == OPCODE_STORE_VAR &&
+                OPCODE_IS_ARITHMETIC(prevOp1) &&
+                ((prevOp2 == OPCODE_LOAD_VAR && OPCODE_IS_STACK(prevOp3)) ||
+                 (OPCODE_IS_STACK(prevOp2) && prevOp3 == OPCODE_LOAD_VAR)))
+            {
+                /*
+                * 0x006a: PUSHD 0.00500
+                * 0x006c: LOAD_VAR v8
+                * 0x006e: ADDD
+                * 0x006f: STORE_VAR v8
+                *
+                * to
+                *
+                * 0x006a: INC_VARx 0.00500
+                */
+
+                int64_t var = -1;
+                if (prevOp2 == OPCODE_LOAD_VAR)
+                {
+                    var = m_code[pos - 2].args[0];
+                }
+                else
+                {
+                    var = m_code[pos - 3].args[0];
+                }
+
+                if (prevOp1 == OPCODE_ADDD && op1 == 0x20 && op3 == 0x20)
+                {
+                    double d = 0;
+                    if (prevOp3 == OPCODE_PUSHD)
+                    {
+                        d = INT64_TO_DOUBLE(m_code[pos - 3].args[0]);
+                    }
+                    else
+                    {
+                        d = INT64_TO_DOUBLE(m_code[pos - 2].args[0]);
+                    }
+#ifdef DEBUG_OPTIMISER
+                    fprintf(
+                        stderr,
+                        "Assembler::optimiseArithmetic: %ls: Potential INCVAR: v=%lld += %0.5f\n",
+                        m_function->getFullName().c_str(),
+                        var, d);
+#endif
+
+                    m_code[pos].op = OPCODE_INC_VARD;
+                    m_code[pos].args[0] = var;
+                    m_code[pos].args.push_back(DOUBLE_TO_INT64(d));
+                    removeList.insert(pos - 1);
+                    removeList.insert(pos - 2);
+                    removeList.insert(pos - 3);
+                    changed = true;
+                }
+            }
+
+            prevOp3 = prevOp2;
+            prevOp2 = prevOp1;
+            prevOp1 = op;
+        }
+
+        set<int>::iterator rIt;
+        for (rIt = removeList.begin(), pos = 0; rIt != removeList.end(); rIt++, pos++)
+        {
+            removeInstruction(*rIt - pos);
+        }
+
+        if (changed)
+        {
+            hasOptimised = true;
+        }
+ 
     }
 
     return true;

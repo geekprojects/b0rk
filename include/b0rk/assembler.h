@@ -78,6 +78,8 @@ class Assembler
     bool store(CodeBlock* block, VarExpression* var, OperationExpression* reference);
 
     bool optimise(AssembledCode& code);
+    bool optimiseVars(AssembledCode& code, bool& hasOptimised);
+    bool optimiseArithmetic(AssembledCode& code, bool& hasOptimised);
     bool removeInstruction(int pos);
 
     Function* findFunction(CodeBlock* block, Identifier id);
