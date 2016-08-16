@@ -33,7 +33,7 @@ namespace b0rk
  *
  * g: Group
  *   0x0 None
- *   0x1 Load/Store
+ *   0x1 Variables
  *   0x2 Arithmetic
  *   0x3 Stack
  *   0x4 Flags
@@ -41,6 +41,23 @@ namespace b0rk
  *   0x6 Comparison
  *   0x7 Jumps
  */
+
+enum OpCodeType
+{
+    OPCODE_TYPE_NONE = 0x000,
+    OPCODE_TYPE_VAR = 0x100,
+    OPCODE_TYPE_ARITHMETIC = 0x200,
+    OPCODE_TYPE_STACK = 0x300,
+    OPCODE_TYPE_FLAGS = 0x400,
+    OPCODE_TYPE_CALLS = 0x500,
+    OPCODE_TYPE_COMPARISON = 0x600,
+    OPCODE_TYPE_JUMPS = 0x700,
+};
+
+#define OPCODE_TYPE(_op) (((int)(_op)) & 0xf00)
+#define OPCODE_IS_VAR(_op) (OPCODE_TYPE(_op) == OPCODE_TYPE_VAR)
+#define OPCODE_IS_ARITHMETIC(_op) (OPCODE_TYPE(_op) == OPCODE_TYPE_ARITHMETIC)
+#define OPCODE_IS_STACK(_op) (OPCODE_TYPE(_op) == OPCODE_TYPE_STACK)
 
 enum OpCode
 {
@@ -57,6 +74,7 @@ enum OpCode
     OPCODE_LOAD_ARRAY         = 0x109,
     OPCODE_STORE_ARRAY        = 0x10a,
     OPCODE_INC_VAR            = 0x10b,
+    OPCODE_INC_VARD           = 0x12b,
 
     // Arithmetic: Any value types (Objects etc)
     OPCODE_ADD                = 0x200,
@@ -87,7 +105,7 @@ enum OpCode
     OPCODE_POP                = 0x305,
     OPCODE_SWAP               = 0x306,
     OPCODE_PUSHI              = 0x310,
-    OPCODE_PUSHD              = 0x321,
+    OPCODE_PUSHD              = 0x320,
 
     OPCODE_PUSHCE             = 0x410, // Push condition: Equals
     OPCODE_PUSHCNE            = 0x411, // Push condition: Not Equals

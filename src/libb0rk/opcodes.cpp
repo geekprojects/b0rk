@@ -46,6 +46,7 @@ void OpCodeInfo::init()
     addOpcode(OPCODE_LOAD_ARRAY, "LOAD_ARRAY", "", 0);
     addOpcode(OPCODE_STORE_ARRAY, "STORE_ARRAY", "", 0);
     addOpcode(OPCODE_INC_VAR, "INC_VAR", "v%d, %d", 2);
+    addOpcode(OPCODE_INC_VARD, "INC_VARD", "v%d, %f", 2);
 
     addOpcode(OPCODE_ADD, "ADD", "", 0);
     addOpcode(OPCODE_SUB, "SUB", "", 0);

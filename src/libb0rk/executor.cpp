@@ -259,6 +259,18 @@ static bool opcodeIncVar(uint64_t thisPC, uint64_t opcode, Context* context, Fra
     return true;
 }
 
+static bool opcodeIncVarD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    int varId = frame->fetch();
+
+    uint64_t amounti = frame->fetch();
+    double* amount = (double*)(&amounti);
+    frame->localVars[varId].d += *amount;
+
+    LOG("INC_VARD: v%d, %" PRId64 ": %" PRIf64, varId, amount, frame->localVars[varId].d);
+
+    return true;
+}
 
 static bool opcodePushI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
@@ -1117,6 +1129,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
             case OPCODE_LOAD_ARRAY: success = opcodeLoadArray(thisPC, opcode, context, &frame); break;
             case OPCODE_STORE_ARRAY: success = opcodeStoreArray(thisPC, opcode, context, &frame); break;
             case OPCODE_INC_VAR: success = opcodeIncVar(thisPC, opcode, context, &frame); break;
+            case OPCODE_INC_VARD: success = opcodeIncVarD(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHI: success = opcodePushI(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHD: success = opcodePushD(thisPC, opcode, context, &frame); break;
             case OPCODE_PUSHOBJ: success = opcodePushObj(thisPC, opcode, context, &frame); break;
