@@ -54,14 +54,14 @@ struct Value
         double d;
     };
 
-/*
-    Value()
-    {
-        type = VALUE_UNKNOWN;
-    }
-*/
-
     std::wstring toString();
+
+    static Value null()
+    {
+        Value n;
+        n.type = VALUE_VOID;
+        return n;
+    }
 };
 
 };

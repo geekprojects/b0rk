@@ -30,6 +30,8 @@
 
 #include <vector>
 
+#define B0RK_STACK_MARGIN 4
+
 namespace b0rk
 {
 
@@ -80,6 +82,8 @@ class Context
     bool m_exception;
     Value m_exceptionValue;
 
+    Value m_null;
+
  public:
     Context(Runtime* runtime);
     virtual ~Context();
@@ -91,42 +95,57 @@ class Context
     int getStackPos() { return m_stackPos; }
     Value* getStack() { return m_stack; }
 
-    inline void push(Value value)
+    inline bool checkStack() const
+    {
+        return B0RK_LIKELY(m_stackPos >= 0 && m_stackPos < m_stackSize);
+    }
+
+    inline void push(Value& value)
     {
 #ifdef DEBUG_STACK
         printf("Context::push: %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
 #endif
-        if (B0RK_UNLIKELY(m_stackPos >= m_stackSize))
-        {
-            fprintf(stderr, "Context::push: STACK OVERFLOW\n");
-            return;
-        }
         m_stack[m_stackPos++] = value;
     }
 
     inline void pushVoid()
     {
-        Value voidValue;
-        voidValue.type = VALUE_VOID;
-        push(voidValue);
+        m_stack[m_stackPos++].type = VALUE_VOID;
+    }
+
+    inline void pushInt(int64_t i)
+    {
+        m_stack[m_stackPos].type = VALUE_INTEGER;
+        m_stack[m_stackPos].i = i;
+        m_stackPos++;
+    }
+
+    inline void pushDouble(double d)
+    {
+        m_stack[m_stackPos].type = VALUE_DOUBLE;
+        m_stack[m_stackPos].d = d;
+        m_stackPos++;
     }
 
     inline Value pop()
     {
-        if (B0RK_UNLIKELY(m_stackPos <= 0))
-        {
-            Value voidValue;
-            voidValue.type = VALUE_VOID;
-            fprintf(stderr, "Context::push: STACK UNDERFLOW\n");
-            return voidValue;
-        }
-
         Value value = m_stack[--m_stackPos];
+
 #ifdef DEBUG_STACK
         printf("Context::pop : %s%s\n", spaces(m_stack.size()).c_str(), value.toString().c_str());
 #endif
 
         return value;
+    }
+
+    inline int64_t popInt()
+    {
+        return m_stack[--m_stackPos].i;
+    }
+
+    inline double popDouble()
+    {
+        return m_stack[--m_stackPos].d;
     }
 
     inline Value peek() const

@@ -32,12 +32,16 @@ Class::Class(Class* superClass, wstring name)
     if (m_superClass != NULL)
     {
         m_fieldStartId = m_superClass->getFieldCount();
+        m_fieldCount = m_superClass->getFieldCount() + 1;
         m_staticFieldStartId = m_superClass->getStaticFieldCount();
+        m_staticFieldCount = m_superClass->getStaticFieldCount();
     }
     else
     {
         m_fieldStartId = 0;
+        m_fieldCount = 1;
         m_staticFieldStartId = 0;
+        m_staticFieldCount = 0;
     }
 }
 
@@ -51,11 +55,6 @@ Class::~Class()
     }
 }
 
-size_t Class::getFieldCount()
-{
-    return m_fieldStartId + m_fields.size() + 1;
-}
-
 void Class::addField(string name)
 {
     addField(Utils::string2wstring(name));
@@ -63,18 +62,18 @@ void Class::addField(string name)
 
 void Class::addField(wstring name)
 {
-    m_fields.push_back(name);
+    size_t id = m_fieldCount;
+    m_fields.insert(make_pair(name, id));
+    m_fieldCount++;
 }
 
 int Class::getFieldId(wstring name)
 {
-    unsigned int i;
-    for (i = 0; i < m_fields.size(); i++)
+    map<std::wstring, size_t>::iterator it;
+    it = m_fields.find(name);
+    if (it != m_fields.end())
     {
-        if (m_fields[i] == name)
-        {
-            return i + m_fieldStartId;
-        }
+        return it->second;
     }
 
     if (m_superClass != NULL)
@@ -92,30 +91,25 @@ int Class::addStaticField(string name)
 
 int Class::addStaticField(wstring name)
 {
-    int id = m_staticFields.size();
-    m_staticFields.push_back(name);
+    size_t id = m_staticFieldCount;
+    m_staticFields.insert(make_pair(name, id));
+    m_staticFieldCount++;
 
     Value initValue;
     initValue.type = VALUE_VOID;
+    initValue.i = 0;
     m_staticValues.push_back(initValue);
 
     return id;
 }
 
-size_t Class::getStaticFieldCount()
-{
-    return m_staticFieldStartId + m_staticFields.size();
-}
-
 int Class::getStaticFieldId(wstring name)
 {
-    unsigned int i;
-    for (i = 0; i < m_staticFields.size(); i++)
+    map<std::wstring, size_t>::iterator it;
+    it = m_staticFields.find(name);
+    if (it != m_staticFields.end())
     {
-        if (m_staticFields[i] == name)
-        {
-            return i + m_staticFieldStartId;
-        }
+        return it->second;
     }
 
     if (m_superClass != NULL)
