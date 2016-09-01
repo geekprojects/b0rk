@@ -130,12 +130,12 @@ bool NativeFunction::execute(Context* context, Object* instance, int argCount)
 
     bool res = (m_class->*m_native)(context, instance, argCount, args, result);
 
-    if (!res)
+    if (B0RK_UNLIKELY(!res))
     {
         return false;
     }
 
-    if (!context->hasException())
+    if (B0RK_LIKELY(!context->hasException()))
     {
         context->push(result);
     }
@@ -171,12 +171,12 @@ bool NativeObjectFunction::execute(Context* context, Object* instance, int argCo
 
     bool res = ((instance->getNativeObject(m_class))->*m_native)(context, argCount, args, result);
 
-    if (!res)
+    if (B0RK_UNLIKELY(!res))
     {
         return false;
     }
 
-    if (!context->hasException())
+    if (B0RK_LIKELY(!context->hasException()))
     {
         context->push(result);
     }

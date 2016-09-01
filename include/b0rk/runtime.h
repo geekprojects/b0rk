@@ -94,11 +94,11 @@ class Runtime
     //Class* findClass(Context* context, std::string name, bool load = true);
     Class* findClass(Context* context, std::wstring name, bool load = true);
 
-    Class* getObjectClass() { return m_objectClass; }
-    Class* getStringClass() { return m_stringClass; }
-    Class* getExceptionClass() { return m_exceptionClass; }
-    Class* getArrayClass() { return m_arrayClass; }
-    Class* getArrayDataClass() { return m_arrayDataClass; }
+    inline Class* getObjectClass() const { return m_objectClass; }
+    inline Class* getStringClass() const { return m_stringClass; }
+    inline Class* getExceptionClass() const { return m_exceptionClass; }
+    inline Class* getArrayClass() const { return m_arrayClass; }
+    inline Class* getArrayDataClass() const { return m_arrayDataClass; }
 
     Context* createContext();
 

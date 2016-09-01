@@ -55,8 +55,8 @@ struct Object
     uint64_t m_gcMark;
     Value m_values[0];
 
-    Class* getClass() { return m_class; }
-    Value getValue(int slot) { return m_values[slot]; }
+    inline Class* getClass() const { return m_class; }
+    Value getValue(int slot) const { return m_values[slot]; }
     void setValue(int slot, Value v) { m_values[slot] = v; }
 
     void setNativeObject(Class* clazz, NativeObject* object)
