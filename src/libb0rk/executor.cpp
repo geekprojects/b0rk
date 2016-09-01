@@ -109,7 +109,8 @@ static bool opcodeLoadFieldNamed(uint64_t thisPC, uint64_t opcode, Context* cont
 
             LOG("LOAD_FIELD_NAMED: class=%ls, obj=%p, name=%ls, id=%d\n", clazz->getName().c_str(), objValue.object, varName.c_str(), id);
 
-            context->push(obj->getValue(id));
+            Value v = obj->getValue(id);
+            context->push(v);
         }
         else
         {
@@ -524,97 +525,81 @@ static bool opcodeNot(uint64_t thisPC, uint64_t opcode, Context* context, Frame*
 
 static bool opcodeAddI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_INTEGER;
-    result.i = v1.i + v2.i;
-    LOG("ADDI: %lld + %lld = %lld", v1.i, v2.i, result.i);
-    context->push(result);
-return true;
+    int64_t v1 = context->popInt();
+    int64_t v2 = context->popInt();
+    int64_t result = v1 + v2;
+    LOG("ADDI: %lld + %lld = %lld", v1, v2, result);
+    context->pushInt(result);
+    return true;
 }
 
 static bool opcodeSubI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_INTEGER;
-    result.i = v1.i - v2.i;
-    LOG("SUBI: %lld - %lld = %lld", v1.i, v2.i, result.i);
-    context->push(result);
+    int64_t v1 = context->popInt();
+    int64_t v2 = context->popInt();
+    int64_t result = v1 - v2;
+    LOG("SUBI: %lld - %lld = %lld", v1, v2, result);
+    context->pushInt(result);
     return true;
 }
 
 static bool opcodeAddD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_DOUBLE;
-    result.d = v1.d + v2.d;
-    LOG("ADDD: %0.2f + %0.2f = %0.2f", v1.d, v2.d, result.d);
-    context->push(result);
+    double v1 = context->popDouble();
+    double v2 = context->popDouble();
+    double result = v1 + v2;
+    LOG("ADDD: %0.2f + %0.2f = %0.2f", v1 v2, result);
+    context->pushDouble(result);
     return true;
 }
 
 static bool opcodeSubD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_DOUBLE;
-    result.d = v1.d - v2.d;
-    LOG("SUBD: %0.2f - %0.2f = %0.2f", v1.d, v2.d, result.d);
-    context->push(result);
+    double v1 = context->popDouble();
+    double v2 = context->popDouble();
+    double result = v1 - v2;
+    LOG("SUBD: %0.2f - %0.2f = %0.2f", v1, v2, result);
+    context->pushDouble(result);
     return true;
 }
 
 static bool opcodeMulI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_INTEGER;
-    result.i = v1.i * v2.i;
-    LOG("MULI: %lld * %lld = %lld", v1.i, v2.i, result.i);
-    context->push(result);
+    int64_t v1 = context->popInt();
+    int64_t v2 = context->popInt();
+    int64_t result = v1 * v2;
+    LOG("MULI: %lld * %lld = %lld", v1, v2, result);
+    context->pushInt(result);
     return true;
 }
 
 static bool opcodeDivI(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_INTEGER;
-    result.i = v1.i / v2.i;
-    LOG("DIVI: %lld * %lld = %lld", v1.i, v2.i, result.i);
-    context->push(result);
+    int64_t v1 = context->popInt();
+    int64_t v2 = context->popInt();
+    int64_t result = v1 / v2;
+    LOG("DIVI: %lld * %lld = %lld", v1, v2, result);
+    context->pushInt(result);
     return true;
 }
 
 static bool opcodeMulD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_DOUBLE;
-    result.d = v1.d * v2.d;
-    LOG("MULD: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
-    context->push(result);
+    double v1 = context->popDouble();
+    double v2 = context->popDouble();
+    double result = v1 * v2;
+    LOG("MULD: %0.2f * %0.2f = %0.2f", v1, v2, result);
+    context->pushDouble(result);
     return true;
 }
 
 static bool opcodeDivD(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
 {
-    Value v1 = context->pop();
-    Value v2 = context->pop();
-    Value result;
-    result.type = VALUE_DOUBLE;
-    result.d = v1.d / v2.d;
-    LOG("DIVD: %0.2f * %0.2f = %0.2f", v1.d, v2.d, result.d);
-    context->push(result);
+    double v1 = context->popDouble();
+    double v2 = context->popDouble();
+    double result = v1 / v2;
+    LOG("DIVD: %0.2f * %0.2f = %0.2f", v1, v2, result);
+    context->pushDouble(result);
     return true;
 }
 
@@ -729,15 +714,17 @@ static bool opcodeCallNamed(uint64_t thisPC, uint64_t opcode, Context* context, 
         ERROR("CALL_NAMED: object is null! %p", obj);
         return false;
     }
-    else if (B0RK_UNLIKELY(obj->getClass() == NULL))
+
+    Class* clazz = obj->getClass();
+    if (B0RK_UNLIKELY(clazz == NULL))
     {
         ERROR("CALL_NAMED: object with no class!? obj=%p", obj);
         return false;
     }
 
-    Function* function;
-    int funcFieldId = obj->getClass()->getFieldId(funcName);
+    int funcFieldId = clazz->getFieldId(funcName);
     LOG("CALL_NAMED:  -> funcFieldId=%d", funcFieldId);
+    Function* function;
     if (funcFieldId != -1)
     {
         Value funcFieldValue = obj->getValue(funcFieldId);
@@ -745,7 +732,7 @@ static bool opcodeCallNamed(uint64_t thisPC, uint64_t opcode, Context* context, 
     }
     else
     {
-        function = obj->getClass()->findMethod(funcName);
+        function = clazz->findMethod(funcName);
     }
 
     LOG("CALL_NAMED:  -> function=%p", function);
@@ -1036,8 +1023,86 @@ static bool opcodePopHandler(uint64_t thisPC, uint64_t opcode, Context* context,
     return true;
 }
 
+static bool opcodeInvalid(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    ERROR("Invalid Opcode: 0x%" PRIx64, opcode);
+    return false;
+}
+
+static opcodeFunc_t g_opcodeTable[OPCODE_MAX];
+
 Executor::Executor()
 {
+    int i;
+    for (i = 0; i < OPCODE_MAX; i++)
+    {
+        g_opcodeTable[i] = opcodeInvalid;
+    }
+
+    g_opcodeTable[OPCODE_LOAD_VAR] = opcodeLoadVar;
+    g_opcodeTable[OPCODE_STORE_VAR] = opcodeStoreVar;
+    g_opcodeTable[OPCODE_LOAD_FIELD] = opcodeLoadField;
+    g_opcodeTable[OPCODE_STORE_FIELD] = opcodeStoreField;
+    g_opcodeTable[OPCODE_LOAD_FIELD_NAMED] = opcodeLoadFieldNamed;
+    g_opcodeTable[OPCODE_STORE_FIELD_NAMED] = opcodeStoreFieldNamed;
+    g_opcodeTable[OPCODE_LOAD_STATIC_FIELD] = opcodeLoadStaticField;
+    g_opcodeTable[OPCODE_STORE_STATIC_FIELD] = opcodeStoreStaticField;
+    g_opcodeTable[OPCODE_LOAD_ARRAY] = opcodeLoadArray;
+    g_opcodeTable[OPCODE_STORE_ARRAY] = opcodeStoreArray;
+    g_opcodeTable[OPCODE_INC_VAR] = opcodeIncVar;
+    g_opcodeTable[OPCODE_INC_VARD] = opcodeIncVarD;
+    g_opcodeTable[OPCODE_PUSHI] = opcodePushI;
+    g_opcodeTable[OPCODE_PUSHD] = opcodePushD;
+    g_opcodeTable[OPCODE_PUSHOBJ] = opcodePushObj;
+    g_opcodeTable[OPCODE_DUP] = opcodeDup;
+    g_opcodeTable[OPCODE_SWAP] = opcodeSwap;
+    g_opcodeTable[OPCODE_ADD] = opcodeAdd;
+    g_opcodeTable[OPCODE_SUB] = opcodeSub;
+    g_opcodeTable[OPCODE_MUL] = opcodeMul;
+    g_opcodeTable[OPCODE_DIV] = opcodeDiv;
+    g_opcodeTable[OPCODE_AND] = opcodeAnd;
+    g_opcodeTable[OPCODE_NOT] = opcodeNot;
+
+    g_opcodeTable[OPCODE_ADDI] = opcodeAddI;
+    g_opcodeTable[OPCODE_SUBI] = opcodeSubI;
+    g_opcodeTable[OPCODE_MULI] = opcodeMulI;
+    g_opcodeTable[OPCODE_DIVI] = opcodeDivI;
+    g_opcodeTable[OPCODE_ANDI] = opcodeAnd;
+    g_opcodeTable[OPCODE_NOTI] = opcodeNot;
+
+    g_opcodeTable[OPCODE_ADDD] = opcodeAddD;
+    g_opcodeTable[OPCODE_SUBD] = opcodeSubD;
+    g_opcodeTable[OPCODE_MULD] = opcodeMulD;
+    g_opcodeTable[OPCODE_DIVD] = opcodeDivD;
+
+    g_opcodeTable[OPCODE_PUSHCE] = opcodePushCE;
+    g_opcodeTable[OPCODE_PUSHCNE] = opcodePushCNE;
+    g_opcodeTable[OPCODE_PUSHCL] = opcodePushCL;
+    g_opcodeTable[OPCODE_PUSHCLE] = opcodePushCLE;
+    g_opcodeTable[OPCODE_PUSHCG] = opcodePushCG;
+    g_opcodeTable[OPCODE_PUSHCGE] = opcodePushCGE;
+    g_opcodeTable[OPCODE_POP] = opcodePop;
+    g_opcodeTable[OPCODE_CALL] = opcodeCall;
+    g_opcodeTable[OPCODE_CALL_STATIC] = opcodeCallStatic;
+    g_opcodeTable[OPCODE_CALL_NAMED] = opcodeCallNamed;
+    g_opcodeTable[OPCODE_CALL_OBJ] = opcodeCallObj;
+    g_opcodeTable[OPCODE_NEW] = opcodeNew;
+    g_opcodeTable[OPCODE_NEW_FUNCTION] = opcodeNewFunction;
+    g_opcodeTable[OPCODE_RETURN] = opcodeReturn;
+    g_opcodeTable[OPCODE_CMP] = opcodeCmp;
+    g_opcodeTable[OPCODE_CMPI] = opcodeCmpI;
+    g_opcodeTable[OPCODE_CMPD] = opcodeCmpD;
+    g_opcodeTable[OPCODE_JMP] = opcodeJmp;
+    g_opcodeTable[OPCODE_BEQ] = opcodeBEq;
+    g_opcodeTable[OPCODE_BNE] = opcodeBNE;
+    g_opcodeTable[OPCODE_BL] = opcodeBL;
+    g_opcodeTable[OPCODE_BLE] = opcodeBLE;
+    g_opcodeTable[OPCODE_BG] = opcodeBG;
+    g_opcodeTable[OPCODE_BGE] = opcodeBGE;
+    g_opcodeTable[OPCODE_THROW] = opcodeThrow;
+    g_opcodeTable[OPCODE_PUSHTRY] = opcodePushHandler;
+    g_opcodeTable[OPCODE_POPTRY] = opcodePopHandler;
+
 #ifdef DEBUG_EXECUTOR_STATS
     int i;
     for (i = 0; i < OPCODE_MAX; i++)
@@ -1082,22 +1147,27 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
     frame.localVars = (Value*)alloca(frameSize);
     memset(frame.localVars, 0, frameSize);
 
+    // v0 is always the "this" pointer
     Value thisValue;
     thisValue.type = VALUE_OBJECT;
     thisValue.object = thisObj;
     frame.localVarsCount = code->localVars;
     frame.localVars[0] = thisValue;
 
+    // Populate the first n variables with any arguments
     int arg;
     for (arg = 0; arg < argCount; arg++)
     {
         frame.localVars[(argCount - arg) + 0] = context->pop();
     }
-    for (; arg < frame.localVarsCount; arg++)
-    {
-        frame.localVars[arg + 1].type = VALUE_VOID;
-    }
 
+    /*
+     * Push the frame pointer to the stack
+     * This is used for a variety of things:
+     * - By the Garbage Collector looking for local vars
+     * - Generating stack traces
+     * - Ensuring the stack is consistent
+    */
     Value frameValue;
     frameValue.type = VALUE_FRAME;
     frameValue.pointer = &frame;
@@ -1108,84 +1178,31 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
 
     while (frame.running && frame.pc < code->size)
     {
-
         uint64_t thisPC = frame.pc;
         uint64_t opcode = frame.fetch();
+
+        if (B0RK_UNLIKELY(!context->checkStack()))
+        {
+            fprintf(
+                stderr,
+                "Executor::run: %ls:%04" PRIx64 ": Stack position is out of bounds",
+                frame.code->function->getFullName().c_str(),
+                thisPC);
+            return false;
+        }
 
 #ifdef DEBUG_EXECUTOR_STATS
         g_stats[opcode]++;
 #endif
 
-        switch (opcode)
+        opcodeFunc_t func = opcodeInvalid;
+
+        if (B0RK_LIKELY(opcode < OPCODE_MAX))
         {
-            case OPCODE_LOAD_VAR: success = opcodeLoadVar(thisPC, opcode, context, &frame); break;
-            case OPCODE_STORE_VAR: success = opcodeStoreVar(thisPC, opcode, context, &frame); break;
-            case OPCODE_LOAD_FIELD: success = opcodeLoadField(thisPC, opcode, context, &frame); break;
-            case OPCODE_STORE_FIELD: success = opcodeStoreField(thisPC, opcode, context, &frame); break;
-            case OPCODE_LOAD_FIELD_NAMED: success = opcodeLoadFieldNamed(thisPC, opcode, context, &frame); break;
-            case OPCODE_STORE_FIELD_NAMED: success = opcodeStoreFieldNamed(thisPC, opcode, context, &frame); break;
-            case OPCODE_LOAD_STATIC_FIELD: success = opcodeLoadStaticField(thisPC, opcode, context, &frame); break;
-            case OPCODE_STORE_STATIC_FIELD: success = opcodeStoreStaticField(thisPC, opcode, context, &frame); break;
-            case OPCODE_LOAD_ARRAY: success = opcodeLoadArray(thisPC, opcode, context, &frame); break;
-            case OPCODE_STORE_ARRAY: success = opcodeStoreArray(thisPC, opcode, context, &frame); break;
-            case OPCODE_INC_VAR: success = opcodeIncVar(thisPC, opcode, context, &frame); break;
-            case OPCODE_INC_VARD: success = opcodeIncVarD(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHI: success = opcodePushI(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHD: success = opcodePushD(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHOBJ: success = opcodePushObj(thisPC, opcode, context, &frame); break;
-            case OPCODE_DUP: success = opcodeDup(thisPC, opcode, context, &frame); break;
-            case OPCODE_SWAP: success = opcodeSwap(thisPC, opcode, context, &frame); break;
-            case OPCODE_ADD: success = opcodeAdd(thisPC, opcode, context, &frame); break;
-            case OPCODE_SUB: success = opcodeSub(thisPC, opcode, context, &frame); break;
-            case OPCODE_MUL: success = opcodeMul(thisPC, opcode, context, &frame); break;
-            case OPCODE_DIV: success = opcodeDiv(thisPC, opcode, context, &frame); break;
-            case OPCODE_AND: success = opcodeAnd(thisPC, opcode, context, &frame); break;
-            case OPCODE_NOT: success = opcodeNot(thisPC, opcode, context, &frame); break;
-
-            case OPCODE_ADDI: success = opcodeAddI(thisPC, opcode, context, &frame); break;
-            case OPCODE_SUBI: success = opcodeSubI(thisPC, opcode, context, &frame); break;
-            case OPCODE_MULI: success = opcodeMulI(thisPC, opcode, context, &frame); break;
-            case OPCODE_DIVI: success = opcodeDivI(thisPC, opcode, context, &frame); break;
-            case OPCODE_ANDI: success = opcodeAnd(thisPC, opcode, context, &frame); break;
-            case OPCODE_NOTI: success = opcodeNot(thisPC, opcode, context, &frame); break;
-
-            case OPCODE_ADDD: success = opcodeAddD(thisPC, opcode, context, &frame); break;
-            case OPCODE_SUBD: success = opcodeSubD(thisPC, opcode, context, &frame); break;
-            case OPCODE_MULD: success = opcodeMulD(thisPC, opcode, context, &frame); break;
-            case OPCODE_DIVD: success = opcodeDivD(thisPC, opcode, context, &frame); break;
-
-            case OPCODE_PUSHCE: success = opcodePushCE(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHCNE: success = opcodePushCNE(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHCL: success = opcodePushCL(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHCLE: success = opcodePushCLE(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHCG: success = opcodePushCG(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHCGE: success = opcodePushCGE(thisPC, opcode, context, &frame); break;
-            case OPCODE_POP: success = opcodePop(thisPC, opcode, context, &frame); break;
-            case OPCODE_CALL: success = opcodeCall(thisPC, opcode, context, &frame); break;
-            case OPCODE_CALL_STATIC: success = opcodeCallStatic(thisPC, opcode, context, &frame); break;
-            case OPCODE_CALL_NAMED: success = opcodeCallNamed(thisPC, opcode, context, &frame); break;
-            case OPCODE_CALL_OBJ: success = opcodeCallObj(thisPC, opcode, context, &frame); break;
-            case OPCODE_NEW: success = opcodeNew(thisPC, opcode, context, &frame); break;
-            case OPCODE_NEW_FUNCTION: success = opcodeNewFunction(thisPC, opcode, context, &frame); break;
-            case OPCODE_RETURN: success = opcodeReturn(thisPC, opcode, context, &frame); break;
-            case OPCODE_CMP: success = opcodeCmp(thisPC, opcode, context, &frame); break;
-            case OPCODE_CMPI: success = opcodeCmpI(thisPC, opcode, context, &frame); break;
-            case OPCODE_CMPD: success = opcodeCmpD(thisPC, opcode, context, &frame); break;
-            case OPCODE_JMP: success = opcodeJmp(thisPC, opcode, context, &frame); break;
-            case OPCODE_BEQ: success = opcodeBEq(thisPC, opcode, context, &frame); break;
-            case OPCODE_BNE: success = opcodeBNE(thisPC, opcode, context, &frame); break;
-            case OPCODE_BL: success = opcodeBL(thisPC, opcode, context, &frame); break;
-            case OPCODE_BLE: success = opcodeBLE(thisPC, opcode, context, &frame); break;
-            case OPCODE_BG: success = opcodeBG(thisPC, opcode, context, &frame); break;
-            case OPCODE_BGE: success = opcodeBGE(thisPC, opcode, context, &frame); break;
-            case OPCODE_THROW: success = opcodeThrow(thisPC, opcode, context, &frame); break;
-            case OPCODE_PUSHTRY: success = opcodePushHandler(thisPC, opcode, context, &frame); break;
-            case OPCODE_POPTRY: success = opcodePopHandler(thisPC, opcode, context, &frame); break;
-            default:
-                fprintf(stderr, "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Unknown opcode\n", frame.code->function->getFullName().c_str(), thisPC, opcode);
-                success = false;
+            func = g_opcodeTable[opcode];
         }
 
+        success = func(thisPC, opcode, context, &frame);
         if (B0RK_UNLIKELY(!success))
         {
             frame.running = false;
@@ -1194,66 +1211,7 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
         // Check for any exceptions
         if (B0RK_UNLIKELY(context->hasException()))
         {
-#ifdef DEBUG_EXECUTOR
-            fprintf(
-                stderr,
-                "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Exception thrown!\n",
-                frame.code->function->getFullName().c_str(),
-                thisPC,
-                opcode);
-#endif
-
-            if (frame.handlerStack.empty())
-            {
-                // There are no current exception handlers
-#ifdef DEBUG_EXECUTOR
-                fprintf(
-                    stderr,
-                    "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " -> No handler, leaving function!\n",
-                    frame.code->function->getFullName().c_str(),
-                    thisPC,
-                    opcode);
-#endif
-                success = true;
-                frame.running = false;
-
-                // Clear the stack until we find our current frame
-                while (true)
-                {
-                    Value v = context->pop();
-#ifdef DEBUG_EXECUTOR
-                    fprintf(stderr, "Executor::run: Popping frame entry: %ls\n", v.toString().c_str());
-#endif
-                    if (v.type == VALUE_FRAME)
-                    {
-                        if (v.pointer != &frame)
-                        {
-                            fprintf(stderr, "Executor::run: ERROR: Frame is not our frame!?\n");
-                        }
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                // There is an exception handler!
-#ifdef DEBUG_EXECUTOR
-                fprintf(
-                    stderr,
-                    "Executor::run: %ls:%04" PRIx64 ": 0x%" PRIx64 " -> Found handler!\n",
-                    frame.code->function->getFullName().c_str(),
-                    thisPC,
-                    opcode);
-#endif
-                ExceptionHandler handler = frame.handlerStack.back();
-                frame.handlerStack.pop_back();
-                context->clearException();
-
-                frame.pc = handler.handlerPC;
-                frame.localVars[handler.excepVar] = context->getExceptionValue();
-
-                context->getExceptionValue();
-            }
+            success = handleException(thisPC, opcode, context, &frame);
         }
     }
 
@@ -1264,4 +1222,68 @@ bool Executor::run(Context* context, Object* thisObj, AssembledCode* code, int a
     return success;
 }
 
+bool Executor::handleException(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame)
+{
+    bool success = true;
+#ifdef DEBUG_EXECUTOR
+    fprintf(
+        stderr,
+        "Executor::handleException: %ls:%04" PRIx64 ": 0x%" PRIx64 " ERROR: Exception thrown!\n",
+        frame->code->function->getFullName().c_str(),
+        thisPC,
+        opcode);
+#endif
 
+    if (frame->handlerStack.empty())
+    {
+        // There are no current exception handlers
+#ifdef DEBUG_EXECUTOR
+        fprintf(
+            stderr,
+            "Executor::handleException: %ls:%04" PRIx64 ": 0x%" PRIx64 " -> No handler, leaving function!\n",
+            frame->code->function->getFullName().c_str(),
+            thisPC,
+            opcode);
+#endif
+        success = true;
+        frame->running = false;
+
+        // Clear the stack until we find our current frame
+        while (true)
+        {
+            Value v = context->pop();
+#ifdef DEBUG_EXECUTOR
+            fprintf(stderr, "Executor::handleException: Popping frame entry: %ls\n", v.toString().c_str());
+#endif
+            if (v.type == VALUE_FRAME)
+            {
+                if (v.pointer != frame)
+                {
+                    fprintf(stderr, "Executor::handleException: ERROR: Frame is not our frame!?\n");
+                }
+                break;
+            }
+        }
+    }
+    else
+    {
+        // There is an exception handler!
+#ifdef DEBUG_EXECUTOR
+        fprintf(
+            stderr,
+            "Executor::handleException: %ls:%04" PRIx64 ": 0x%" PRIx64 " -> Found handler!\n",
+            frame->code->function->getFullName().c_str(),
+            thisPC,
+            opcode);
+#endif
+        ExceptionHandler handler = frame->handlerStack.back();
+        frame->handlerStack.pop_back();
+        context->clearException();
+
+        frame->pc = handler.handlerPC;
+        frame->localVars[handler.excepVar] = context->getExceptionValue();
+
+        context->getExceptionValue();
+    }
+    return success;
+}

@@ -29,8 +29,19 @@ namespace b0rk
 
 class Executor;
 
+typedef bool(*opcodeFunc_t)(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame);
+
+struct OpcodeTableEntry
+{
+    opcodeFunc_t func;
+};
+
 class Executor
 {
+ private:
+    //OpcodeTableEntry m_opcodeTable[OPCODE_MAX];
+
+    bool handleException(uint64_t thisPC, uint64_t opcode, Context* context, Frame* frame);
  public:
     Executor();
     ~Executor();
