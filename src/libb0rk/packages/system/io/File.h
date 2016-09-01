@@ -30,7 +30,7 @@ class File : public Class
  private:
     int m_fdFieldId;
 
-    FILE* getDescriptor(Object* instance);
+    inline FILE* getDescriptor(Object* instance) const;
 
     bool doWrite(Context* context, FILE* fd, int argCount, Value* args);
 

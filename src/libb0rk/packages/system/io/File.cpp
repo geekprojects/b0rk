@@ -18,7 +18,6 @@
  *  along with b0rk.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,6 +27,8 @@
 
 #include "packages/system/io/File.h"
 #include "packages/system/lang/StringClass.h"
+
+#define BUFFER_SIZE 1024
 
 using namespace std;
 using namespace b0rk;
@@ -92,7 +93,7 @@ bool File::writeln(Context* context, Object* instance, int argCount, Value* args
 }
 
 
-FILE* File::getDescriptor(Object* instance)
+FILE* File::getDescriptor(Object* instance) const
 {
     FILE* fd;
     if (instance != NULL)
@@ -110,6 +111,8 @@ FILE* File::getDescriptor(Object* instance)
 
 bool File::doWrite(Context* context, FILE* fd, int argCount, Value* args)
 {
+    char outbuffer[BUFFER_SIZE];
+
     int i;
     for (i = 0; i < argCount; i++)
     {
@@ -127,13 +130,20 @@ bool File::doWrite(Context* context, FILE* fd, int argCount, Value* args)
             str = v.toString();
         }
 
+        int strlength = str.length();
         unsigned int j;
-        char outbuffer[4];
-        for (j = 0; j < str.length(); j++)
+        char* outpos = outbuffer;
+        for (j = 0; j < strlength; j++)
         {
-            char* outpos = outbuffer;
-            utf8::append(str[j], outpos);
-            fwrite(outbuffer, 1, 1, fd);
+            wchar_t c = str[j];
+
+            outpos = utf8::append(c, outpos);
+            int len = (outpos - outbuffer);
+            if (j >= strlength - 1 || len > BUFFER_SIZE - 4)
+            {
+                fwrite(outbuffer, len, 1, fd);
+                outpos = outbuffer;
+            }
         }
     }
 
