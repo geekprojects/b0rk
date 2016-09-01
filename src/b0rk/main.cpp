@@ -86,9 +86,15 @@ int main(int argc, char** argv)
     argsValue.object = argsObj;
 
     Value result;
-    mainFunc->execute(context, NULL, 1, &argsValue, result);
+    bool res;
+    res = mainFunc->execute(context, NULL, 1, &argsValue, result);
 
     delete runtime;
+
+    if (!res)
+    {
+        return 1;
+    }
 
     return 0;
 }
