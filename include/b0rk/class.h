@@ -51,26 +51,27 @@ class Class
 
     std::map<std::wstring, Function*> m_methods;
 
-    int m_fieldStartId;
-    std::vector<std::wstring> m_fields;
+    size_t m_fieldStartId;
+    size_t m_fieldCount;
+    std::map<std::wstring, size_t> m_fields;
 
-    int m_staticFieldStartId;
-    std::vector<std::wstring> m_staticFields;
+    size_t m_staticFieldStartId;
+    size_t m_staticFieldCount;
+    std::map<std::wstring, size_t> m_staticFields;
     std::vector<Value> m_staticValues;
-    //Value* m_staticValues;
 
  public:
     Class(Class* superClass, std::wstring name);
     virtual ~Class();
 
-    std::wstring getName() { return m_name; }
+    std::wstring getName() const { return m_name; }
     ClassState getState() { return m_state; }
     void setState(ClassState state) { m_state = state; }
     void setSuperClass(Class* sc) { m_superClass = sc; }
-    Class* getSuperClass() { return m_superClass; }
+    Class* getSuperClass() const { return m_superClass; }
 
-    virtual size_t getFieldCount();
-    virtual size_t getStaticFieldCount();
+    size_t getFieldCount() const { return m_fieldCount; }
+    size_t getStaticFieldCount() const { return m_staticFieldCount; }
 
     void addField(std::string name);
     void addField(std::wstring name);
@@ -81,8 +82,6 @@ class Class
     int getStaticFieldId(std::wstring name);
     Value getStaticField(int slot) { return m_staticValues[slot - m_staticFieldStartId]; }
     void setStaticField(int slot, Value v) { m_staticValues[slot - m_staticFieldStartId] = v; }
-    //void initStaticFields();
-    std::vector<std::wstring>& getStaticFields();
 
     void addMethod(std::string name, Function* function);
     void addMethod(std::wstring name, Function* function);

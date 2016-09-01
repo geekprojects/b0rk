@@ -29,11 +29,13 @@ Context::Context(Runtime* runtime)
 {
     m_runtime = runtime;
 
-    m_stackPos = 0;
+    m_stackPos = B0RK_STACK_MARGIN;
     m_stackSize = 1024;
-    m_stack = new Value[m_stackSize];
+    m_stack = new Value[m_stackSize + (B0RK_STACK_MARGIN * 2)];
 
     m_exception = false;
+
+    m_null.type = VALUE_VOID;
 }
 
 Context::~Context()
