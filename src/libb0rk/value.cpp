@@ -29,6 +29,45 @@
 using namespace std;
 using namespace b0rk;
 
+void int642wstr(int64_t v, wchar_t *s, int base)
+{
+    if (v == 0)
+    {
+        s[0] = '0';
+        s[1] = '\0';
+    }
+    else
+    {
+        wchar_t s1[80];
+        int64_t v1;
+        int i = 0, j = 0;
+        if (v < 0)
+        {
+            s[j++] = '-';
+            v = -v;
+        }
+
+        while (v > 0)
+        {
+            v1 = v % base;
+            if (v1 < 10)
+            {
+                s1[i++] = v1 + '0';
+            }
+            else
+            {
+                s1[i++] = v1 - 10 + 'a';
+            }
+            v /= base;
+        }
+        while (i > 0)
+        {
+            s[j++] = s1[--i];
+        }
+        s[j] = '\0';
+    }
+}
+
 wstring Value::toString()
 {
     wchar_t buffer[128];
@@ -61,7 +100,7 @@ wstring Value::toString()
             return wstring(buffer);
 
         case VALUE_INTEGER:
-            swprintf(buffer, 128, L"%" PRIu64, i);
+            int642wstr(i, buffer, 10);
             return wstring(buffer);
 
         case VALUE_DOUBLE:
