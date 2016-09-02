@@ -120,7 +120,7 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
             return false;
         }
 
-        int j;
+        unsigned int j;
         for (j = 0; j < opCodeInfo.args; j++)
         {
             uint64_t arg = inst.args[j];
@@ -1259,7 +1259,7 @@ void Assembler::pushInstruction(OpCode op, ...)
 
     OpCodeInfo opInfo = OpCodeInfo::getOpcodeInfo(op);
 
-    int i;
+    unsigned int i;
     for (i = 0; i < opInfo.args; i++)
     {
         uint64_t arg = va_arg(vl, uint64_t);
@@ -1808,7 +1808,7 @@ bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
 
 bool Assembler::removeInstruction(unsigned int pos)
 {
-    int i;
+    unsigned int i;
     vector<Instruction>::iterator it;
 
     // Remove the instruction...
