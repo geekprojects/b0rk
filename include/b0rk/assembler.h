@@ -80,7 +80,7 @@ class Assembler
     bool optimise(AssembledCode& code);
     bool optimiseVars(AssembledCode& code, bool& hasOptimised);
     bool optimiseArithmetic(AssembledCode& code, bool& hasOptimised);
-    bool removeInstruction(int pos);
+    bool removeInstruction(unsigned int pos);
 
     Function* findFunction(CodeBlock* block, Identifier id);
 

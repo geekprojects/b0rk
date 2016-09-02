@@ -34,11 +34,22 @@
 
 #include <set>
 
-#define DOUBLE_TO_INT64(_d) *((int64_t*)(&(_d)))
-#define INT64_TO_DOUBLE(_i) *((double*)&(_i))
-
 using namespace std;
 using namespace b0rk;
+
+static inline int64_t double_to_int64(double d)
+{
+    int64_t i;
+    memcpy(&i, &d, sizeof(d));
+    return i;
+}
+
+static inline double int64_to_double(int64_t i)
+{
+    double d;
+    memcpy(&d, &i, sizeof(i));
+    return d;
+}
 
 Assembler::Assembler(Context* context)
 {
@@ -1677,8 +1688,8 @@ bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
                     }
                     else if (opt == 0x20)
                     {
-                        double d1 = INT64_TO_DOUBLE(m_code[pos - 1].args[0]);
-                        double d2 = INT64_TO_DOUBLE(m_code[pos - 2].args[0]);
+                        double d1 = int64_to_double(m_code[pos - 1].args[0]);
+                        double d2 = int64_to_double(m_code[pos - 2].args[0]);
                         double result = 0;
                         switch (op)
                         {
@@ -1713,7 +1724,7 @@ bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
                             removeList.insert(pos - 1);
                             removeList.insert(pos - 2);
                             m_code[pos].op = OPCODE_PUSHD;
-                            m_code[pos].args.push_back(DOUBLE_TO_INT64(result));
+                            m_code[pos].args.push_back(double_to_int64(result));
                             changed = true;
                         }
                     }
@@ -1750,11 +1761,11 @@ bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
                     double d = 0;
                     if (prevOp3 == OPCODE_PUSHD)
                     {
-                        d = INT64_TO_DOUBLE(m_code[pos - 3].args[0]);
+                        d = int64_to_double(m_code[pos - 3].args[0]);
                     }
                     else
                     {
-                        d = INT64_TO_DOUBLE(m_code[pos - 2].args[0]);
+                        d = int64_to_double(m_code[pos - 2].args[0]);
                     }
 #ifdef DEBUG_OPTIMISER
                     fprintf(
@@ -1766,7 +1777,7 @@ bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
 
                     m_code[pos].op = OPCODE_INC_VARD;
                     m_code[pos].args[0] = var;
-                    m_code[pos].args.push_back(DOUBLE_TO_INT64(d));
+                    m_code[pos].args.push_back(double_to_int64(d));
                     removeList.insert(pos - 1);
                     removeList.insert(pos - 2);
                     removeList.insert(pos - 3);
@@ -1795,7 +1806,7 @@ bool Assembler::optimiseArithmetic(AssembledCode& code, bool& hasOptimised)
     return true;
 }
 
-bool Assembler::removeInstruction(int pos)
+bool Assembler::removeInstruction(unsigned int pos)
 {
     int i;
     vector<Instruction>::iterator it;

@@ -145,7 +145,7 @@ struct OpCodeInfo
 {
     std::string name;
     std::string format;
-    int args;
+    unsigned int args;
     int address;
 
     OpCodeInfo()
