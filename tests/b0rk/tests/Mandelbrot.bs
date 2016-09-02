@@ -28,7 +28,7 @@ class tests.Mandelbrot
 
     function Mandelbrot()
     {
-        maxIterations = 20;
+        maxIterations = 50;
     }
 
     function iterate(px, py)
@@ -63,6 +63,7 @@ class tests.Mandelbrot
         File.out.write(" ");
         File.out.writeln(Maths.round(height));
         File.out.writeln(maxIterations);
+
         var py;
         for (py = minY; py <= maxY - step; py += step)
         {
