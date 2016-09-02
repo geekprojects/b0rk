@@ -130,7 +130,7 @@ bool File::doWrite(Context* context, FILE* fd, int argCount, Value* args)
             str = v.toString();
         }
 
-        int strlength = str.length();
+        unsigned int strlength = str.length();
         unsigned int j;
         char* outpos = outbuffer;
         for (j = 0; j < strlength; j++)
@@ -138,7 +138,7 @@ bool File::doWrite(Context* context, FILE* fd, int argCount, Value* args)
             wchar_t c = str[j];
 
             outpos = utf8::append(c, outpos);
-            int len = (outpos - outbuffer);
+            unsigned int len = (outpos - outbuffer);
             if (j >= strlength - 1 || len > BUFFER_SIZE - 4)
             {
                 fwrite(outbuffer, len, 1, fd);
