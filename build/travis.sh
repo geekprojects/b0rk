@@ -10,4 +10,5 @@ cd libgeek
 make
 
 sudo make install
+if [ $TRAVIS_OS_NAME == linux ]; then sudo ldconfig; fi
 
