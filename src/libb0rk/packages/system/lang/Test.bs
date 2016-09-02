@@ -1,0 +1,20 @@
+import system.io.File;
+
+class system.lang.Test
+{
+    function assertEquals(name, actual, expected)
+    {
+        //File.out.write("Test: " + name + ": ");
+        if (actual == expected)
+        {
+            //File.out.writeln("PASS");
+        }
+        else
+        {
+            //File.out.writeln(("FAIL: expected: " + expected) + ", got: " + actual);
+            throw "assertEquals: " + name + ": " + expected + " != " + actual;
+        }
+    }
+}
+
+

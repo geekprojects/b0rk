@@ -8,6 +8,6 @@ libsystemlang_la_CXXFLAGS=-I../../..
 library_includedir=$(includedir)/b0rk/packages/system/lang
 library_include_HEADERS=Array.h Object.h Function.h StringClass.h Exception.h
 
-#scriptsdir=${datarootdir}/${PACKAGE}/packages/system/lang
-#scripts_DATA=Test.bs
+scriptsdir=${datarootdir}/${PACKAGE}/packages/system/lang
+scripts_DATA=Test.bs
 
