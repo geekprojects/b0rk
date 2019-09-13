@@ -16,6 +16,7 @@ addons:
     packages:
       - libsigc++@2
       - libtool
+      - freetype
     update: true
 
 before_script:
