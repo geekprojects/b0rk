@@ -80,7 +80,6 @@ int CodeBlock::setStartingVarId(int id)
 
 int CodeBlock::getVarId(wstring var)
 {
-    vector<string>::iterator it;
     unsigned int i;
     for (i = 0; i < m_vars.size(); i++)
     {
