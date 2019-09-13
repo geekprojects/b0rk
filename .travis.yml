@@ -16,7 +16,7 @@ addons:
     packages:
       - libsigc++
       - libtool
-    #update: true
+    update: true
 
 before_script:
   - bash ./build/travis.sh
