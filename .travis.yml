@@ -9,6 +9,14 @@ addons:
       - libpng12-dev
       - libjpeg-dev
       - libjpeg-turbo8
+      - libsigc++-2.0-dev
+      - sqlite3
+      - libsqlite-dev
+  homebrew:
+    packages:
+      - libsigc++
+      - libtool
+    #update: true
 
 before_script:
   - if [ $TRAVIS_OS_NAME == osx ]; then brew install libpng libxml2 jpeg; fi
