@@ -43,7 +43,7 @@ class StringNative : public NativeObject
     bool length(Context* context, int argCount, Value* args, Value& result);
     bool at(Context* context, int argCount, Value* args, Value& result);
 
-    std::wstring getString() { return m_string; }
+    std::wstring getString() const { return m_string; }
 };
 
 class String : public Class

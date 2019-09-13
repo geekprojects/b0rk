@@ -28,6 +28,7 @@
 #include <map>
 #include <vector>
 #include <list>
+#include <deque>
 #include <string>
 
 namespace b0rk
@@ -37,6 +38,12 @@ class Context;
 class Class;
 struct Object;
 class Executor;
+
+enum RuntimeVerboseFlags
+{
+    VERBOSE_GC  = 0x0001,
+    VERBOSE_ALL = 0xffff
+};
 
 struct Arena
 {
@@ -49,8 +56,11 @@ struct Arena
 class Runtime
 {
  private:
-    std::vector<std::wstring> m_classpath;
+    std::deque<std::wstring> m_classpath;
     std::map<std::wstring, Class*> m_classes;
+
+    int m_optionVerboseFlags;
+    bool m_optionDisableOptimiser;
 
     Class* m_objectClass;
     Class* m_stringClass;
@@ -90,9 +100,16 @@ class Runtime
     Runtime();
     ~Runtime();
 
+    void setVerboseFlags(int verbose) { m_optionVerboseFlags = verbose; }
+    int getVerboseFlags() { return m_optionVerboseFlags; }
+    void setDisableOptimiser(bool disable) { m_optionDisableOptimiser = disable; }
+    bool getDisableOptimiser() { return m_optionDisableOptimiser; }
+
     bool addClass(Context* context, Class* clazz, bool findScript = false);
     //Class* findClass(Context* context, std::string name, bool load = true);
     Class* findClass(Context* context, std::wstring name, bool load = true);
+
+    void addClasspath(std::wstring classpath);
 
     inline Class* getObjectClass() const { return m_objectClass; }
     inline Class* getStringClass() const { return m_stringClass; }

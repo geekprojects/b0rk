@@ -62,7 +62,7 @@ class Assembler
 
     std::vector<Instruction> m_code;
 
-    void pushInstruction(OpCode op, ...);
+    void pushInstruction(int op, ...);
 
     void pushOperator(OpCode opcode, ValueType type);
     void pushCMP(ValueType type);

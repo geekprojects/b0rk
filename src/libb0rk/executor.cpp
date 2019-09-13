@@ -794,7 +794,7 @@ static bool opcodeNewFunction(uint64_t thisPC, uint64_t opcode, Context* context
     LOG("NEW_FUNCTION: Function class=%p", clazz);
 
     Value funcValue;
-    funcValue.type = VALUE_POINTER;
+    funcValue.type = VALUE_OBJECT;
     funcValue.pointer = func;
     context->push(funcValue);
     Object* funcObject = context->getRuntime()->newObject(context, clazz, 1);

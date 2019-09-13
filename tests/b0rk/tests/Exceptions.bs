@@ -1,6 +1,7 @@
 
 class tests.Exceptions extends system.lang.Test
 {
+
     function throwsFunc() static
     {
         system.io.File.out.writeln("throwsFunc: About to throw!");
@@ -36,6 +37,7 @@ class tests.Exceptions extends system.lang.Test
     function functionException(arg)
     {
         var var0 = "var0";
+
         try
         {
             throwsFunc();

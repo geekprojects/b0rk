@@ -124,7 +124,7 @@ bool Assembler::assemble(CodeBlock* code, AssembledCode& asmCode)
         for (j = 0; j < opCodeInfo.args; j++)
         {
             uint64_t arg = inst.args[j];
-            if (j == opCodeInfo.address)
+            if ((int)j == opCodeInfo.address)
             {
                 if (arg >= m_code.size())
                 {
@@ -1249,15 +1249,15 @@ bool Assembler::store(CodeBlock* block, VarExpression* varExpr, OperationExpress
     }
 }
 
-void Assembler::pushInstruction(OpCode op, ...)
+void Assembler::pushInstruction(int op, ...)
 {
     va_list vl;
     va_start(vl, op);
 
     Instruction inst;
-    inst.op = op;
+    inst.op = (OpCode)op;
 
-    OpCodeInfo opInfo = OpCodeInfo::getOpcodeInfo(op);
+    OpCodeInfo opInfo = OpCodeInfo::getOpcodeInfo((OpCode)op);
 
     unsigned int i;
     for (i = 0; i < opInfo.args; i++)

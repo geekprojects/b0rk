@@ -219,9 +219,6 @@ wstring OperationExpression::toString()
         case VALUE_VOID:
             str += L"VOID";
             break;
-        case VALUE_VARIABLE:
-            str += L"VARIABLE";
-            break;
         case VALUE_OBJECT:
             str += L"OBJECT";
             break;

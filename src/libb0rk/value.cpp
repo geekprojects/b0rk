@@ -73,10 +73,6 @@ wstring Value::toString()
     wchar_t buffer[128];
     switch (type)
     {
-        case VALUE_VARIABLE:
-            swprintf(buffer, 128, L"{VARIABLE:%p}", variable);
-            return wstring(buffer);
-
         case VALUE_OBJECT:
             if (object != NULL)
             {

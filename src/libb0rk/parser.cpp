@@ -104,6 +104,8 @@ bool Parser::parse(vector<Token> tokens, bool addToExisting)
 
     Token* token;
 
+    m_imports.insert(make_pair(L"Runtime", Identifier::makeIdentifier(L"system.lang.Runtime")));
+
     // Imports
     while (moreTokens())
     {

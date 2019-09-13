@@ -64,15 +64,15 @@ bool Array::constructor(Context* context, Object* instance, int argCount, Value*
     Value arrayVal;
     arrayVal.type = VALUE_OBJECT;
     arrayVal.object = arrayData;
-    instance->setValue(0, sizeVal);
-    instance->setValue(1, arrayVal);
+    instance->setValue(1, sizeVal);
+    instance->setValue(2, arrayVal);
 
     return true;
 }
 
 bool Array::load(Context* context, Object* array, Value index, Value& value)
 {
-    int size = array->getValue(0).i;
+    int size = array->getValue(1).i;
 
 #ifdef DEBUG_ARRAYS
     printf("Array::load: size=%d, index=%ls\n", size, index.toString().c_str());
@@ -89,7 +89,7 @@ bool Array::load(Context* context, Object* array, Value index, Value& value)
         return true;
     }
 
-    Object* arrayData = array->getValue(1).object;
+    Object* arrayData = array->getValue(2).object;
     value = arrayData->m_values[index.i];
 
     return true;
@@ -97,7 +97,7 @@ bool Array::load(Context* context, Object* array, Value index, Value& value)
 
 bool Array::store(Context* context, Object* array, Value index, Value value)
 {
-    int size = array->getValue(0).i;
+    int size = array->getValue(1).i;
 
 #ifdef DEBUG_ARRAYS
     printf("Array::store: size=%d, index=%ls\n", size, index.toString().c_str());
@@ -114,7 +114,7 @@ bool Array::store(Context* context, Object* array, Value index, Value value)
         return true;
     }
 
-    Object* arrayData = array->getValue(1).object;
+    Object* arrayData = array->getValue(2).object;
     arrayData->m_values[index.i] = value;
     return true;
 }

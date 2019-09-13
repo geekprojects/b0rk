@@ -37,6 +37,8 @@
 #include "packages/system/lang/Function.h"
 #include "packages/system/lang/Maths.h"
 #include "packages/system/lang/Exception.h"
+#include "packages/system/lang/RuntimeClass.h"
+#include "packages/system/lang/TimeClass.h"
 #include "packages/system/io/File.h"
 
 #include <cinttypes>
@@ -91,12 +93,14 @@ Runtime::Runtime()
     Context* initContext = new Context(this);
 
     // system.lang classes
+    addClass(initContext, new RuntimeClass(), true);
     addClass(initContext, m_objectClass = new ObjectClass(), true);
     addClass(initContext, m_arrayClass = new Array(), true);
     addClass(initContext, m_arrayDataClass = new ArrayData(), true);
     addClass(initContext, m_stringClass = new String(), true);
     addClass(initContext, new FunctionClass(), true);
     addClass(initContext, new Maths(), true);
+    addClass(initContext, new Time(), true);
     addClass(initContext, m_exceptionClass = new Exception(), true);
 
     // system.io classes
@@ -110,7 +114,10 @@ Runtime::Runtime()
 Runtime::~Runtime()
 {
     gc(true);
-    gcStats();
+    if (m_optionVerboseFlags & VERBOSE_GC)
+    {
+        gcStats();
+    }
 
     // Get rid of classes
     map<wstring, Class*>::iterator it;
@@ -131,6 +138,11 @@ Runtime::~Runtime()
 
     delete m_executor;
     free((void*)m_arena.m_start);
+}
+
+void Runtime::addClasspath(wstring cp)
+{
+    m_classpath.push_front(cp);
 }
 
 bool Runtime::addClass(Context* context, Class* clazz, bool findScript)
@@ -205,7 +217,7 @@ Class* Runtime::loadClass(Context* context, wstring name, bool addToExisting)
 #endif
 
     FILE* fp = NULL;
-    vector<wstring>::iterator cpit;
+    deque<wstring>::iterator cpit;
 
     for (cpit = m_classpath.begin(); cpit != m_classpath.end(); cpit++)
     {
@@ -604,19 +616,6 @@ int64_t Runtime::gcArena(Arena* arena, uint64_t mark)
             else
             {
                 // This object hasn't been marked, collect it!
-
-#if 0
-                // Free up any private pointers (Mostly Strings)
-                // XXX: This ends up freeing things it shouldn't (Functions)
-                int i;
-                for (i = 0; i < obj->m_class->getFieldCount(); i++)
-                {
-                    if (obj->m_values[i].type == VALUE_POINTER && obj->m_values[i].pointer != NULL)
-                    {
-                        free(obj->m_values[i].pointer);
-                    }
-                }
-#endif
 
                 freed += obj->m_size;
 #ifdef DEBUG_GC

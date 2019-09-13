@@ -34,12 +34,11 @@ enum ValueType
 {
    VALUE_UNKNOWN,
    VALUE_VOID,     // 1
-   VALUE_VARIABLE, // 2
-   VALUE_OBJECT,   // 3
-   VALUE_POINTER,  // 4
-   VALUE_INTEGER,  // 5
-   VALUE_DOUBLE,   // 6
-   VALUE_FRAME = 0x1000,
+   VALUE_OBJECT,   // 2
+   VALUE_INTEGER,  // 3
+   VALUE_DOUBLE,   // 4
+   VALUE_POINTER = 0x1000,
+   VALUE_FRAME   = 0x2000,
 };
 
 struct Value
